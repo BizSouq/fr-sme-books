@@ -56,6 +56,7 @@ await build({
       export { useSearch } from './src/utils/useSearch';
       export { searcherKey } from './src/utils/injectionKeys';
       export { createApp, effectScope, shallowRef } from 'vue';
+      export { AccountsReceivable } from './reports/AccountsReceivable/AccountsReceivable';
       export { GeneralLedger } from './reports/GeneralLedger/GeneralLedger';
       export { ProfitAndLoss } from './reports/ProfitAndLoss/ProfitAndLoss';
       export { StockBalance } from './reports/inventory/StockBalance';
@@ -122,6 +123,8 @@ globalThis.window = {
           'Books Profit and Loss',
           'Books Balance Sheet',
           'Books Trial Balance',
+          'Books Accounts Receivable',
+          'Books Accounts Payable',
           'Books GSTR-1',
           'Books GSTR-2',
           'Books Stock Ledger',
@@ -189,6 +192,7 @@ export const {
   createApp,
   effectScope,
   shallowRef,
+  AccountsReceivable,
   GeneralLedger,
   ProfitAndLoss,
   StockBalance,

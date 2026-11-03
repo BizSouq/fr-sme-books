@@ -115,7 +115,8 @@ export class MobileTree {
     const groupIndex = getColumnIndex(this.report, groupBy);
     const groups = new Map<string, ReportRow[]>();
     for (const row of this.report.reportData) {
-      if (row.isEmpty) continue;
+      // Groups sum their own rows, so the report's totals would count twice.
+      if (row.isEmpty || row.isSummary) continue;
       const name = row.cells[groupIndex]?.value ?? '';
       const group = groups.get(name) ?? [];
       group.push(row);

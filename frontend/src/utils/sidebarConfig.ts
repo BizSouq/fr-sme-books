@@ -169,6 +169,16 @@ function getReportSidebar() {
         route: '/report/TrialBalance',
       },
       {
+        label: t`Accounts Receivable`,
+        name: 'accounts-receivable',
+        route: '/report/AccountsReceivable',
+      },
+      {
+        label: t`Accounts Payable`,
+        name: 'accounts-payable',
+        route: '/report/AccountsPayable',
+      },
+      {
         label: t`Stock Ledger`,
         name: 'stock-ledger',
         route: '/report/StockLedger',
