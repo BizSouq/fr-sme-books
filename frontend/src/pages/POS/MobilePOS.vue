@@ -42,7 +42,8 @@
         @click="$emit('addItem', item)"
       >
         <span
-          class="flex h-21 items-center justify-center overflow-hidden rounded-4 bg-surface-gray-2 text-3xl-semibold text-ink-gray-5"
+          class="flex h-21 items-center justify-center overflow-hidden rounded-4 text-3xl-semibold"
+          :class="getItemTint(item.itemName)"
         >
           <img
             v-if="item.image && !brokenImages.has(item.image)"
@@ -61,7 +62,7 @@
         <span
           class="flex justify-between gap-1 px-1 pb-0.5 text-sm tabular-nums"
         >
-          <span class="text-ink-gray-8" dir="ltr">
+          <span class="font-semibold text-[color:var(--books-brand)]" dir="ltr">
             {{ fyo.format(item.rate, 'Currency') }}
           </span>
           <span class="text-end text-ink-gray-5">
@@ -134,7 +135,7 @@ import { fyo } from 'src/initFyo';
 import EmptyState from 'src/components/EmptyState.vue';
 import MobileFooter from 'src/mobile/MobileFooter.vue';
 import BarcodeScanButton from 'src/mobile/scan/BarcodeScanButton.vue';
-import { getItemInitials, getPayableTotal } from 'src/utils/pos';
+import { getItemInitials, getItemTint, getPayableTotal } from 'src/utils/pos';
 import { getQuantityByItem } from 'src/utils/posCart';
 import {
   computed,

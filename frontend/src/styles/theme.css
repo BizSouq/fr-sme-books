@@ -1,0 +1,240 @@
+/*
+  The Books theme: a green brand, tinted neutrals, an indigo sidebar and
+  colored section icons, over frappe-ui's tokens.
+
+  frappe-ui paints solid buttons, checkboxes, switches, radios, sliders and
+  progress bars with --surface-gray-10 (hover 9, pressed 8), so those three
+  steps carry the brand. Tooltips and toasts use the same steps and are put
+  back to neutral below.
+*/
+
+:root {
+  --books-brand: #006a4e;
+  --books-brand-hover: #00573f;
+  --books-brand-active: #004532;
+  --books-ground: #f2f6f4;
+
+  --surface-gray-10: var(--books-brand);
+  --surface-gray-9: var(--books-brand-hover);
+  --surface-gray-8: var(--books-brand-active);
+
+  /* Neutrals lean slightly green, so white cards stand off the ground. */
+  --surface-gray-1: oklch(0.979 0.004 165);
+  --surface-gray-2: oklch(0.964 0.006 165);
+  --surface-gray-3: oklch(0.946 0.007 165);
+  --surface-gray-4: oklch(0.913 0.008 165);
+  --outline-gray-1: oklch(0.94 0.006 165);
+  --outline-gray-2: oklch(0.905 0.008 165);
+
+  /* Colored cards and chips; each passes 4.5:1 with white text. */
+  --books-green: #006a4e;
+  --books-orange: #c2410c;
+  --books-blue: #1d4ed8;
+  --books-pink: #be185d;
+}
+
+[data-theme='dark'] {
+  --books-brand: #3cc795;
+  --books-brand-hover: #5ad6a8;
+  --books-brand-active: #2aa97c;
+  --books-ground: oklch(0.17 0.03 285);
+
+  --surface-gray-10: var(--books-brand);
+  --surface-gray-9: var(--books-brand-hover);
+  --surface-gray-8: var(--books-brand-active);
+
+  /* Dark mode leans indigo instead of plain gray. */
+  --surface-base: oklch(0.2 0.03 285);
+  --surface-gray-1: oklch(0.235 0.035 285);
+  --surface-gray-2: oklch(0.27 0.038 285);
+  --surface-gray-3: oklch(0.32 0.04 285);
+  --surface-gray-4: oklch(0.36 0.04 285);
+  --surface-elevation-1: oklch(0.235 0.035 285);
+  --surface-elevation-2: oklch(0.255 0.037 285);
+  --surface-elevation-3: oklch(0.32 0.04 285);
+  --outline-base: oklch(0.2 0.03 285);
+  --outline-gray-1: oklch(0.27 0.035 285);
+  --outline-gray-2: oklch(0.34 0.035 285);
+  --outline-gray-3: oklch(0.38 0.035 285);
+  --outline-elevation-1: oklch(0.29 0.035 285);
+  --outline-elevation-2: oklch(0.34 0.035 285);
+
+  --books-green: #0b7a5a;
+  --books-orange: #c2410c;
+  --books-blue: #2563eb;
+  --books-pink: #be185d;
+}
+
+html {
+  font-family:
+    'Plus Jakarta Sans Variable', 'Hind Siliguri', InterVar, ui-sans-serif,
+    system-ui, sans-serif;
+}
+
+/* Bangla needs room above and below its letters. */
+:lang(bn) {
+  line-height: 1.6;
+}
+
+/* Tooltips and toasts stay neutral, not brand colored. */
+[data-slot='content']:has(> [data-slot='bubble']),
+[data-sonner-toaster] {
+  --surface-gray-10: oklch(0.205 0 0);
+  --surface-gray-9: oklch(0.27 0 0);
+  --surface-gray-8: oklch(0.34 0 0);
+}
+
+[data-theme='dark'] [data-slot='content']:has(> [data-slot='bubble']),
+[data-theme='dark'] [data-sonner-toaster] {
+  --surface-gray-10: oklch(0.93 0 0);
+  --surface-gray-9: oklch(0.885 0 0);
+  --surface-gray-8: oklch(0.82 0 0);
+}
+
+/*
+  Sidebar: Sidebar.vue marks it data-theme="dark", so it reads frappe-ui's
+  dark text colors in either theme, on an indigo ground.
+*/
+.books-sidebar {
+  /* Set here, not on :root: the sidebar's own data-theme would re-value them. */
+  --books-sidebar: #1c1640;
+  --books-sidebar-raised: #2a2259;
+  --books-sidebar-active: #3cc795;
+  --surface-sidebar: var(--books-sidebar);
+  --surface-gray-2: rgb(255 255 255 / 0.08);
+  --surface-gray-3: rgb(255 255 255 / 0.12);
+  --surface-gray-4: rgb(255 255 255 / 0.16);
+  --surface-elevation-2: var(--books-sidebar-raised);
+  --outline-gray-1: rgb(255 255 255 / 0.08);
+  --ink-gray-6: oklch(0.86 0.03 285);
+  --ink-gray-8: #fff;
+  color: var(--ink-gray-6);
+}
+
+[data-theme='dark'] .books-sidebar {
+  --books-sidebar: oklch(0.15 0.04 285);
+  --books-sidebar-raised: oklch(0.22 0.05 285);
+}
+
+.books-sidebar [data-slot='sidebar-item'] {
+  height: 2.25rem;
+  border-radius: 0.625rem;
+}
+
+.books-sidebar [data-slot='sidebar-item'][data-state='active'] {
+  background: var(--books-sidebar-active);
+  color: oklch(0.18 0.03 285);
+  box-shadow: none;
+}
+
+.books-nav-chip {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.4375rem;
+  background: var(--chip);
+  color: var(--chip-ink);
+}
+
+.books-nav-chip > span {
+  width: 0.9375rem;
+  height: 0.9375rem;
+}
+
+/* The active row is already green; its chip goes translucent. */
+[data-state='active'] .books-nav-chip {
+  background: rgb(255 255 255 / 0.3);
+  color: inherit;
+}
+
+/*
+  Colored total cards: frappe-ui's NumberCard reads its text from the ink
+  tokens, so the card re-points them at white.
+*/
+.books-kpi {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: var(--kpi);
+  color: #fff;
+  --ink-gray-4: rgb(255 255 255 / 0.8);
+  --ink-gray-5: rgb(255 255 255 / 0.9);
+  --ink-gray-6: rgb(255 255 255 / 0.9);
+  --ink-gray-8: #fff;
+  --ink-gray-9: #fff;
+  --surface-gray-2: rgb(255 255 255 / 0.16);
+  --surface-gray-3: rgb(255 255 255 / 0.2);
+  --surface-gray-4: rgb(255 255 255 / 0.28);
+}
+
+/* A soft ring in the corner, as on the cards in the design. */
+.books-kpi::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: -1.75rem;
+  top: -1.75rem;
+  width: 6.5rem;
+  height: 6.5rem;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.12);
+  pointer-events: none;
+}
+
+/* White panels on the tinted dashboard ground. */
+.books-panel {
+  border-radius: 1.25rem;
+  background: var(--surface-base);
+  box-shadow: 0 1px 3px rgb(30 27 58 / 0.06);
+}
+
+/*
+  Chart colors: green to orange for money in and out, and bright categories.
+  frappe-ui's chart stylesheet loads with the charts, possibly after this
+  file, so these selectors are one step more specific than its own.
+*/
+html:root {
+  --chart-diverging-1: #006a4e;
+  --chart-diverging-2: #2f8f6e;
+  --chart-diverging-3: #6fb89a;
+  --chart-diverging-4: #b5dccb;
+  --chart-diverging-5: #f4f1e4;
+  --chart-diverging-6: #f6c8a0;
+  --chart-diverging-7: #ee9a63;
+  --chart-diverging-8: #dd6f36;
+  --chart-diverging-9: #c2410c;
+
+  --chart-categorical-1: #006a4e;
+  --chart-categorical-2: #f97316;
+  --chart-categorical-3: #2563eb;
+  --chart-categorical-4: #db2777;
+  --chart-categorical-5: #eab308;
+  --chart-categorical-6: #7c3aed;
+  --chart-categorical-7: #0ea5a4;
+  --chart-categorical-8: #65a30d;
+  --chart-categorical-9: #64748b;
+  --chart-categorical-10: #e11d48;
+}
+
+html[data-theme='dark'] {
+  --chart-diverging-1: #3cc795;
+  --chart-diverging-2: #4fb48c;
+  --chart-diverging-3: #5f9f84;
+  --chart-diverging-4: #6e8a7f;
+  --chart-diverging-5: #7a7680;
+  --chart-diverging-6: #a8836a;
+  --chart-diverging-7: #d08f5a;
+  --chart-diverging-8: #ec9450;
+  --chart-diverging-9: #fb923c;
+
+  --chart-categorical-1: #3cc795;
+  --chart-categorical-2: #fb923c;
+  --chart-categorical-3: #60a5fa;
+  --chart-categorical-4: #f472b6;
+  --chart-categorical-5: #facc15;
+  --chart-categorical-6: #a78bfa;
+  --chart-categorical-7: #2dd4bf;
+  --chart-categorical-8: #a3e635;
+  --chart-categorical-9: #94a3b8;
+  --chart-categorical-10: #fb7185;
+}
