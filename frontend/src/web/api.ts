@@ -260,6 +260,8 @@ declare global {
           charts_of_accounts: ChartOfAccounts[];
           indian_states: Record<string, string>;
           print_style: string;
+          /** Whether the AI Guard lets the user use the assistant, and change its settings. */
+          ai?: { can_use: boolean; is_admin: boolean };
         };
         app_data?: { app_name: string; app_logo_url?: string | null }[];
         docs?: { doctype: string; name: string; symbol?: string | null }[];

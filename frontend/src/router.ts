@@ -1,3 +1,4 @@
+import AIAssistant from 'src/pages/AIAssistant.vue';
 import ChartOfAccounts from 'src/pages/ChartOfAccounts.vue';
 import CommonForm from 'src/pages/CommonForm/CommonForm.vue';
 import Dashboard from 'src/pages/Dashboard/Dashboard.vue';
@@ -34,6 +35,11 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: Dashboard,
+  },
+  {
+    path: '/ai',
+    name: 'AI Assistant',
+    component: AIAssistant,
   },
   {
     path: '/get-started',

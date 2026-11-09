@@ -48,6 +48,7 @@ import {
 } from 'src/frappe/registry';
 import { registerFrappeModels } from 'src/frappe/doctypes';
 import { getFrappeDoc } from 'src/frappe/documents';
+import { initializeAiSession } from 'src/ai/session';
 import { fyo } from 'src/initFyo';
 import { Search } from 'src/utils/search';
 import { Shortcuts } from 'src/utils/shortcuts';
@@ -135,6 +136,7 @@ export default defineComponent({
       fyo.store.indianStates = books.indian_states;
       fyo.setCurrencySymbols(boot.docs);
       fyo.user = boot.user.name;
+      initializeAiSession();
 
       registerFrappeModels(frappeModels);
       registerFrappeModels(await getRegionalFrappeModels(books.country_code));

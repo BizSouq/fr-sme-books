@@ -1,6 +1,7 @@
 import { t } from 'fyo';
 import { getReports, type ReportName } from 'reports';
 import { canOpenReport } from 'reports/serverReport';
+import { canUseAi, isAiAdmin } from 'src/ai/session';
 import { getImportableSchemaNames } from 'src/importer';
 import { routeFilters } from 'src/utils/filters';
 import { fyo } from '../initFyo';
@@ -272,6 +273,14 @@ function getCompleteSidebar(): SidebarConfig {
       name: 'dashboard',
       route: '/',
       icon: 'lucide-layout-dashboard',
+    },
+    {
+      label: t`AI Assistant`,
+      name: 'ai-assistant',
+      route: '/ai',
+      icon: 'lucide-sparkles',
+      // Managers see it to set the assistant up before it is on.
+      hidden: () => !canUseAi.value && !isAiAdmin.value,
     },
     {
       label: t`Sales`,
