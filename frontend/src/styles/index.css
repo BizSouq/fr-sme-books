@@ -1,4 +1,11 @@
 @import 'frappe-ui/style.css';
+/* Bundled, not from a font CDN, so self-hosted sites load them offline. */
+@import '@fontsource-variable/plus-jakarta-sans/wght.css';
+@import '@fontsource/hind-siliguri/bengali-400.css';
+@import '@fontsource/hind-siliguri/bengali-500.css';
+@import '@fontsource/hind-siliguri/bengali-600.css';
+@import '@fontsource/hind-siliguri/bengali-700.css';
+@import './theme.css';
 
 html {
   @apply text-ink-gray-8 bg-surface-base;

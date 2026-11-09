@@ -22,10 +22,11 @@ export default defineComponent({
       return isMobile.value;
     },
     /** Phones set each widget on its own card. */
-    cardClass(): string | undefined {
+    /** Charts sit on white panels over the dashboard's tinted ground. */
+    cardClass(): string {
       return this.isMobile
-        ? 'overflow-hidden rounded-6 border bg-surface-base p-3'
-        : undefined;
+        ? 'books-panel overflow-hidden p-3'
+        : 'books-panel p-5';
     },
     /**
      * frappe-ui charts mishandle taps: the tooltip closes when the finger

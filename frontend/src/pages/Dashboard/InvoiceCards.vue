@@ -1,5 +1,10 @@
 <template>
-  <div v-for="card in cards" :key="card.title" :class="cardClass">
+  <div
+    v-for="card in cards"
+    :key="card.title"
+    class="books-kpi p-3 md:p-5"
+    :style="{ '--kpi': card.color }"
+  >
     <!-- The card clips at its top edge and the link button overflows the
       title row; the negative margin makes room without moving the card
       (frappe/frappe-ui#1255). -->
@@ -35,6 +40,7 @@ import { NumberCard as FrappeNumberCard } from 'frappe-ui/charts';
 import { getDocType } from 'src/frappe/doctypes';
 import { getSchema } from 'src/frappe/registry';
 import { fyo } from 'src/initFyo';
+import { ModelNameEnum } from 'models/types';
 import {
   getInvoiceListFilters,
   getInvoiceSummary,
@@ -64,6 +70,8 @@ export default defineComponent({
   computed: {
     cards() {
       const { summary, paidTitle, unpaidTitle } = this;
+      // Sales in green and orange, purchases in blue and pink (styles/theme.css).
+      const isSales = this.schemaName === ModelNameEnum.SalesInvoice;
       return [
         {
           paid: true,
@@ -71,6 +79,7 @@ export default defineComponent({
           value: summary?.paid ?? null,
           count: summary?.paid_count ?? 0,
           linkLabel: t`View paid invoices`,
+          color: isSales ? 'var(--books-green)' : 'var(--books-blue)',
         },
         {
           paid: false,
@@ -78,6 +87,7 @@ export default defineComponent({
           value: summary?.unpaid ?? null,
           count: summary?.unpaid_count ?? 0,
           linkLabel: t`View unpaid invoices`,
+          color: isSales ? 'var(--books-orange)' : 'var(--books-pink)',
         },
       ];
     },

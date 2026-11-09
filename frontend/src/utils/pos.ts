@@ -117,6 +117,30 @@ export async function getPOSRowItem(item?: string): Promise<POSRowItem> {
 }
 
 /** Up to two initials that stand in for an item without an image. */
+/**
+ * Tile colors for items without an image, so neighbours read apart. Semantic
+ * tokens, so dark mode gets its own shades; literal so Tailwind keeps them.
+ */
+const ITEM_TINTS = [
+  'bg-surface-violet-2 text-ink-violet-7',
+  'bg-surface-orange-2 text-ink-orange-7',
+  'bg-surface-green-2 text-ink-green-8',
+  'bg-surface-blue-2 text-ink-blue-8',
+  'bg-surface-pink-2 text-ink-pink-7',
+  'bg-surface-amber-2 text-ink-amber-8',
+  'bg-surface-teal-2 text-ink-teal-8',
+  'bg-surface-cyan-2 text-ink-cyan-8',
+];
+
+/** The same tile color for an item every time, from its name. */
+export function getItemTint(name: string): string {
+  let hash = 0;
+  for (const char of name) {
+    hash = (hash * 31 + char.codePointAt(0)!) | 0;
+  }
+  return ITEM_TINTS[Math.abs(hash) % ITEM_TINTS.length];
+}
+
 export function getItemInitials(name: string): string {
   return name
     .trim()

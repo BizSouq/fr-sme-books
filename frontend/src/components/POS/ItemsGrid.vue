@@ -13,7 +13,8 @@
         @click="$emit('addItem', item)"
       >
         <div
-          class="relative flex h-21 w-full items-center justify-center overflow-hidden rounded-4 bg-surface-gray-2"
+          class="relative flex h-21 w-full items-center justify-center overflow-hidden rounded-4"
+          :class="getItemTint(item.itemName)"
         >
           <img
             v-if="item.image && !brokenImages.has(item.image)"
@@ -22,7 +23,7 @@
             class="h-full w-full object-cover"
             @error="brokenImages.add(item.image)"
           />
-          <span v-else class="select-none text-4xl-semibold text-ink-gray-4">
+          <span v-else class="select-none text-4xl-semibold">
             {{ getItemInitials(item.itemName) }}
           </span>
           <FrappeBadge
@@ -36,7 +37,9 @@
           <span class="text-p-base-medium text-ink-gray-8">{{
             item.itemName
           }}</span>
-          <span class="text-sm tabular-nums text-ink-gray-6">
+          <span
+            class="text-sm-medium tabular-nums text-[color:var(--books-brand)]"
+          >
             {{ fyo.format(item.rate, 'Currency') }}
           </span>
         </div>
@@ -51,7 +54,7 @@ import {
   Badge as FrappeBadge,
   ScrollArea as FrappeScrollArea,
 } from 'frappe-ui';
-import { getItemInitials } from 'src/utils/pos';
+import { getItemInitials, getItemTint } from 'src/utils/pos';
 import { POSItem } from './types';
 
 export default defineComponent({
@@ -67,6 +70,6 @@ export default defineComponent({
   data() {
     return { brokenImages: new Set<string>() };
   },
-  methods: { getItemInitials },
+  methods: { getItemInitials, getItemTint },
 });
 </script>

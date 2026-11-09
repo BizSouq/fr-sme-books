@@ -1,5 +1,8 @@
 <template>
+  <!-- Dark text colors on an indigo ground, in either theme (styles/theme.css). -->
   <FrappeSidebar
+    class="books-sidebar"
+    data-theme="dark"
     :collapsible="false"
     width="var(--w-sidebar)"
     :aria-label="t`Books`"
@@ -21,8 +24,13 @@
           :label="page.label"
           :route="getPath(page)"
           :active="isActive(page)"
-          :icon="page.icon"
-        />
+        >
+          <template #prefix>
+            <span class="books-nav-chip" :style="getChipStyle(page.name)">
+              <span :class="page.icon" aria-hidden="true" />
+            </span>
+          </template>
+        </FrappeSidebarItem>
       </div>
       <FrappeSidebarSection
         v-for="group in sections"
@@ -35,8 +43,13 @@
           :label="item.label"
           :route="getPath(item)"
           :active="isActive(item)"
-          :icon="item.icon"
-        />
+        >
+          <template #prefix>
+            <span class="books-nav-chip" :style="getChipStyle(group.name)">
+              <span :class="item.icon" aria-hidden="true" />
+            </span>
+          </template>
+        </FrappeSidebarItem>
       </FrappeSidebarSection>
     </FrappeScrollArea>
 
@@ -87,6 +100,21 @@ import { defineComponent, inject } from 'vue';
 import ShortcutsHelper from './ShortcutsHelper.vue';
 
 const COMPONENT_NAME = 'Sidebar';
+
+/** Each page and group's icon color, as [chip, icon]; the rest are slate. */
+const CHIP_COLORS: Record<string, [string, string]> = {
+  'get-started': ['#facc15', '#1c1640'],
+  dashboard: ['#a78bfa', '#1f1147'],
+  sales: ['#22c55e', '#0b2e17'],
+  purchases: ['#fb923c', '#3a1604'],
+  'common-entries': ['#38bdf8', '#062a3b'],
+  reports: ['#f472b6', '#3d0a22'],
+  inventory: ['#c4b5fd', '#1f1147'],
+  pos: ['#2dd4bf', '#06302b'],
+  gst: ['#fb7185', '#3d0a12'],
+  setup: ['#cbd5e1', '#1e293b'],
+};
+const DEFAULT_CHIP: [string, string] = ['#cbd5e1', '#1e293b'];
 
 export default defineComponent({
   components: {
@@ -154,6 +182,10 @@ export default defineComponent({
       return this.currentEntry?.item === entry;
     },
     getPath: getSidebarLocation,
+    getChipStyle(name: string): Record<string, string> {
+      const [chip, ink] = CHIP_COLORS[name] ?? DEFAULT_CHIP;
+      return { '--chip': chip, '--chip-ink': ink };
+    },
   },
 });
 </script>
