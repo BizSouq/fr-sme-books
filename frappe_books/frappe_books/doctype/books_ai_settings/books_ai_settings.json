@@ -1,0 +1,182 @@
+{
+ "actions": [],
+ "creation": "2026-11-09 12:00:00.000000",
+ "description": "The assistant's provider key and the AI Guard rules it runs under.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "assistant_section",
+  "enabled",
+  "provider",
+  "model",
+  "api_key",
+  "allow_personal_keys",
+  "guard_section",
+  "allowed_roles",
+  "allow_writes",
+  "allow_destructive",
+  "column_break_guard",
+  "blocked_doctypes",
+  "limits_section",
+  "requests_per_minute",
+  "requests_per_day",
+  "column_break_limits",
+  "max_tool_rounds",
+  "max_rows"
+ ],
+ "fields": [
+  {
+   "fieldname": "assistant_section",
+   "fieldtype": "Section Break",
+   "label": "Assistant"
+  },
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enable AI Assistant",
+   "default": "0",
+   "description": "Turns the assistant on for the users the AI Guard lets in."
+  },
+  {
+   "fieldname": "provider",
+   "fieldtype": "Select",
+   "label": "Provider",
+   "options": "anthropic\nopenai\ngemini",
+   "default": "anthropic"
+  },
+  {
+   "fieldname": "model",
+   "fieldtype": "Data",
+   "label": "Model",
+   "description": "Leave empty for the provider's default model."
+  },
+  {
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "Company API Key",
+   "length": 512,
+   "description": "Stored encrypted. Used by everyone who has not set a key of their own."
+  },
+  {
+   "fieldname": "allow_personal_keys",
+   "fieldtype": "Check",
+   "label": "Allow Personal API Keys",
+   "default": "1",
+   "description": "Lets each user bring their own key, which their questions then use."
+  },
+  {
+   "fieldname": "guard_section",
+   "fieldtype": "Section Break",
+   "label": "AI Guard"
+  },
+  {
+   "fieldname": "allowed_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Allowed Roles",
+   "options": "Books AI Role",
+   "description": "Only users with one of these roles may use the assistant. Leave empty to let every Books user in."
+  },
+  {
+   "fieldname": "allow_writes",
+   "fieldtype": "Check",
+   "label": "Allow Proposed Changes",
+   "default": "1",
+   "description": "Lets the assistant propose creating, changing and submitting records. Nothing is written until the user approves the change."
+  },
+  {
+   "fieldname": "allow_destructive",
+   "fieldtype": "Check",
+   "label": "Allow Deletes and Cancellations",
+   "default": "0",
+   "depends_on": "allow_writes",
+   "description": "Lets the assistant propose deleting records and cancelling submitted documents."
+  },
+  {
+   "fieldname": "column_break_guard",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "blocked_doctypes",
+   "fieldtype": "Table MultiSelect",
+   "label": "Hidden Record Types",
+   "options": "Books AI Blocked DocType",
+   "description": "Record types the assistant may neither read nor change, whatever the user's own rights."
+  },
+  {
+   "fieldname": "limits_section",
+   "fieldtype": "Section Break",
+   "label": "Limits"
+  },
+  {
+   "fieldname": "requests_per_minute",
+   "fieldtype": "Int",
+   "label": "Requests per User per Minute",
+   "default": "20",
+   "non_negative": 1,
+   "description": "0 for no limit."
+  },
+  {
+   "fieldname": "requests_per_day",
+   "fieldtype": "Int",
+   "label": "Requests per User per Day",
+   "default": "500",
+   "non_negative": 1,
+   "description": "0 for no limit."
+  },
+  {
+   "fieldname": "column_break_limits",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "max_tool_rounds",
+   "fieldtype": "Int",
+   "label": "Lookups per Question",
+   "default": "8",
+   "non_negative": 1,
+   "description": "How many rounds of lookups one question may take before it is stopped."
+  },
+  {
+   "fieldname": "max_rows",
+   "fieldtype": "Int",
+   "label": "Rows per Lookup",
+   "default": "200",
+   "non_negative": 1,
+   "description": "The most rows one lookup returns to the model."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-11-09 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Frappe Books",
+ "name": "Books AI Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "share": 1
+  },
+  {
+   "role": "Books Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

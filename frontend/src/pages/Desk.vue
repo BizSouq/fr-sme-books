@@ -68,16 +68,19 @@ const isResizingSidebar = ref(false);
       </router-view>
     </div>
     <SettingsDialog />
+    <AssistantPopover />
   </FrappeDesktopShell>
 </template>
 <script lang="ts">
 import { DesktopShell as FrappeDesktopShell } from 'frappe-ui';
+import AssistantPopover from 'src/components/AI/AssistantPopover.vue';
 import { defineComponent } from 'vue';
 import Sidebar from '../components/Sidebar.vue';
 import SettingsDialog from './Settings/SettingsDialog.vue';
 export default defineComponent({
   name: 'Desk',
   components: {
+    AssistantPopover,
     FrappeDesktopShell,
     SettingsDialog,
     Sidebar,
