@@ -1,3 +1,5 @@
+import { AccountsPayable } from './AccountsReceivable/AccountsPayable';
+import { AccountsReceivable } from './AccountsReceivable/AccountsReceivable';
 import { BalanceSheet } from './BalanceSheet/BalanceSheet';
 import { GeneralLedger } from './GeneralLedger/GeneralLedger';
 import { GSTR1 } from './GoodsAndServiceTax/GSTR1';
@@ -12,6 +14,8 @@ export const reports = {
   ProfitAndLoss,
   BalanceSheet,
   TrialBalance,
+  AccountsReceivable,
+  AccountsPayable,
   GSTR1,
   GSTR2,
   StockLedger,

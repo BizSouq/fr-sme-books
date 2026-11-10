@@ -206,6 +206,8 @@ const REPORT_ICONS: Record<string, string> = {
   TrialBalance: 'lucide-scale',
   ProfitAndLoss: 'lucide-activity',
   BalanceSheet: 'lucide-chart-pie',
+  AccountsReceivable: 'lucide-hand-coins',
+  AccountsPayable: 'lucide-wallet',
   StockBalance: 'lucide-boxes',
   StockLedger: 'lucide-list',
 };
@@ -239,6 +241,18 @@ function getBooksReportItems(): SidebarItem[] {
       name: 'trial-balance',
       icon: REPORT_ICONS.TrialBalance,
       route: '/report/TrialBalance',
+    },
+    {
+      label: t`Accounts Receivable`,
+      name: 'accounts-receivable',
+      icon: REPORT_ICONS.AccountsReceivable,
+      route: '/report/AccountsReceivable',
+    },
+    {
+      label: t`Accounts Payable`,
+      name: 'accounts-payable',
+      icon: REPORT_ICONS.AccountsPayable,
+      route: '/report/AccountsPayable',
     },
     {
       label: t`Stock Ledger`,

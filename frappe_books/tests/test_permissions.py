@@ -67,6 +67,8 @@ FINANCIAL_REPORTS = (
 	"Books Profit and Loss",
 	"Books Balance Sheet",
 	"Books Trial Balance",
+	"Books Accounts Receivable",
+	"Books Accounts Payable",
 	"Books GSTR-1",
 	"Books GSTR-2",
 )
