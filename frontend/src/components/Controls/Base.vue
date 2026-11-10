@@ -49,6 +49,11 @@
         @scan="(code: string) => triggerChange(code)"
       />
     </template>
+    <template v-else-if="suffix" #suffix>
+      <span class="text-base text-ink-gray-5" aria-hidden="true">{{
+        suffix
+      }}</span>
+    </template>
   </FrappeTextInput>
 </template>
 <script lang="ts">
@@ -199,6 +204,10 @@ export default defineComponent({
     inputMode(): string | undefined {
       return undefined;
     },
+    /** Text the input ends with, like a percent's `%`. */
+    suffix(): string {
+      return '';
+    },
     inputPlaceholder(): string {
       return this.placeholder || this.df.placeholder || this.df.label;
     },
@@ -235,7 +244,10 @@ export default defineComponent({
         return this.required;
       }
 
-      return this.fieldState?.required ?? !!this.df.required;
+      // As in Desk, a field no one can fill, e.g. on a submitted document, is not marked.
+      return (
+        !this.isReadOnly && (this.fieldState?.required ?? !!this.df.required)
+      );
     },
   },
   mounted() {

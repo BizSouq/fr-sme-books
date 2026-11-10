@@ -15,20 +15,23 @@ await build({
   stdin: {
     contents: `
       export { FrappeDoc, afterPause, setPreviewScheduler } from './src/frappe/document';
-      export { registerFrappeModels, isFrappeBacked, getDocType } from './src/frappe/doctypes';
+      export { registerFrappeModels, isFrappeBacked, getDocType, setDocType } from './src/frappe/doctypes';
       export { getFrappeDoc, getFrappeDocOrNew, getMappedDoc, newFrappeDoc } from './src/frappe/documents';
       export { useBooksDoc } from './src/frappe/useBooksDoc';
       export { evaluateCondition } from './src/frappe/dependsOn';
+      export { getCompanyRow, getCompanyRowValue, setCompanyRowValue } from './src/frappe/companyRow';
+      export { getCalculatedState } from './src/frappe/calculated';
       export { getFrappeListPage, getFrappeRows, isSortableField } from './src/frappe/list';
       export { getLinkDisplayValue, searchFrappeLink } from './src/frappe/link';
       export { loadListData, onListChange } from './src/utils/listData';
-      export { getModel, getQuickViewFields, getSchema, getSearchFields, getSingleSchemaNames, loadFrappeDocTypes, toSchemaName } from './src/frappe/registry';
+      export { getFileFields, getModel, getQuickViewFields, getSchema, getSearchFields, getSingleSchemaNames, loadFrappeDocTypes, toSchemaName } from './src/frappe/registry';
       export { toSchema } from './src/frappe/schema';
       export { fyo } from './src/initFyo';
       export { setLanguageMapOnTranslationString } from './fyo/utils/translation';
       export { loadDocPermissions } from './src/utils/doc';
       export { getRowDetails } from './src/components/Controls/rowDetails';
-      export { getRowSummary } from './src/components/Controls/rowSummary';
+      export { getRowSummary, isRedAmount } from './src/components/Controls/rowSummary';
+      export { getOwnRowTitle } from './src/utils/sheetFields';
       export * as errors from './fyo/utils/errors';
       export { frappeModels, getRegionalFrappeModels } from './models';
       export { getLedgerLink, getStockTransferActions } from './models/helpers';
@@ -41,8 +44,10 @@ await build({
       export { deskTheme, getColorScheme } from './src/utils/theme';
       export { default as ListView } from './src/pages/ListView/ListView.vue';
       export { default as POS } from './src/pages/POS/POS.vue';
+      export { default as LinkedRecordsSection } from './src/pages/CommonForm/LinkedRecordsSection.vue';
+      export { getEmptyState } from './src/pages/ListView/listColumns';
       export { default as router } from 'src/router';
-      export { ListFilters } from './src/utils/listFilters';
+      export { getSearchFilters, ListFilters } from './src/utils/listFilters';
       export * as pos from './src/utils/pos';
       export { usePOSCheckout } from './src/utils/posCheckout';
       export * as posDiscounts from './src/utils/posDiscounts';
@@ -60,7 +65,9 @@ await build({
       export { GeneralLedger } from './reports/GeneralLedger/GeneralLedger';
       export { ProfitAndLoss } from './reports/ProfitAndLoss/ProfitAndLoss';
       export { StockBalance } from './reports/inventory/StockBalance';
+      export { StockLedger } from './reports/inventory/StockLedger';
       export { MobileTree } from './src/components/Report/Mobile/MobileTree';
+      export { getFilterItems } from './src/components/Report/filterToolbar';
       export { getCsvData, getJsonData } from './reports/commonExporter';
       export { getRowReference } from './src/components/Report/Mobile/mobileRows';
       export { Importer, getGridRows, getImportableSchemaNames } from './src/importer';
@@ -91,7 +98,10 @@ await build({
         }));
         // Components under test keep their script; the rest are stubs.
         builder.onLoad(
-          { filter: /(ListView\/ListView|pages\/POS\/POS)\.vue$/ },
+          {
+            filter:
+              /(ListView\/ListView|pages\/POS\/POS|CommonForm\/LinkedRecordsSection)\.vue$/,
+          },
           async (args) => ({
             contents: (await readFile(args.path, 'utf8')).match(
               /<script[^>]*>([\s\S]*?)<\/script>/
@@ -142,11 +152,16 @@ export const {
   registerFrappeModels,
   isFrappeBacked,
   getDocType,
+  setDocType,
   getFrappeDoc,
   getFrappeDocOrNew,
   newFrappeDoc,
   useBooksDoc,
   evaluateCondition,
+  getCompanyRow,
+  getCompanyRowValue,
+  setCompanyRowValue,
+  getCalculatedState,
   getFrappeListPage,
   getFrappeRows,
   isSortableField,
@@ -154,6 +169,7 @@ export const {
   getLinkDisplayValue,
   loadListData,
   onListChange,
+  getFileFields,
   getModel,
   getQuickViewFields,
   getSchema,
@@ -167,6 +183,8 @@ export const {
   loadDocPermissions,
   getRowDetails,
   getRowSummary,
+  isRedAmount,
+  getOwnRowTitle,
   errors,
   frappeModels,
   getRegionalFrappeModels,
@@ -176,6 +194,7 @@ export const {
   getNewDocValues,
   getStockTransferActions,
   getFilterFields,
+  getSearchFilters,
   ListFilters,
   pos,
   usePOSCheckout,
@@ -196,7 +215,9 @@ export const {
   GeneralLedger,
   ProfitAndLoss,
   StockBalance,
+  StockLedger,
   MobileTree,
+  getFilterItems,
   getCsvData,
   getJsonData,
   getRowReference,
@@ -215,6 +236,8 @@ export const {
   getColorScheme,
   ListView,
   POS,
+  LinkedRecordsSection,
+  getEmptyState,
   router,
 } = createRequire(import.meta.url)(output);
 
@@ -280,7 +303,7 @@ function parseParam(value) {
 export const itemMeta = {
   name: 'Books Item',
   autoname: 'Prompt',
-  search_fields: 'item_type, item_usage',
+  search_fields: 'item_type',
   permissions: [
     { role: 'Books Manager', permlevel: 0, read: 1, write: 1 },
     { role: 'Books Manager', permlevel: 1, read: 1 },
@@ -319,7 +342,7 @@ export const itemMeta = {
       fieldname: 'unit',
       fieldtype: 'Link',
       label: 'Unit',
-      options: 'Books Uom',
+      options: 'Books UOM',
     },
     { fieldname: 'inventory_tab', fieldtype: 'Tab Break', label: 'Inventory' },
     {
@@ -385,7 +408,7 @@ export const conversionMeta = {
       fieldname: 'uom',
       fieldtype: 'Link',
       label: 'UOM',
-      options: 'Books Uom',
+      options: 'Books UOM',
       reqd: 1,
       in_list_view: 1,
     },

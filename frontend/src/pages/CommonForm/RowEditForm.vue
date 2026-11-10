@@ -2,13 +2,13 @@
   <RowDetailSheet
     v-if="isMobile && !isEditable"
     :row="row"
-    :title="t`${fieldlabel} · Row ${index + 1}`"
+    :title="ownTitle ?? t`${fieldlabel} · Row ${index + 1}`"
     @close="$emit('close')"
   />
   <FrappeBottomSheet
     v-else-if="isMobile"
     :open="true"
-    :title="t`Row ${index + 1}`"
+    :title="title"
     @update:open="(open: boolean) => !open && $emit('close')"
   >
     <div class="px-4">
@@ -40,7 +40,7 @@
       class="flex h-12 shrink-0 items-center gap-2 border-b border-outline-gray-1 px-3"
     >
       <h2 class="truncate text-lg-semibold text-ink-gray-8">
-        {{ t`Row ${index + 1}` }}
+        {{ title }}
       </h2>
       <span class="min-w-0 flex-1 truncate text-sm text-ink-gray-5">
         {{ fieldlabel }}
@@ -86,20 +86,20 @@ import {
   Button as FrappeButton,
   ScrollArea as FrappeScrollArea,
 } from 'frappe-ui';
-import { FrappeDoc } from 'src/frappe/document';
 import { ValueError } from 'fyo/utils/errors';
+import { Field } from 'schemas/types';
 import TwoColumnForm from 'src/components/TwoColumnForm.vue';
+import { FrappeDoc } from 'src/frappe/document';
 import MobileSheetFooter from 'src/mobile/MobileSheetFooter.vue';
-import RowDetailSheet from './RowDetailSheet.vue';
-import { isMobile } from 'src/utils/viewport';
 import { shortcutsKey } from 'src/utils/injectionKeys';
-import { getRowEditFieldnames } from 'src/utils/sheetFields';
-import { computed } from 'vue';
-import { inject } from 'vue';
-import { defineComponent, PropType } from 'vue';
+import { getOwnRowTitle, getRowEditFieldnames } from 'src/utils/sheetFields';
+import { isMobile } from 'src/utils/viewport';
+import { computed, defineComponent, inject, PropType } from 'vue';
+import RowDetailSheet from './RowDetailSheet.vue';
 
 const COMPONENT_NAME = 'RowEditForm';
 
+/** A table row's editor: a side panel on desktop, a sheet on phones. */
 export default defineComponent({
   components: {
     FrappeBottomSheet,
@@ -121,7 +121,10 @@ export default defineComponent({
   },
   emits: ['next', 'previous', 'close'],
   setup() {
-    return { shortcuts: inject(shortcutsKey), isMobile };
+    return {
+      shortcuts: inject(shortcutsKey),
+      isMobile,
+    };
   },
   computed: {
     isEditable(): boolean {
@@ -131,7 +134,13 @@ export default defineComponent({
     fieldlabel() {
       return this.doc.fieldMap[this.fieldname]?.label ?? '';
     },
-    row() {
+    ownTitle(): string | undefined {
+      return getOwnRowTitle(this.row, this.index);
+    },
+    title(): string {
+      return this.ownTitle ?? this.t`Row ${this.index + 1}`;
+    },
+    row(): FrappeDoc {
       const rows = this.doc.get(this.fieldname);
       if (Array.isArray(rows) && rows[this.index] instanceof FrappeDoc) {
         return rows[this.index];
@@ -142,7 +151,7 @@ export default defineComponent({
       }]`;
       throw new ValueError(this.t`Invalid value found for ${label}`);
     },
-    fields() {
+    fields(): Field[] {
       const fieldnames = getRowEditFieldnames(this.row.schema);
       return fieldnames.map((f) => this.row.fieldMap[f]);
     },

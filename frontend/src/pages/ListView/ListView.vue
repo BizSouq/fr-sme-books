@@ -35,7 +35,11 @@
       >
         {{ t`Export` }}
       </FrappeButton>
-      <FilterDropdown ref="filterDropdown" :schema-name="schemaName" @change="applyFilter" />
+      <FilterDropdown
+        ref="filterDropdown"
+        :schema-name="schemaName"
+        @change="applyFilter"
+      />
       <FrappeButton
         v-if="canCreate"
         variant="solid"
@@ -49,6 +53,7 @@
       ref="mobileToolbar"
       :schema-name="schemaName"
       :search-fields="searchFields"
+      :search-placeholder="filterBar?.searchPlaceholder"
       @change="applyFilter"
     >
       <FrappeButton
@@ -57,7 +62,40 @@
         :label="isSelectionMode ? t`Cancel` : t`Select`"
         @click="toggleSelectionMode"
       />
+      <template v-if="filterBar" #below>
+        <ListLinkFilter
+          v-model="linkValue"
+          :schema-name="schemaName"
+          :fieldname="filterBar.linkField"
+          :all-label="filterBar.allLabel"
+          @update:model-value="updateList"
+        />
+      </template>
     </MobileListToolbar>
+    <div v-else-if="filterBar" class="flex gap-2 px-3 pb-2 pt-3 sm:px-5">
+      <FrappeTextInput
+        type="search"
+        class="w-60"
+        :model-value="search"
+        :placeholder="filterBar.searchPlaceholder"
+        :aria-label="t`Search`"
+        @update:model-value="onSearch"
+      >
+        <template #prefix>
+          <span
+            aria-hidden="true"
+            class="lucide-search size-4 text-ink-gray-5"
+          />
+        </template>
+      </FrappeTextInput>
+      <ListLinkFilter
+        v-model="linkValue"
+        :schema-name="schemaName"
+        :fieldname="filterBar.linkField"
+        :all-label="filterBar.allLabel"
+        @update:model-value="updateList"
+      />
+    </div>
     <List
       ref="list"
       :schema-name="schemaName"
@@ -69,8 +107,8 @@
       @open-doc="openDoc"
       @updated-data="updatedData"
       @make-new-doc="makeNewDoc"
-      @clear-filters="mobileToolbar?.clear()"
-      @selected-items-changed="updateSelectedItems"
+      @clear-filters="clearFilters"
+      @selected-items-changed="selectedItems = $event"
     />
     <MobileFooter v-if="isMobile && isSelectionMode" class="items-center">
       <span class="min-w-0 flex-1 text-base text-ink-gray-7">
@@ -104,13 +142,19 @@
 import {
   Button as FrappeButton,
   Dropdown as FrappeDropdown,
+  TextInput as FrappeTextInput,
   type DropdownOptions,
 } from 'frappe-ui';
 import ExportWizard from 'src/components/ExportWizard.vue';
 import FilterDropdown from 'src/components/FilterDropdown.vue';
 import PageHeader from 'src/components/PageHeader.vue';
 
-import { getField, getModel, getSchema, getSearchFields } from 'src/frappe/registry';
+import {
+  getField,
+  getModel,
+  getSchema,
+  getSearchFields,
+} from 'src/frappe/registry';
 import { newFrappeDoc } from 'src/frappe/documents';
 import { fyo } from 'src/initFyo';
 import { shortcutsKey } from 'src/utils/injectionKeys';
@@ -118,16 +162,18 @@ import { docsPathMap, getNewDocValues } from 'src/utils/misc';
 import { docsPathRef } from 'src/utils/refs';
 import { getFormRoute, openNewDoc, routeTo } from 'src/utils/ui';
 import { isMobile } from 'src/utils/viewport';
+import type { ListFilterBar } from 'fyo/model/types';
 import type { Filter } from 'src/frappe/api';
 import { defineComponent, inject, ref, type PropType } from 'vue';
+import { getSearchFilters } from 'src/utils/listFilters';
 import List from './List.vue';
+import ListLinkFilter from './ListLinkFilter.vue';
 import { getListColumns } from './listColumns';
 import MobileFooter from 'src/mobile/MobileFooter.vue';
 import MobileOptionsSheet from 'src/mobile/MobileOptionsSheet.vue';
 import MobileListToolbar from './MobileListToolbar.vue';
 import { getMobileRowLayout } from './mobileRowLayout';
 import type { Invoice } from 'models/invoices/Invoice';
-import { Item } from 'models/baseModels/Item/Item';
 import { ModelNameEnum } from 'models/types';
 
 export default defineComponent({
@@ -139,6 +185,8 @@ export default defineComponent({
     FrappeButton,
     ExportWizard,
     FrappeDropdown,
+    FrappeTextInput,
+    ListLinkFilter,
     MobileFooter,
     MobileListToolbar,
     MobileOptionsSheet,
@@ -165,21 +213,32 @@ export default defineComponent({
       listFilters: [],
       isSelectionMode: false,
       selectedItems: [] as string[],
-      invoiceSchemaNames: [] as string[],
       isCreateSheetOpen: false,
+      appliedFilters: [],
+      searchFilters: [],
+      search: '',
+      searchTimer: 0,
+      linkValue: null,
     } as {
       listConfig: undefined | ReturnType<typeof getListConfig>;
       openExportModal: boolean;
       listFilters: Filter[];
       isSelectionMode: boolean;
       selectedItems: string[];
-      invoiceSchemaNames: string[];
       isCreateSheetOpen: boolean;
+      appliedFilters: Filter[];
+      searchFilters: Filter[];
+      search: string;
+      searchTimer: number;
+      linkValue: string | null;
     };
   },
   computed: {
     context(): string {
       return 'ListView-' + this.schemaName;
+    },
+    filterBar(): ListFilterBar | undefined {
+      return this.listConfig?.filterBar;
     },
     title(): string {
       if (this.pageTitle) {
@@ -191,7 +250,8 @@ export default defineComponent({
     /** The row title and the schema's search fields, as stored columns. */
     searchFields(): string[] {
       const columns = getListColumns(this.schemaName, this.listConfig);
-      const title = getMobileRowLayout(this.schemaName, columns).title.fieldname;
+      const title = getMobileRowLayout(this.schemaName, columns).title
+        .fieldname;
       const keywords = getSearchFields(this.schemaName);
       return [...new Set(['name', title, ...keywords])].filter((fieldname) => {
         const field = getField(this.schemaName, fieldname);
@@ -209,15 +269,21 @@ export default defineComponent({
     },
     /** Documents that can be made from the selected items. */
     createOptions(): { value: string; label: string }[] {
+      if (
+        this.schemaName !== ModelNameEnum.Item ||
+        !this.selectedItems.length
+      ) {
+        return [];
+      }
+
       return [
-        { value: ModelNameEnum.SalesQuote, label: this.t`Sales Quote` },
+        { value: ModelNameEnum.Quotation, label: this.t`Quotation` },
         { value: ModelNameEnum.SalesInvoice, label: this.t`Sales Invoice` },
-        { value: ModelNameEnum.PurchaseInvoice, label: this.t`Purchase Invoice` },
-      ].filter(
-        (option) =>
-          this.invoiceSchemaNames.includes(option.value) &&
-          fyo.can(option.value, 'create')
-      );
+        {
+          value: ModelNameEnum.PurchaseInvoice,
+          label: this.t`Purchase Invoice`,
+        },
+      ].filter((option) => fyo.can(option.value, 'create'));
     },
     actionOptions(): DropdownOptions {
       return this.createOptions.map((option) => ({
@@ -228,7 +294,8 @@ export default defineComponent({
   },
   activated() {
     this.listConfig = getListConfig(this.schemaName);
-    docsPathRef.value = docsPathMap[this.schemaName] ?? docsPathMap.Entries ?? '';
+    docsPathRef.value =
+      docsPathMap[this.schemaName] ?? docsPathMap.Entries ?? '';
 
     this.setShortcuts();
   },
@@ -243,7 +310,9 @@ export default defineComponent({
       }
 
       this.shortcuts.pmod.set(this.context, ['KeyN'], () => this.makeNewDoc());
-      this.shortcuts.pmod.set(this.context, ['KeyE'], () => this.exportButton?.$el.click());
+      this.shortcuts.pmod.set(this.context, ['KeyE'], () =>
+        this.exportButton?.$el.click()
+      );
     },
     updatedData(listFilters: Filter[]) {
       this.listFilters = listFilters;
@@ -263,8 +332,34 @@ export default defineComponent({
     async handleMakeNewDoc() {
       await this.makeNewDoc();
     },
+    /** The filter dropdown's or phone toolbar's filters; the toolbar also sends its search. */
     applyFilter(filters: Filter[], orFilters?: Filter[]) {
-      this.list?.updateData(filters, orFilters);
+      this.appliedFilters = filters;
+      if (orFilters) {
+        this.searchFilters = orFilters;
+      }
+      this.updateList();
+    },
+    onSearch(value: string) {
+      this.search = value;
+      window.clearTimeout(this.searchTimer);
+      this.searchTimer = window.setTimeout(() => {
+        this.searchFilters = getSearchFilters(this.searchFields, this.search);
+        this.updateList();
+      }, 300);
+    },
+    updateList() {
+      const field = this.filterBar?.linkField;
+      const linkFilters: Filter[] =
+        field && this.linkValue ? [[field, '=', this.linkValue]] : [];
+      this.list?.updateData(
+        [...this.appliedFilters, ...linkFilters],
+        this.searchFilters
+      );
+    },
+    clearFilters() {
+      this.linkValue = null;
+      this.mobileToolbar?.clear();
     },
     toggleSelectionMode() {
       this.isSelectionMode = !this.isSelectionMode;
@@ -274,7 +369,7 @@ export default defineComponent({
     },
     async createInvoice(value: string) {
       if (
-        value === ModelNameEnum.SalesQuote ||
+        value === ModelNameEnum.Quotation ||
         value === ModelNameEnum.SalesInvoice ||
         value === ModelNameEnum.PurchaseInvoice
       ) {
@@ -288,20 +383,6 @@ export default defineComponent({
         await routeTo(route);
         this.selectedItems = [];
         this.isSelectionMode = false;
-      }
-    },
-
-    async updateSelectedItems(selected: string[]) {
-      this.selectedItems = selected;
-      this.invoiceSchemaNames = [];
-      if (this.schemaName !== ModelNameEnum.Item || !selected.length) {
-        return;
-      }
-
-      const schemaNames = await Item.getInvoiceSchemaNames(fyo, selected);
-      // A later selection may have been answered first.
-      if (this.selectedItems === selected) {
-        this.invoiceSchemaNames = schemaNames;
       }
     },
   },

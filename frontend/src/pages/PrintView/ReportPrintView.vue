@@ -25,7 +25,7 @@
               <tr>
                 <td style="padding: 0.5rem">
                   <h1 style="margin: 0; font-size: 1.25rem; font-weight: bold">
-                    {{ fyo.singles.PrintSettings?.company_name }}
+                    {{ companyName }}
                   </h1>
                 </td>
                 <td style="padding: 0.5rem; text-align: right; color: #7c7c7c">
@@ -194,7 +194,7 @@ import {
 } from 'frappe-ui';
 import { t } from 'fyo';
 import { Report } from 'reports/Report';
-import { reports } from 'reports/index';
+import { getReports, type ReportName } from 'reports/index';
 import { OptionField } from 'schemas/types';
 import Check from 'src/components/Controls/Check.vue';
 import Int from 'src/components/Controls/Int.vue';
@@ -226,7 +226,7 @@ export default defineComponent({
   },
   props: {
     reportName: {
-      type: String as PropType<keyof typeof reports>,
+      type: String as PropType<ReportName>,
       required: true,
     },
   },
@@ -248,8 +248,12 @@ export default defineComponent({
     };
   },
   computed: {
+    /** Print Settings' company name. */
+    companyName(): string {
+      return this.fyo.singles.PrintSettings?.company_name ?? '';
+    },
     title(): string {
-      return reports[this.reportName]?.title ?? this.t`Report`;
+      return getReports()[this.reportName]?.title ?? this.t`Report`;
     },
     printSizeDf(): OptionField {
       return {

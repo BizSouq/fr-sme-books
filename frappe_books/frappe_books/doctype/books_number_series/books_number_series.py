@@ -21,12 +21,12 @@ class BooksNumberSeries(Document):
 		reference_type: DF.Literal[
 			"",
 			"SalesInvoice",
-			"SalesQuote",
+			"Quotation",
 			"PurchaseInvoice",
-			"Payment",
+			"PaymentEntry",
 			"JournalEntry",
-			"StockMovement",
-			"Shipment",
+			"StockEntry",
+			"DeliveryNote",
 			"PurchaseReceipt",
 			"PricingRule",
 		]

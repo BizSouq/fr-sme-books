@@ -60,6 +60,7 @@ export interface SidebarItem {
   label: string;
   name: string;
   route: string;
+  icon: string;
   schemaName?: string;
   hidden?: () => boolean;
   filters?: Filter[];
@@ -97,6 +98,8 @@ export interface DialogOptions {
   buttons?: DialogButton[];
   /** Confirms an irreversible action: its primary button is red. */
   destructive?: boolean;
+  /** A failing action shows its error in the dialog, which stays open to try again. */
+  keepsOpenOnError?: boolean;
 }
 
 export type DialogButton = {

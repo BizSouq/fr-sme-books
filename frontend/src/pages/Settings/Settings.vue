@@ -87,14 +87,26 @@ export default defineComponent({
     return { doc: computed(() => this.doc) };
   },
   setup() {
-    return { ...useSettings(), isInstallSheetOpen };
+    return {
+      ...useSettings(),
+      isInstallSheetOpen,
+    };
   },
   data() {
-    return { activeTab: ModelNameEnum.AccountingSettings as string };
+    return { pickedTab: '' };
   },
   computed: {
     doc(): FrappeDoc | null {
       return this.fyo.singles[this.activeTab] ?? null;
+    },
+    /** The first tab until the user picks one. */
+    activeTab: {
+      get(): string {
+        return this.pickedTab || this.tabOptions[0].value;
+      },
+      set(tab: string) {
+        this.pickedTab = tab;
+      },
     },
     tabOptions(): { value: string; label: string }[] {
       return this.tabs.map(({ value, label }) => ({ value, label }));
@@ -131,7 +143,7 @@ export default defineComponent({
     const tab = this.$route.query.tab;
     if (
       typeof tab === 'string' &&
-      this.tabs.some(({ value }) => value === tab)
+      this.tabOptions.some(({ value }) => value === tab)
     ) {
       this.activeTab = tab;
     }

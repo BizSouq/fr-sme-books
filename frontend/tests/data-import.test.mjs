@@ -49,21 +49,21 @@ test('the grid file is attached to a new Data Import, which lists missing links'
           ],
         }
   );
-  const uploads = stubUpload('/private/files/Party.csv');
+  const uploads = stubUpload('/private/files/Customer.csv');
 
-  const dataImport = await DataImport.insert('Books Party', false);
-  await dataImport.setFile('docstatus,name\r\n0,Ann', 'Party.csv');
+  const dataImport = await DataImport.insert('Books Customer', false);
+  await dataImport.setFile('docstatus,name\r\n0,Ann', 'Customer.csv');
 
   assert.deepEqual(calls[0].args.doc, {
     doctype: 'Data Import',
-    reference_doctype: 'Books Party',
+    reference_doctype: 'Books Customer',
     import_type: 'Insert New Records',
     submit_after_import: 0,
   });
   assert.deepEqual(
     { ...uploads[0], file: uploads[0].file.name },
     {
-      file: 'Party.csv',
+      file: 'Customer.csv',
       is_private: '1',
       folder: 'Home',
       doctype: 'Data Import',
@@ -77,7 +77,7 @@ test('the grid file is attached to a new Data Import, which lists missing links'
       doctype: 'Data Import',
       name: 'DI-1',
       fieldname: 'import_file',
-      value: '/private/files/Party.csv',
+      value: '/private/files/Customer.csv',
     },
   });
   assert.deepEqual(dataImport.missingLinks, [
@@ -100,7 +100,7 @@ test('an import is polled until Frappe finishes and its failures are read back',
             {
               docname: null,
               messages: JSON.stringify([{ message: 'Customer is required' }]),
-              exception: 'Traceback\nfrappe.exceptions.MandatoryError: party',
+              exception: 'Traceback\nfrappe.exceptions.MandatoryError: customer',
               row_indexes: '[3, 4]',
             },
           ]

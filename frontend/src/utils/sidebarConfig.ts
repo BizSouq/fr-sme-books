@@ -1,6 +1,7 @@
 import { t } from 'fyo';
-import { reports } from 'reports';
+import { getReports, type ReportName } from 'reports';
 import { canOpenReport } from 'reports/serverReport';
+import { canUseAi, isAiAdmin } from 'src/ai/session';
 import { getImportableSchemaNames } from 'src/importer';
 import { routeFilters } from 'src/utils/filters';
 import { fyo } from '../initFyo';
@@ -50,8 +51,8 @@ export function canOpen(route: string): boolean {
   }
 
   if (page === 'report') {
-    const report = reports[name as keyof typeof reports];
-    return canOpenReport(report.serverReportName);
+    const report = getReports()[name as ReportName];
+    return !!report && canOpenReport(report.serverReportName);
   }
 
   return pageRights[page]?.() ?? true;
@@ -59,7 +60,20 @@ export function canOpen(route: string): boolean {
 
 /** Whether the user may change the settings, which the Setup group gathers. */
 function canEditSettings(): boolean {
-  return fyo.can('AccountingSettings', 'write');
+  return fyo.can('SystemSettings', 'write');
+}
+
+/** Books Custom Forms customize forms. */
+function getCustomizeFormItem(): SidebarItem {
+  return {
+    label: t`Customize Form`,
+    name: 'customize-form',
+    icon: 'lucide-layout-template',
+    route: `/list/CustomForm/${t`Customize Form`}`,
+    hidden: () =>
+      !fyo.isFeatureOn('enable_form_customization') ||
+      !fyo.can('CustomForm', 'create'),
+  };
 }
 
 function getRegionalSidebar(): SidebarRoot[] {
@@ -78,11 +92,13 @@ function getRegionalSidebar(): SidebarRoot[] {
         {
           label: t`GSTR1`,
           name: 'gstr1',
+          icon: 'lucide-file-up',
           route: '/report/GSTR1',
         },
         {
           label: t`GSTR2`,
           name: 'gstr2',
+          icon: 'lucide-file-down',
           route: '/report/GSTR2',
         },
       ],
@@ -90,108 +106,169 @@ function getRegionalSidebar(): SidebarRoot[] {
   ];
 }
 
-function getInventorySidebar(): SidebarRoot[] {
-  const hasInventory = !!fyo.singles.AccountingSettings?.enable_inventory;
-  if (!hasInventory) {
-    return [];
-  }
-
-  return [
-    {
-      label: t`Inventory`,
-      name: 'inventory',
-      icon: 'lucide-package',
-      route: '/list/StockMovement',
-      items: [
-        {
-          label: t`Stock Movement`,
-          name: 'stock-movement',
-          route: '/list/StockMovement',
-          schemaName: 'StockMovement',
-        },
-        {
-          label: t`Shipment`,
-          name: 'shipment',
-          route: '/list/Shipment',
-          schemaName: 'Shipment',
-        },
-        {
-          label: t`Purchase Receipt`,
-          name: 'purchase-receipt',
-          route: '/list/PurchaseReceipt',
-          schemaName: 'PurchaseReceipt',
-        },
-      ],
-    },
-  ];
+/** Stock records, with inventory on; delivery notes and purchase receipts sit with sales and purchases. */
+function getInventorySidebar(): SidebarRoot {
+  return {
+    label: t`Inventory`,
+    name: 'inventory',
+    icon: 'lucide-package',
+    route: '/list/StockEntry',
+    hidden: isInventoryOff,
+    items: [
+      {
+        label: t`Stock Entry`,
+        name: 'stock-entry',
+        icon: 'lucide-arrow-right-left',
+        route: '/list/StockEntry',
+        schemaName: 'StockEntry',
+      },
+      {
+        label: t`Warehouse`,
+        name: 'warehouse',
+        icon: 'lucide-warehouse',
+        route: '/list/Warehouse',
+        schemaName: 'Warehouse',
+      },
+      {
+        label: t`Batch`,
+        name: 'batch',
+        icon: 'lucide-boxes',
+        route: '/list/Batch',
+        schemaName: 'Batch',
+        hidden: () => !fyo.isFeatureOn('enable_batches'),
+      },
+      {
+        label: t`Serial No`,
+        name: 'serial-no',
+        icon: 'lucide-scan-barcode',
+        route: '/list/SerialNo',
+        schemaName: 'SerialNo',
+        hidden: () => !fyo.isFeatureOn('enable_serial_number'),
+      },
+    ],
+  };
 }
 
-function getPOSSidebar() {
+/** The POS screen, its profiles and its shifts. */
+function getPOSSidebar(): SidebarRoot {
   return {
     label: t`POS`,
     name: 'pos',
     route: '/pos',
     icon: 'lucide-store',
-    hidden: () =>
-      !fyo.singles.InventorySettings?.enable_point_of_sale ||
-      !fyo.can('POSOpeningShift', 'create'),
+    hidden: () => !fyo.isFeatureOn('enable_point_of_sale'),
+    items: [
+      {
+        label: t`Point of Sale`,
+        name: 'point-of-sale',
+        icon: 'lucide-monitor-smartphone',
+        route: '/pos',
+        hidden: () => !fyo.can('POSOpeningEntry', 'create'),
+      },
+      {
+        label: t`POS Profile`,
+        name: 'pos-profile',
+        icon: 'lucide-id-card',
+        route: '/list/POSProfile',
+        schemaName: 'POSProfile',
+      },
+      {
+        label: t`POS Opening Entry`,
+        name: 'pos-opening-entry',
+        icon: 'lucide-door-open',
+        route: '/list/POSOpeningEntry',
+        schemaName: 'POSOpeningEntry',
+      },
+      {
+        label: t`POS Closing Entry`,
+        name: 'pos-closing-entry',
+        icon: 'lucide-door-closed',
+        route: '/list/POSClosingEntry',
+        schemaName: 'POSClosingEntry',
+      },
+    ],
   };
 }
 
 function getReportSidebar() {
-  const isInventoryDisabled = () =>
-    !fyo.singles.AccountingSettings?.enable_inventory;
-
   return {
     label: t`Reports`,
     name: 'reports',
     icon: 'lucide-chart-no-axes-combined',
     route: '/report/GeneralLedger',
-    items: [
-      {
-        label: t`General Ledger`,
-        name: 'general-ledger',
-        route: '/report/GeneralLedger',
-      },
-      {
-        label: t`Profit and Loss`,
-        name: 'profit-and-loss',
-        route: '/report/ProfitAndLoss',
-      },
-      {
-        label: t`Balance Sheet`,
-        name: 'balance-sheet',
-        route: '/report/BalanceSheet',
-      },
-      {
-        label: t`Trial Balance`,
-        name: 'trial-balance',
-        route: '/report/TrialBalance',
-      },
-      {
-        label: t`Accounts Receivable`,
-        name: 'accounts-receivable',
-        route: '/report/AccountsReceivable',
-      },
-      {
-        label: t`Accounts Payable`,
-        name: 'accounts-payable',
-        route: '/report/AccountsPayable',
-      },
-      {
-        label: t`Stock Ledger`,
-        name: 'stock-ledger',
-        route: '/report/StockLedger',
-        hidden: isInventoryDisabled,
-      },
-      {
-        label: t`Stock Balance`,
-        name: 'stock-balance',
-        route: '/report/StockBalance',
-        hidden: isInventoryDisabled,
-      },
-    ],
+    items: getBooksReportItems(),
   };
+}
+
+// Each report's icon, by route name
+const REPORT_ICONS: Record<string, string> = {
+  GeneralLedger: 'lucide-chart-column',
+  TrialBalance: 'lucide-scale',
+  ProfitAndLoss: 'lucide-activity',
+  BalanceSheet: 'lucide-chart-pie',
+  AccountsReceivable: 'lucide-hand-coins',
+  AccountsPayable: 'lucide-wallet',
+  StockBalance: 'lucide-boxes',
+  StockLedger: 'lucide-list',
+};
+
+function isInventoryOff(): boolean {
+  return !fyo.isFeatureOn('enable_inventory');
+}
+
+function getBooksReportItems(): SidebarItem[] {
+  return [
+    {
+      label: t`General Ledger`,
+      name: 'general-ledger',
+      icon: REPORT_ICONS.GeneralLedger,
+      route: '/report/GeneralLedger',
+    },
+    {
+      label: t`Profit and Loss`,
+      name: 'profit-and-loss',
+      icon: REPORT_ICONS.ProfitAndLoss,
+      route: '/report/ProfitAndLoss',
+    },
+    {
+      label: t`Balance Sheet`,
+      name: 'balance-sheet',
+      icon: REPORT_ICONS.BalanceSheet,
+      route: '/report/BalanceSheet',
+    },
+    {
+      label: t`Trial Balance`,
+      name: 'trial-balance',
+      icon: REPORT_ICONS.TrialBalance,
+      route: '/report/TrialBalance',
+    },
+    {
+      label: t`Accounts Receivable`,
+      name: 'accounts-receivable',
+      icon: REPORT_ICONS.AccountsReceivable,
+      route: '/report/AccountsReceivable',
+    },
+    {
+      label: t`Accounts Payable`,
+      name: 'accounts-payable',
+      icon: REPORT_ICONS.AccountsPayable,
+      route: '/report/AccountsPayable',
+    },
+    {
+      label: t`Stock Ledger`,
+      name: 'stock-ledger',
+      icon: REPORT_ICONS.StockLedger,
+      route: '/report/StockLedger',
+      hidden: isInventoryOff,
+    },
+    {
+      label: t`Stock Balance`,
+      name: 'stock-balance',
+      icon: REPORT_ICONS.StockBalance,
+      route: '/report/StockBalance',
+      hidden: isInventoryOff,
+    },
+  ];
 }
 
 function getCompleteSidebar(): SidebarConfig {
@@ -212,71 +289,87 @@ function getCompleteSidebar(): SidebarConfig {
       icon: 'lucide-layout-dashboard',
     },
     {
+      label: t`AI Assistant`,
+      name: 'ai-assistant',
+      route: '/ai',
+      icon: 'lucide-sparkles',
+      // Managers see it to set the assistant up before it is on.
+      hidden: () => !canUseAi.value && !isAiAdmin.value,
+    },
+    {
       label: t`Sales`,
       name: 'sales',
       icon: 'lucide-credit-card',
       route: '/list/SalesInvoice',
       items: [
         {
-          label: t`Sales Quotes`,
-          name: 'sales-quotes',
-          route: '/list/SalesQuote',
-          schemaName: 'SalesQuote',
+          label: t`Quotation`,
+          name: 'quotation',
+          icon: 'lucide-file-text',
+          route: '/list/Quotation',
+          schemaName: 'Quotation',
         },
         {
-          label: t`Sales Invoices`,
+          label: t`Sales Invoice`,
           name: 'sales-invoices',
+          icon: 'lucide-receipt',
           route: '/list/SalesInvoice',
           schemaName: 'SalesInvoice',
         },
         {
-          label: t`Sales Payments`,
+          label: t`Delivery Note`,
+          name: 'delivery-note',
+          icon: 'lucide-truck',
+          route: '/list/DeliveryNote',
+          schemaName: 'DeliveryNote',
+          hidden: isInventoryOff,
+        },
+        {
+          label: t`Sales Payment`,
           name: 'payments',
-          route: `/list/Payment/${t`Sales Payments`}`,
-          schemaName: 'Payment',
+          icon: 'lucide-wallet',
+          route: `/list/PaymentEntry/${t`Sales Payment`}`,
+          schemaName: 'PaymentEntry',
           filters: routeFilters.SalesPayments,
         },
         {
-          label: t`Customers`,
-          name: 'customers',
-          route: `/list/Party/${t`Customers`}`,
-          schemaName: 'Party',
-          filters: routeFilters.Customers,
-        },
-        {
-          label: t`Sales Items`,
-          name: 'sales-items',
-          route: `/list/Item/${t`Sales Items`}`,
-          schemaName: 'Item',
-          filters: routeFilters.SalesItems,
+          label: t`Customer`,
+          name: 'customer',
+          icon: 'lucide-circle-user',
+          route: '/list/Customer',
+          schemaName: 'Customer',
         },
         {
           label: t`Loyalty Program`,
           name: 'loyalty-program',
+          icon: 'lucide-gift',
           route: '/list/LoyaltyProgram',
           schemaName: 'LoyaltyProgram',
-          hidden: () => !fyo.singles.AccountingSettings?.enable_loyalty_program,
+          hidden: () => !fyo.isFeatureOn('enable_loyalty_point_program'),
         },
         {
           label: t`Lead`,
           name: 'lead',
+          icon: 'lucide-user-plus',
           route: '/list/Lead',
           schemaName: 'Lead',
-          hidden: () => !fyo.singles.AccountingSettings?.enable_lead,
+          hidden: () => !fyo.isFeatureOn('enable_lead'),
         },
         {
           label: t`Pricing Rule`,
           name: 'pricing-rule',
+          icon: 'lucide-tag',
           route: '/list/PricingRule',
           schemaName: 'PricingRule',
-          hidden: () => !fyo.singles.AccountingSettings?.enable_pricing_rule,
+          hidden: () => !fyo.isFeatureOn('enable_pricing_rule'),
         },
         {
           label: t`Coupon Code`,
           name: 'coupon-code',
+          icon: 'lucide-ticket',
           route: `/list/CouponCode`,
           schemaName: 'CouponCode',
-          hidden: () => !fyo.singles.AccountingSettings?.enable_coupon_code,
+          hidden: () => !fyo.isFeatureOn('enable_coupon_code'),
         },
       ] as SidebarItem[],
     },
@@ -287,34 +380,39 @@ function getCompleteSidebar(): SidebarConfig {
       route: '/list/PurchaseInvoice',
       items: [
         {
-          label: t`Purchase Invoices`,
+          label: t`Purchase Invoice`,
           name: 'purchase-invoices',
+          icon: 'lucide-receipt',
           route: '/list/PurchaseInvoice',
           schemaName: 'PurchaseInvoice',
         },
         {
-          label: t`Purchase Payments`,
+          label: t`Purchase Receipt`,
+          name: 'purchase-receipt',
+          icon: 'lucide-package-check',
+          route: '/list/PurchaseReceipt',
+          schemaName: 'PurchaseReceipt',
+          hidden: isInventoryOff,
+        },
+        {
+          label: t`Purchase Payment`,
           name: 'payments',
-          route: `/list/Payment/${t`Purchase Payments`}`,
-          schemaName: 'Payment',
+          icon: 'lucide-wallet',
+          route: `/list/PaymentEntry/${t`Purchase Payment`}`,
+          schemaName: 'PaymentEntry',
           filters: routeFilters.PurchasePayments,
+          hidden: () => !fyo.can('Supplier', 'read'),
         },
         {
-          label: t`Suppliers`,
-          name: 'suppliers',
-          route: `/list/Party/${t`Suppliers`}`,
-          schemaName: 'Party',
-          filters: routeFilters.Suppliers,
-        },
-        {
-          label: t`Purchase Items`,
-          name: 'purchase-items',
-          route: `/list/Item/${t`Purchase Items`}`,
-          schemaName: 'Item',
-          filters: routeFilters.PurchaseItems,
+          label: t`Supplier`,
+          name: 'supplier',
+          icon: 'lucide-building-2',
+          route: '/list/Supplier',
+          schemaName: 'Supplier',
         },
       ] as SidebarItem[],
     },
+    getInventorySidebar(),
     {
       label: t`Common`,
       name: 'common-entries',
@@ -324,33 +422,51 @@ function getCompleteSidebar(): SidebarConfig {
         {
           label: t`Journal Entry`,
           name: 'journal-entry',
+          icon: 'lucide-book-open',
           route: '/list/JournalEntry',
           schemaName: 'JournalEntry',
         },
         {
-          label: t`Party`,
-          name: 'party',
-          route: '/list/Party',
-          schemaName: 'Party',
+          label: t`Item`,
+          name: 'item',
+          icon: 'lucide-package',
+          route: '/list/Item',
+          schemaName: 'Item',
         },
         {
-          label: t`Items`,
-          name: 'common-items',
-          route: `/list/Item/${t`Items`}`,
-          schemaName: 'Item',
-          filters: [['item_usage', '=', 'Both']],
+          label: t`Item Group`,
+          name: 'item-group',
+          icon: 'lucide-folder-tree',
+          route: '/list/ItemGroup',
+          schemaName: 'ItemGroup',
+          hidden: () => !fyo.isFeatureOn('enable_item_group'),
+        },
+        {
+          label: t`UOM`,
+          name: 'uom',
+          icon: 'lucide-ruler',
+          route: '/list/UOM',
+          schemaName: 'UOM',
         },
         {
           label: t`Price List`,
           name: 'price-list',
+          icon: 'lucide-list',
           route: '/list/PriceList',
           schemaName: 'PriceList',
-          hidden: () => !fyo.singles.AccountingSettings?.enable_price_list,
+          hidden: () => !fyo.isFeatureOn('enable_price_list'),
+        },
+        {
+          label: t`Item Price`,
+          name: 'item-price',
+          icon: 'lucide-tags',
+          route: '/list/ItemPrice',
+          schemaName: 'ItemPrice',
+          hidden: () => !fyo.isFeatureOn('enable_price_list'),
         },
       ] as SidebarItem[],
     },
     getReportSidebar(),
-    getInventorySidebar(),
     getPOSSidebar(),
     getRegionalSidebar(),
     {
@@ -363,42 +479,62 @@ function getCompleteSidebar(): SidebarConfig {
         {
           label: t`Chart of Accounts`,
           name: 'chart-of-accounts',
+          icon: 'lucide-list-tree',
           route: '/chart-of-accounts',
         },
         {
-          label: t`Tax Templates`,
+          label: t`Mode of Payment`,
+          name: 'mode-of-payment',
+          icon: 'lucide-banknote',
+          route: '/list/ModeOfPayment',
+          schemaName: 'ModeOfPayment',
+        },
+        {
+          label: t`Tax Template`,
           name: 'taxes',
-          route: '/list/Tax',
-          schemaName: 'Tax',
+          icon: 'lucide-percent',
+          route: '/list/ItemTaxTemplate',
+          schemaName: 'ItemTaxTemplate',
+        },
+        {
+          label: t`Sales Taxes and Charges Template`,
+          name: 'sales-taxes',
+          icon: 'lucide-receipt-text',
+          route: '/list/SalesTaxesAndChargesTemplate',
+          schemaName: 'SalesTaxesAndChargesTemplate',
+        },
+        {
+          label: t`Purchase Taxes and Charges Template`,
+          name: 'purchase-taxes',
+          icon: 'lucide-receipt-text',
+          route: '/list/PurchaseTaxesAndChargesTemplate',
+          schemaName: 'PurchaseTaxesAndChargesTemplate',
         },
         {
           label: t`Number Series`,
           name: 'number-series',
+          icon: 'lucide-hash',
           route: '/list/NumberSeries',
           schemaName: 'NumberSeries',
         },
         {
           label: t`Import Wizard`,
           name: 'import-wizard',
+          icon: 'lucide-upload',
           route: '/import-wizard',
           hidden: () => !getImportableSchemaNames(fyo).length,
         },
         {
-          label: t`Print Templates`,
+          label: t`Print Template`,
           name: 'print-template',
-          route: `/list/PrintFormat/${t`Print Templates`}`,
+          icon: 'lucide-printer',
+          route: `/list/PrintFormat/${t`Print Template`}`,
         },
-        {
-          label: t`Customize Form`,
-          name: 'customize-form',
-          route: `/list/CustomForm/${t`Customize Form`}`,
-          hidden: () =>
-            !fyo.singles.AccountingSettings?.enable_form_customization ||
-            !fyo.can('CustomForm', 'create'),
-        },
+        getCustomizeFormItem(),
         {
           label: t`Settings`,
           name: 'settings',
+          icon: 'lucide-settings',
           route: '/settings',
         },
       ] as SidebarItem[],

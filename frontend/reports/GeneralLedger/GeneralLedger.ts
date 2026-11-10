@@ -16,17 +16,17 @@ export class GeneralLedger extends Report {
     title: 'account',
     amount: 'debit',
     credit: 'credit',
-    meta: ['reference_name', 'party'],
+    meta: ['voucher_no', 'party'],
     balance: 'balance',
-    chips: ['fromDate', 'toDate', 'account', 'party'],
+    chips: ['fromDate', 'toDate', 'account', 'partyType', 'party'],
   };
   usePagination = true;
 
   ascending = false;
-  reverted = false;
+  isCancelled = false;
   /** The doctype of the entries' documents, or `All`. */
-  referenceType = 'All';
-  groupBy: 'none' | 'party' | 'account' | 'reference_name' = 'none';
+  voucherType = 'All';
+  groupBy: 'none' | 'party' | 'account' | 'voucher_no' = 'none';
 
   async setDefaultFilters() {
     if (!this.toDate) {
@@ -48,8 +48,8 @@ export class GeneralLedger extends Report {
   }
 
   formatValue(column: ColumnField, rawValue: RawValue | undefined): string {
-    if (column.fieldname === 'reverted') {
-      return rawValue ? t`Reverted` : '';
+    if (column.fieldname === 'is_cancelled') {
+      return rawValue ? t`Cancelled` : '';
     }
 
     return super.formatValue(column, rawValue);
@@ -62,17 +62,17 @@ export class GeneralLedger extends Report {
   getFilters() {
     const refTypeOptions = [
       { label: t`All`, value: 'All' },
-      { label: t`Sales Invoices`, value: 'Books Sales Invoice' },
-      { label: t`Purchase Invoices`, value: 'Books Purchase Invoice' },
-      { label: t`Payments`, value: 'Books Payment' },
-      { label: t`Journal Entries`, value: 'Books Journal Entry' },
+      { label: t`Sales Invoice`, value: 'Books Sales Invoice' },
+      { label: t`Purchase Invoice`, value: 'Books Purchase Invoice' },
+      { label: t`Payment Entry`, value: 'Books Payment Entry' },
+      { label: t`Journal Entry`, value: 'Books Journal Entry' },
     ];
 
-    if (this.fyo.singles.AccountingSettings?.enable_inventory) {
+    if (this.fyo.isFeatureOn('enable_inventory')) {
       refTypeOptions.push(
-        { label: t`Shipment`, value: 'Books Shipment' },
+        { label: t`Delivery Note`, value: 'Books Delivery Note' },
         { label: t`Purchase Receipt`, value: 'Books Purchase Receipt' },
-        { label: t`Stock Movements`, value: 'Books Stock Movement' }
+        { label: t`Stock Entry`, value: 'Books Stock Entry' }
       );
     }
 
@@ -81,16 +81,16 @@ export class GeneralLedger extends Report {
         fieldtype: 'Select',
         options: refTypeOptions,
         label: t`Ref Type`,
-        fieldname: 'referenceType',
+        fieldname: 'voucherType',
         placeholder: t`Ref Type`,
       },
       {
         fieldtype: 'DynamicLink',
         label: t`Ref Name`,
-        references: 'referenceType',
+        references: 'voucherType',
         placeholder: t`Ref Name`,
         emptyMessage: t`Change Ref Type`,
-        fieldname: 'referenceName',
+        fieldname: 'voucherNo',
       },
       {
         fieldtype: 'Link',
@@ -100,10 +100,21 @@ export class GeneralLedger extends Report {
         fieldname: 'account',
       },
       {
-        fieldtype: 'Link',
-        target: 'Party',
+        fieldtype: 'Select',
+        options: [
+          { label: t`Customer`, value: 'Books Customer' },
+          { label: t`Supplier`, value: 'Books Supplier' },
+        ],
+        label: t`Party Type`,
+        fieldname: 'partyType',
+        placeholder: t`Party Type`,
+      },
+      {
+        fieldtype: 'DynamicLink',
         label: t`Party`,
+        references: 'partyType',
         placeholder: t`Party`,
+        emptyMessage: t`Change Party Type`,
         fieldname: 'party',
       },
       {
@@ -126,13 +137,13 @@ export class GeneralLedger extends Report {
           { label: t`None`, value: 'none' },
           { label: t`Party`, value: 'party' },
           { label: t`Account`, value: 'account' },
-          { label: t`Reference`, value: 'reference_name' },
+          { label: t`Reference`, value: 'voucher_no' },
         ],
       },
       {
         fieldtype: 'Check',
         label: t`Include Cancelled`,
-        fieldname: 'reverted',
+        fieldname: 'isCancelled',
       },
       {
         fieldtype: 'Check',

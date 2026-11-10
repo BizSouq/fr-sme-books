@@ -21,3 +21,11 @@ export const reports = {
   StockLedger,
   StockBalance,
 } as const;
+
+export type ReportClass = (typeof reports)[keyof typeof reports];
+export type ReportName = keyof typeof reports;
+
+/** The reports Books shows, by route name. */
+export function getReports(): Partial<Record<ReportName, ReportClass>> {
+  return reports;
+}

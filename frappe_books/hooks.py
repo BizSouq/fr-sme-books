@@ -1,3 +1,5 @@
+from frappe_books.company import COMPANY_DOCTYPES
+
 app_name = "frappe_books"
 app_title = "Books"
 app_publisher = "Frappe Technologies Pvt. Ltd."
@@ -51,6 +53,14 @@ before_tests = [
 	"frappe_books.tests.accounting.enable_features",
 	"frappe_books.tests.accounting.set_default_inventory_accounts",
 ]
+
+# Each new document belongs to the one Books Company.
+doc_events = {doctype: {"before_insert": "frappe_books.company.set_company"} for doctype in COMPANY_DOCTYPES}
+# Keeps the palette's index in step with saves while Frappe's update stops at ERPNext's search; see search.py.
+doc_events["*"] = {
+	"on_update": "frappe_books.search.update_doc_index",
+	"on_trash": "frappe_books.search.delete_doc_index",
+}
 
 scheduler_events = {
 	"daily": ["frappe_books.commerce.loyalty.expire_programs_and_points"],

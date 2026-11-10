@@ -1,8 +1,4 @@
 import {
-  call as frappeCall,
-  type FrappeResourceError,
-} from 'frappe-ui';
-import {
   BaseError,
   ConflictError,
   DuplicateEntryError,
@@ -13,6 +9,7 @@ import {
   ValidationError,
 } from 'fyo/utils/errors';
 import type { BootUserPermissions } from 'fyo/utils/permissions';
+import { t } from 'fyo/utils/translation';
 import type { DeskTheme } from 'src/utils/theme';
 import type { ChartOfAccounts } from 'utils/types';
 import { ref } from 'vue';
@@ -41,16 +38,27 @@ const LOGIN_URL = `/login?redirect-to=${encodeURIComponent('/books')}`;
 /** Whether the last request failed because the server could not be reached. */
 export const hasLostConnection = ref(false);
 
+/** Runs a whitelisted method; what the server logged besides its answer shows as Desk shows it. */
 export async function call<T>(
   method: string,
   args: Record<string, unknown> = {}
 ): Promise<T> {
-  try {
-    return await reachServer(() => frappeCall<T>(method, args));
-  } catch (error) {
-    await leaveIfSessionExpired((error as FrappeResourceError).status);
-    throw toBooksError(error);
+  const response = await reachServer(() =>
+    fetch(`/api/method/${method}`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(args),
+    })
+  );
+  const body = (await response.json().catch(() => ({}))) as MethodResponse<T>;
+  const messages = parseServerMessages(body._server_messages);
+  if (!response.ok) {
+    await leaveIfSessionExpired(response.status);
+    throw getFailure(messages, body.exc_type, response.status, body.exc);
   }
+
+  showServerMessages(messages);
+  return body.message as T;
 }
 
 /** Runs a request and notes whether the server could be reached. */
@@ -65,15 +73,111 @@ export async function reachServer<T>(request: () => Promise<T>): Promise<T> {
   }
 }
 
-/** A fyo error for a server error, so forms treat it like their own. */
+/** One message the server logged, as Frappe's msgprint sends it; its HTML is the server's. */
+export interface ServerMessage {
+  message: string;
+  title?: string;
+  /** Desk shows an alert as a toast. */
+  alert?: boolean | number;
+  indicator?: string;
+}
+
+type MethodResponse<T> = {
+  message?: T;
+  exc_type?: string;
+  /** The tracebacks, as a JSON list, when the server shows them to the user. */
+  exc?: string;
+  _server_messages?: string;
+};
+
+let messagesHandler: (messages: ServerMessage[]) => void = () => undefined;
+
+/** Sets how the messages of a request that went through show, as Desk shows its toasts and message dialogs. */
+export function onServerMessages(handler: (messages: ServerMessage[]) => void) {
+  messagesHandler = handler;
+}
+
+/** Shows what a successful request logged. */
+export function showServerMessages(messages: ServerMessage[] = []) {
+  if (messages.length) {
+    messagesHandler(messages);
+  }
+}
+
+/** Frappe's `_server_messages`: a JSON list of JSON messages. */
+function parseServerMessages(text?: string): ServerMessage[] {
+  const messages = JSON.parse(text ?? '[]') as string[];
+  return messages.map((message) => JSON.parse(message) as ServerMessage);
+}
+
+/**
+ * The error of a failed request. Its alerts are dropped, as the request kept
+ * nothing they announce; an error with no message of its own, like a
+ * TypeError, says what failed.
+ */
+export function getFailure(
+  messages: ServerMessage[],
+  excType?: string,
+  status?: number,
+  traceback?: string
+): Error {
+  const shown = messages.filter(({ alert }) => !alert);
+  if (!shown.length) {
+    shown.push(getUnexplainedFailure(excType, traceback));
+  }
+
+  const message = shown.map((m) => m.message).join('\n');
+  return getServerError(message, excType, status, shown);
+}
+
+/** Desk shows the traceback of an error that has no message; /books its last line, when the server sends it. */
+function getUnexplainedFailure(
+  excType?: string,
+  traceback?: string
+): ServerMessage {
+  const lines = (parseTraceback(traceback) ?? '').trim().split('\n');
+  const lastLine = lines[lines.length - 1];
+  const message =
+    lastLine || t`The server ran into an error (${excType ?? 'Error'}).`;
+  return { message, title: t`Server Error` };
+}
+
+/** v1 sends tracebacks as a JSON list; v2 one traceback. */
+function parseTraceback(traceback?: string): string | undefined {
+  try {
+    return (JSON.parse(traceback ?? '') as string[])[0];
+  } catch {
+    return traceback;
+  }
+}
+
+/**
+ * A fyo error for a server error, so forms treat it like their own. It keeps
+ * the server's messages, in server order, for forms that show them as sent.
+ */
 export function getServerError(
   message: string,
   excType?: string,
-  status?: number
+  status?: number,
+  messages: ServerMessage[] = [{ message }]
 ): Error {
   const ServerError =
     errorClassByType[excType ?? ''] ?? errorClassByStatus[status ?? 0];
-  return ServerError ? new ServerError(message, false) : new Error(message);
+  const error = ServerError
+    ? new ServerError(message, false)
+    : new Error(message);
+  return Object.assign(error, { serverMessages: messages });
+}
+
+/** The server's messages of an error, or its own message. */
+export function getServerMessages(error: unknown): ServerMessage[] {
+  const { serverMessages } = error as { serverMessages?: ServerMessage[] };
+  if (serverMessages?.length) {
+    return serverMessages;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return [{ message }];
 }
 
 /** Sends the user to log in, and back to Books after. */
@@ -109,23 +213,19 @@ function isConnectionFailure(error: unknown): boolean {
   return error instanceof TypeError && CONNECTION_FAILURE.test(error.message);
 }
 
-function toBooksError(error: unknown): unknown {
-  if (!isServerError(error)) {
-    return error;
+/** Frappe's JSON request headers, with the session's CSRF token. */
+export function getHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json; charset=utf-8',
+    'X-Frappe-Site-Name': window.location.hostname,
+  };
+  const token = window.csrf_token;
+  if (token && token !== '{{ csrf_token }}') {
+    headers['X-Frappe-CSRF-Token'] = token;
   }
 
-  return getServerError(
-    error.messages.join('\n'),
-    error.exc_type,
-    error.status
-  );
-}
-
-function isServerError(error: unknown): error is FrappeResourceError {
-  return (
-    error instanceof Error &&
-    Array.isArray((error as FrappeResourceError).messages)
-  );
+  return headers;
 }
 
 declare global {
@@ -150,13 +250,18 @@ declare global {
           currency_precision?: string;
           number_format?: string;
           rounding_method?: string;
+          time_format?: string;
         };
         /** Added by `frappe_books.boot.extend_bootinfo`. */
         books?: {
           country_code: string;
+          /** The one Books Company once the setup wizard has made it. */
+          company: string | null;
           charts_of_accounts: ChartOfAccounts[];
           indian_states: Record<string, string>;
           print_style: string;
+          /** Whether the AI Guard lets the user use the assistant, and change its settings. */
+          ai?: { can_use: boolean; is_admin: boolean };
         };
         app_data?: { app_name: string; app_logo_url?: string | null }[];
         docs?: { doctype: string; name: string; symbol?: string | null }[];

@@ -48,16 +48,29 @@ export function getTemplateNameFromFile(fileName: string): string | null {
 /** A print as Frappe renders it: the body HTML and its stylesheet. */
 export type PrintHTML = { html: string | null; style: string };
 
+// Frappe's print format builder renders whole documents that show the page on a
+// gray screen; the print sheet is the page already.
+const SHEET_STYLE =
+  '<style>@media screen { html { background: none; } body { margin: 0; box-shadow: none; } }</style>';
+
+// The print sheet runs no scripts, so a print's scripts go rather than log blocked errors.
+const SCRIPTS = /<script\b[\s\S]*?<\/script>/gi;
+
 /** A page for a print, styled the way Frappe's print view styles it. */
-export function getPrintDocument({ html, style }: PrintHTML): string {
+export function getPrintDocument(print: PrintHTML): string {
+  const html = (print.html ?? '').replace(SCRIPTS, '');
+  if (/^\s*<!DOCTYPE/i.test(html)) {
+    return html.replace('</head>', `${SHEET_STYLE}</head>`);
+  }
+
   const boot = window.frappe?.boot;
   const direction = boot?.layout_direction === 'rtl' ? 'rtl' : 'ltr';
   const stylesheet = boot?.books?.print_style;
   const link = stylesheet ? `<link rel="stylesheet" href="${stylesheet}">` : '';
   return (
     `<!DOCTYPE html><html lang="${boot?.lang ?? 'en'}" dir="${direction}">` +
-    `<head><meta charset="utf-8">${link}<style>${style}</style></head>` +
-    `<body><div class="print-format">${html ?? ''}</div></body></html>`
+    `<head><meta charset="utf-8">${link}<style>${print.style}</style></head>` +
+    `<body><div class="print-format">${html}</div></body></html>`
   );
 }
 

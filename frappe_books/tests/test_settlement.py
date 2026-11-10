@@ -3,7 +3,14 @@ from frappe.tests import IntegrationTestCase
 
 from frappe_books.accounting import settlement
 from frappe_books.accounting.returns import map_return
-from frappe_books.tests.accounting import make_account, make_invoice, make_item, make_party, make_tax
+from frappe_books.tests.accounting import (
+	make_account,
+	make_customer,
+	make_invoice,
+	make_item,
+	make_tax,
+	set_company_value,
+)
 
 
 class IntegrationTestSettlement(IntegrationTestCase):
@@ -12,8 +19,8 @@ class IntegrationTestSettlement(IntegrationTestCase):
 		self.income = make_account("Sales", root_type="Income", account_type="Income Account").name
 		expense = make_account("Expense", root_type="Expense", account_type="Expense Account").name
 		tax = make_tax(make_account("Tax", root_type="Liability", account_type="Tax").name)
-		frappe.db.set_single_value("Books Accounting Settings", "discount_account", expense)
-		self.party = make_party(self.receivable).name
+		set_company_value("default_discount_account", expense)
+		self.party = make_customer(self.receivable).name
 		self.item = make_item(self.income, expense, tax.name).name
 
 	def test_allocations_settle_an_invoice_and_reversing_one_restores_it(self):
@@ -45,12 +52,12 @@ class IntegrationTestSettlement(IntegrationTestCase):
 	def test_party_owes_its_open_invoices_and_a_cancelled_one_owes_nothing(self):
 		invoice, other = self.submit_invoice(), self.submit_invoice()
 		settlement.settle(other.reload(), 98)
-		settlement.refresh_party(self.party)
-		self.assertEqual(frappe.db.get_value("Books Party", self.party, "outstanding_amount"), 298)
+		settlement.refresh_party("Books Customer", self.party)
+		self.assertEqual(frappe.db.get_value("Books Customer", self.party, "outstanding_amount"), 298)
 
 		invoice.cancel()
 		self.assertEqual(invoice.db_get("outstanding_amount"), 0)
-		self.assertEqual(frappe.db.get_value("Books Party", self.party, "outstanding_amount"), 100)
+		self.assertEqual(frappe.db.get_value("Books Customer", self.party, "outstanding_amount"), 100)
 
 	def submit_invoice(self):
 		return make_invoice(

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-0 flex-col">
+  <div class="flex min-h-0 flex-col bg-[var(--books-ground)]">
     <PageHeader :title="t`Dashboard`">
       <template #mobile>
         <MobileCreateMenu />
@@ -14,7 +14,7 @@
       :viewport-class="isMobile ? undefined : 'px-3 pb-10 pt-5 sm:px-5'"
     >
       <div
-        class="space-y-4 px-4 pb-10 pt-3 md:mx-auto md:max-w-4xl md:space-y-6 md:p-0"
+        class="space-y-4 px-4 pb-10 pt-3 md:mx-auto md:max-w-6xl md:space-y-5 md:p-0"
       >
         <PeriodSelector
           v-if="isMobile"
@@ -22,18 +22,18 @@
           @change="(value) => (period = value)"
         />
         <div
-          class="grid grid-cols-2 gap-3 md:gap-x-8 md:gap-y-6 xl:grid-cols-4"
+          class="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4"
         >
           <InvoiceCards
             v-if="canRead.sales"
-            doctype="Books Sales Invoice"
+            :schema-name="ModelNameEnum.SalesInvoice"
             :paid-title="t`Paid sales`"
             :unpaid-title="t`Unpaid sales`"
             :period="period"
           />
           <InvoiceCards
             v-if="canRead.purchases"
-            doctype="Books Purchase Invoice"
+            :schema-name="ModelNameEnum.PurchaseInvoice"
             :paid-title="t`Paid purchases`"
             :unpaid-title="t`Unpaid purchases`"
             :period="period"
@@ -41,12 +41,10 @@
         </div>
         <!-- The charts total the ledger. -->
         <template v-if="canRead.ledger">
-          <div class="border-t border-outline-gray-2 max-md:hidden" />
-          <Cashflow class="h-64 md:h-72" :period="period" />
-          <div class="border-t border-outline-gray-2 max-md:hidden" />
-          <div class="grid gap-4 md:gap-8 lg:grid-cols-2">
-            <ProfitAndLoss class="h-64 min-w-0 md:h-80" :period="period" />
-            <Expenses class="h-96 min-w-0 md:h-80" :period="period" />
+          <Cashflow class="h-64 md:h-80" :period="period" />
+          <div class="grid gap-4 md:gap-5 lg:grid-cols-2">
+            <ProfitAndLoss class="h-64 min-w-0 md:h-96" :period="period" />
+            <Expenses class="h-96 min-w-0" :period="period" />
           </div>
         </template>
       </div>
@@ -84,9 +82,9 @@ export default {
     const canRead = {
       sales: fyo.can(ModelNameEnum.SalesInvoice, 'read'),
       purchases: fyo.can(ModelNameEnum.PurchaseInvoice, 'read'),
-      ledger: fyo.can(ModelNameEnum.AccountingLedgerEntry, 'read'),
+      ledger: fyo.can(ModelNameEnum.GLEntry, 'read'),
     };
-    return { isMobile, canRead };
+    return { isMobile, canRead, ModelNameEnum };
   },
   data() {
     return { period: 'This Year' };

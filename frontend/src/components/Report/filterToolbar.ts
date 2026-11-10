@@ -18,27 +18,44 @@ export interface FiscalYear {
   end?: Date;
 }
 
-/** One range for the From and To dates, then periodicity, then the rest in order. */
-export function getFilterItems(filters: Field[]): FilterItem[] {
-  const from = filters.find(({ fieldname }) => fieldname === 'fromDate');
-  const to = filters.find(({ fieldname }) => fieldname === 'toDate');
-  const range: FilterItem[] =
-    from && to ? [{ type: 'dateRange', key: 'dateRange', from, to }] : [];
+/** The filter pair a date range picker sets. */
+const DATE_PAIRS = [['fromDate', 'toDate']];
+
+/** One range for the From and To dates, then the tabs, then the rest in order. */
+export function getFilterItems(
+  filters: Field[],
+  tabs = ['periodicity']
+): FilterItem[] {
+  const range = getDateRange(filters);
   const items = filters
-    .filter((field) => !range.length || (field !== from && field !== to))
-    .map(toFilterItem);
+    .filter((field) => !range || (field !== range.from && field !== range.to))
+    .map((field) => toFilterItem(field, tabs));
 
   return [
-    ...range,
+    ...(range ? [range] : []),
     ...items.filter(({ type }) => type === 'tabs'),
     ...items.filter(({ type }) => type !== 'tabs'),
   ];
 }
 
-/** Periodicity is a segmented control while its options fit one. */
-function toFilterItem(field: Field): FilterItem {
+function getDateRange(
+  filters: Field[]
+): Extract<FilterItem, { type: 'dateRange' }> | undefined {
+  const find = (name: string) =>
+    filters.find(({ fieldname }) => fieldname === name);
+  for (const [fromName, toName] of DATE_PAIRS) {
+    const from = find(fromName);
+    const to = find(toName);
+    if (from && to) {
+      return { type: 'dateRange', key: 'dateRange', from, to };
+    }
+  }
+}
+
+/** A tab filter is a segmented control while its options fit one. */
+function toFilterItem(field: Field, tabs: string[]): FilterItem {
   const isTabs =
-    field.fieldname === 'periodicity' &&
+    tabs.includes(field.fieldname) &&
     field.fieldtype === 'Select' &&
     field.options.length <= 4;
   return isTabs

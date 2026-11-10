@@ -9,8 +9,8 @@ MONTHS = {"Monthly": 1, "Quarterly": 3, "Half Yearly": 6, "Yearly": 12}
 
 def get_fiscal_year(date=None) -> tuple:
 	"""Return the start and end of the fiscal year that holds `date`, today by default."""
-	start, end = _fiscal_year_setting()
 	date = getdate(date)
+	start, end = _fiscal_year_setting()
 	years = date.year - start.year
 	if add_years(start, years) > date:
 		years -= 1
@@ -73,7 +73,7 @@ def _period(from_date, to_date, date_format):
 def _fiscal_year_setting():
 	start, end = (
 		frappe.db.get_single_value("Books Accounting Settings", fieldname)
-		for fieldname in ("fiscal_year_start", "fiscal_year_end")
+		for fieldname in ("year_start_date", "year_end_date")
 	)
 	if not start or not end:
 		frappe.throw(_("Set the fiscal year in Accounting Settings."))

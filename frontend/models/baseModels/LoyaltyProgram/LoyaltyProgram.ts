@@ -4,16 +4,16 @@ import { ValidationError } from 'fyo/utils/errors';
 import { t } from 'fyo';
 import { getLoyaltyProgramStatusColumn } from 'models/helpers';
 import { FrappeDoc } from 'src/frappe/document';
-import { CollectionRulesItems } from './CollectionRulesItems';
+import { getField } from 'src/frappe/registry';
+import { LoyaltyProgramCollection } from './LoyaltyProgramCollection';
 
 /** Books Loyalty Program, served by Frappe. The server keeps its status. */
 export class LoyaltyProgram extends FrappeDoc {
   static override doctype = 'Books Loyalty Program';
   static override presentation = {
     label: 'Loyalty Program',
-    nameField: { label: 'Name', placeholder: 'Name' },
     quickEditFields: [
-      'name',
+      'loyalty_program_name',
       'from_date',
       'to_date',
       'conversion_factor',
@@ -23,7 +23,9 @@ export class LoyaltyProgram extends FrappeDoc {
     ],
     fields: { expense_account: { create: false } },
   };
-  static override rowModels = { collection_rules: CollectionRulesItems };
+  static override rowModels = {
+    collection_rules: LoyaltyProgramCollection,
+  };
 
   maximum_use?: number;
   status?: 'Active' | 'Expired' | 'Disabled' | 'Maxed';
@@ -53,7 +55,10 @@ export class LoyaltyProgram extends FrappeDoc {
     return {
       columns: [
         'name',
-        getLoyaltyProgramStatusColumn(),
+        // ERPNext's program has no status, only its dates.
+        ...(getField('LoyaltyProgram', 'status')
+          ? [getLoyaltyProgramStatusColumn()]
+          : []),
         'from_date',
         'to_date',
       ],

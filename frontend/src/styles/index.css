@@ -1,4 +1,11 @@
 @import 'frappe-ui/style.css';
+/* Bundled, not from a font CDN, so self-hosted sites load them offline. */
+@import '@fontsource-variable/plus-jakarta-sans/wght.css';
+@import '@fontsource/hind-siliguri/bengali-400.css';
+@import '@fontsource/hind-siliguri/bengali-500.css';
+@import '@fontsource/hind-siliguri/bengali-600.css';
+@import '@fontsource/hind-siliguri/bengali-700.css';
+@import './theme.css';
 
 html {
   @apply text-ink-gray-8 bg-surface-base;
@@ -42,6 +49,12 @@ html {
 [data-sonner-toast] [data-button] {
   align-items: center;
   justify-content: center;
+}
+
+/* Frappe UI phone toasts cover the bottom tabs and offer no offset (frappe/frappe-ui#1321).
+   vue-sonner sets this variable inline, hence !important. */
+body:has([data-slot='mobile-nav']) [data-sonner-toaster] {
+  --mobile-offset-bottom: calc(4.5rem + env(safe-area-inset-bottom)) !important;
 }
 
 /* Frappe UI menu rows touch, so a selected row and the hovered one merge (frappe/frappe-ui#1265). */

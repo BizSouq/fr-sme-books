@@ -38,7 +38,7 @@
           :df="{
             fieldname: 'customer',
             fieldtype: 'Link',
-            target: 'Party',
+            target: 'Customer',
             label: t`Customer`,
           }"
           :value="ItemEnquiry.customer"
@@ -151,11 +151,11 @@ export default defineComponent({
   },
   methods: {
     async updateCustomerContact(customer: string) {
-      const [party] = await getDocuments('Books Party', {
-        fields: ['phone'],
+      const [record] = await getDocuments('Books Customer', {
+        fields: ['mobile_no'],
         filters: [['name', '=', customer]],
       });
-      this.ItemEnquiry.contact = (party?.phone as string) || '';
+      this.ItemEnquiry.contact = (record?.mobile_no as string) || '';
     },
 
     async submitForm() {

@@ -14,8 +14,8 @@ stubFrappe(({ body }) => ({ message: getBooksMeta(body.doctypes) }));
 registerFrappeModels(frappeModels);
 await loadFrappeDocTypes();
 
-test('a party links to its General Ledger only once saved', async () => {
-  const party = newFrappeDoc('Party', { name: 'Acme', role: 'Customer' });
+test('a customer links to its General Ledger only once saved', async () => {
+  const party = newFrappeDoc('Customer', { name: 'Acme' });
   const ledger = () =>
     getActionsForDoc(party).find(({ label }) => label === 'General Ledger');
 
@@ -26,7 +26,9 @@ test('a party links to its General Ledger only once saved', async () => {
   assert.deepEqual(routes, [
     {
       path: '/report/GeneralLedger',
-      query: { defaultFilters: '{"party":"Acme"}' },
+      query: {
+        defaultFilters: '{"partyType":"Books Customer","party":"Acme"}',
+      },
     },
   ]);
 });

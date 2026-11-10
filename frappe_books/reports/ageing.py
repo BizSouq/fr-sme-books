@@ -2,17 +2,20 @@
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, date_diff, getdate
+from frappe.utils import date_diff, getdate
 
 from frappe_books.accounting import settlement
 from frappe_books.accounting.money import as_decimal, rounded, sum_decimal
-from frappe_books.reports.filters import datetime_conditions
 
 # The days since the invoice date that each range ends on; the last range has no end.
 RANGES = (30, 60, 90)
 RANGE_KEYS = ("range_0_30", "range_31_60", "range_61_90", "range_91_above")
 AMOUNT_KEYS = ("invoice_amount", "outstanding", *RANGE_KEYS)
-INVOICE_FIELDS = ["name", "party", "date", "base_grand_total", "outstanding_amount", "return_against"]
+# The party doctype and field of each report's invoices
+PARTIES = {
+	"Books Sales Invoice": ("Books Customer", "customer"),
+	"Books Purchase Invoice": ("Books Supplier", "supplier"),
+}
 
 
 def get_default_filters() -> dict:
@@ -23,9 +26,9 @@ def get_default_filters() -> dict:
 def get_columns(doctype) -> list[dict]:
 	return [
 		{"fieldname": "index", "label": "#", "fieldtype": "Int", "width": 60},
-		{"fieldname": "party", "label": _("Party"), "fieldtype": "Link", "options": "Books Party"},
+		{"fieldname": "party", "label": _("Party"), "fieldtype": "Link", "options": PARTIES[doctype][0]},
 		{"fieldname": "date", "label": _("Date"), "fieldtype": "Date"},
-		{"fieldname": "reference_name", "label": _("Invoice"), "fieldtype": "Data", "width": 150},
+		{"fieldname": "voucher_no", "label": _("Invoice"), "fieldtype": "Data", "width": 150},
 		{"fieldname": "age", "label": _("Age (Days)"), "fieldtype": "Int", "width": 90},
 		{"fieldname": "invoice_amount", "label": _("Invoice Amount"), "fieldtype": "Currency", "width": 150},
 		{"fieldname": "outstanding", "label": _("Outstanding"), "fieldtype": "Currency", "width": 150},
@@ -33,7 +36,7 @@ def get_columns(doctype) -> list[dict]:
 		{"fieldname": "range_31_60", "label": _("31-60"), "fieldtype": "Currency"},
 		{"fieldname": "range_61_90", "label": _("61-90"), "fieldtype": "Currency"},
 		{"fieldname": "range_91_above", "label": _("91+"), "fieldtype": "Currency"},
-		{"fieldname": "reference_type", "label": _("Ref Type"), "fieldtype": "Data"},
+		{"fieldname": "voucher_type", "label": _("Ref Type"), "fieldtype": "Data"},
 	]
 
 
@@ -59,14 +62,17 @@ def get_data(doctype, filters) -> list[dict]:
 
 def _outstanding_invoices(doctype, filters, to_date):
 	"""Yield the submitted invoices up to the date with what each still owed at the end of it."""
-	conditions = [["docstatus", "=", 1], *datetime_conditions("date", None, to_date)]
+	party_field = PARTIES[doctype][1]
+	conditions = [["docstatus", "=", 1], ["posting_date", "<=", to_date]]
 	if filters.get("party"):
-		conditions.append(["party", "=", filters["party"]])
+		conditions.append([party_field, "=", filters["party"]])
+	fields = ["name", party_field, "posting_date", "base_grand_total", "outstanding_amount", "return_against"]
 	invoices = frappe.get_list(
-		doctype, filters=conditions, fields=INVOICE_FIELDS, order_by="party asc, date asc"
+		doctype, filters=conditions, fields=fields, order_by=f"{party_field} asc, posting_date asc, name asc"
 	)
 	settled_later = _settled_after(doctype, [invoice.name for invoice in invoices], to_date)
 	for invoice in invoices:
+		invoice.party = invoice[party_field]
 		# A payment after the date had not settled its part yet, so it still counts as owed.
 		outstanding = as_decimal(invoice.outstanding_amount) + settlement.signed(
 			invoice, settled_later.get(invoice.name, 0)
@@ -80,21 +86,21 @@ def _settled_after(doctype, invoice_names, to_date) -> dict:
 	if not invoice_names:
 		return {}
 	references = frappe.get_all(
-		"Books Payment For",
+		"Books Payment Entry Reference",
 		filters={
-			"parenttype": "Books Payment",
-			"reference_type": doctype,
+			"parenttype": "Books Payment Entry",
+			"reference_doctype": doctype,
 			"reference_name": ["in", invoice_names],
 		},
-		fields=["parent", "reference_name", "amount"],
+		fields=["parent", "reference_name", "allocated_amount"],
 	)
 	later = set(
 		frappe.get_all(
-			"Books Payment",
+			"Books Payment Entry",
 			filters=[
 				["name", "in", list({row.parent for row in references})],
 				["docstatus", "=", 1],
-				["date", ">=", add_days(to_date, 1)],
+				["posting_date", ">", to_date],
 			],
 			pluck="name",
 		)
@@ -104,18 +110,20 @@ def _settled_after(doctype, invoice_names, to_date) -> dict:
 	settled = {}
 	for row in references:
 		if row.parent in later:
-			settled[row.reference_name] = settled.get(row.reference_name, 0) + as_decimal(row.amount)
+			settled[row.reference_name] = settled.get(row.reference_name, 0) + as_decimal(
+				row.allocated_amount
+			)
 	return settled
 
 
 def _invoice_row(doctype, invoice, outstanding, to_date) -> dict:
-	age = max(date_diff(to_date, getdate(invoice.date)), 0)
+	age = max(date_diff(to_date, getdate(invoice.posting_date)), 0)
 	row = {
 		"type": "invoice",
 		"party": invoice.party,
-		"date": getdate(invoice.date),
-		"reference_name": invoice.name,
-		"reference_type": doctype,
+		"date": getdate(invoice.posting_date),
+		"voucher_no": invoice.name,
+		"voucher_type": doctype,
 		"age": age,
 		"invoice_amount": settlement.signed(invoice, abs(as_decimal(invoice.base_grand_total))),
 		"outstanding": outstanding,
@@ -138,7 +146,7 @@ def _grouped_by_party(rows) -> list[dict]:
 		groups.setdefault(row["party"], []).append(row)
 	grouped = []
 	for party, invoices in groups.items():
-		grouped += [*invoices, {**_total_row(invoices), "party": party, "reference_name": _("Total")}, {}]
+		grouped += [*invoices, {**_total_row(invoices), "party": party, "voucher_no": _("Total")}, {}]
 	return grouped
 
 

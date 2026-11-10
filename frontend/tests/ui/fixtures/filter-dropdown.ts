@@ -53,7 +53,7 @@ async function mount() {
   });
   const invoices = Array.from({ length: 60 }, (_, index) => ({
     name: `INV-${index + 1}`,
-    party: 'Test customer',
+    customer: 'Test customer',
     date: '2024-01-01 00:00:00',
     docstatus: 1,
     grand_total: 100,
@@ -108,7 +108,10 @@ async function mount() {
     },
     { 'Books Item': itemFields }
   );
-  fyo.singles.SystemSettings = { currency: 'USD', display_precision: 2 } as any;
+  fyo.singles.SystemSettings = {
+    currency: 'USD',
+    currency_precision: 2,
+  } as any;
   const list = ref<InstanceType<typeof List>>();
   const filter = ref<InstanceType<typeof FilterDropdown>>();
   const app = createApp({

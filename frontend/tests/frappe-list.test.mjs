@@ -51,7 +51,7 @@ test("a list page and its count come from Frappe's list query, newest first", as
     filters: [['item_type', '=', 'Product']],
     orFilters: [
       ['name', 'like', '%pe%'],
-      ['item_usage', 'like', '%pe%'],
+      ['item_group', 'like', '%pe%'],
     ],
     start: 50,
     limit: 50,
@@ -70,7 +70,7 @@ test("a list page and its count come from Frappe's list query, newest first", as
     filters: [['item_type', '=', 'Product']],
     or_filters: [
       ['name', 'like', '%pe%'],
-      ['item_usage', 'like', '%pe%'],
+      ['item_group', 'like', '%pe%'],
     ],
     order_by: 'creation desc',
     limit_start: 50,
@@ -81,7 +81,7 @@ test("a list page and its count come from Frappe's list query, newest first", as
     filters: [['item_type', '=', 'Product']],
     or_filters: [
       ['name', 'like', '%pe%'],
-      ['item_usage', 'like', '%pe%'],
+      ['item_group', 'like', '%pe%'],
     ],
   });
 });
@@ -177,7 +177,7 @@ test("link options come from Frappe's link search, letters matched in order", as
     'Item',
     ' rce ',
     [
-      ['item_usage', 'not in', ['Purchases']],
+      ['item_type', '=', 'Product'],
       ['track_item', '=', 1],
     ],
     50
@@ -195,7 +195,7 @@ test("link options come from Frappe's link search, letters matched in order", as
     doctype: 'Books Item',
     txt: 'r%c%e',
     filters: [
-      ['item_usage', 'not in', ['Purchases']],
+      ['item_type', '=', 'Product'],
       ['track_item', '=', 1],
     ],
     filter_fields: [],

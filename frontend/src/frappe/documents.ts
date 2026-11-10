@@ -35,7 +35,10 @@ export function newFrappeDoc(
   return doc;
 }
 
-/** What the source DocType's server `mapper`, like an invoice's make_payment, builds from its document `sourceName`. */
+/**
+ * What the source DocType's server `mapper`, like an invoice's make_payment,
+ * builds from its document `sourceName`.
+ */
 export async function getMappedValues(
   sourceSchemaName: string,
   sourceName: string,

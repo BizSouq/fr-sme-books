@@ -4,18 +4,51 @@ import {
   Action,
   FiltersMap,
   HiddenMap,
+  LinkedRecords,
   ListViewSettings,
   ValidationMap,
 } from 'fyo/model/types';
 import { ValidationError } from 'fyo/utils/errors';
 import { getMappedDocAction } from 'models/helpers';
+import { getItemPrices } from 'models/baseModels/ItemPrice/ItemPrice';
 import { isHsnCodeHidden } from 'models/regionalModels/in/hsnCode';
 import { ModelNameEnum } from 'models/types';
 import { Money } from 'pesa';
+import { getCompanyRowValue, setCompanyRowValue } from 'src/frappe/companyRow';
 import { FrappeDoc } from 'src/frappe/document';
-import { getFrappeRows } from 'src/frappe/list';
-import { AccountRootTypeEnum } from '../Account/types';
-import { UOMConversionItem } from './UOMConversionItem';
+import type { ClientField, Presentation } from 'src/frappe/schema';
+import { ItemBarcode } from './ItemBarcode';
+import {
+  getExpenseAccountFilters,
+  getIncomeAccountFilters,
+  ItemDefault,
+} from './ItemDefault';
+import { ItemTax } from './ItemTax';
+import { UOMConversionDetail } from './UOMConversionDetail';
+
+const DEFAULT_FIELDNAMES = [
+  'income_account',
+  'expense_account',
+  'default_warehouse',
+];
+
+/** A field of the current company's Item Defaults row, shown after the field `after`. */
+function defaultField(
+  fieldname: string,
+  label: string,
+  target: string,
+  after: string
+): ClientField {
+  return {
+    fieldname,
+    fieldtype: 'Link',
+    label,
+    target,
+    create: false,
+    companyTable: 'item_defaults',
+    after,
+  } as ClientField;
+}
 
 /**
  * Books Item, served by Frappe. The DocType owns its fields, defaults and
@@ -23,41 +56,62 @@ import { UOMConversionItem } from './UOMConversionItem';
  */
 export class Item extends FrappeDoc {
   static override doctype = 'Books Item';
-  static override presentation = {
+  static override presentation: Presentation = {
     label: 'Item',
-    nameField: { label: 'Item Name', placeholder: 'Item Name' },
     quickEditFields: [
-      'rate',
-      'unit',
+      'standard_rate',
+      'stock_uom',
       'item_type',
-      'item_usage',
-      'tax',
+      'taxes',
       'description',
-      'income_account',
-      'expense_account',
-      'barcode',
-      'hsn_code',
-      'track_item',
+      ...DEFAULT_FIELDNAMES,
+      'barcodes',
+      'gst_hsn_code',
+      'is_stock_item',
     ],
+    // The fields edit the current company's Item Defaults row.
+    clientFields: [
+      defaultField(
+        'income_account',
+        'Income Account',
+        'Account',
+        'item_defaults'
+      ),
+      defaultField(
+        'expense_account',
+        'Expense Account',
+        'Account',
+        'income_account'
+      ),
+      defaultField(
+        'default_warehouse',
+        'Default Warehouse',
+        'Warehouse',
+        'is_stock_item'
+      ),
+    ],
+    fields: {
+      item_defaults: { hidden: true },
+      taxes: { emptyMessage: 'No taxes' },
+      barcodes: { emptyMessage: 'No barcodes' },
+    },
   };
-  static override rowModels = { uom_conversions: UOMConversionItem };
+  static override rowModels = {
+    item_defaults: ItemDefault,
+    taxes: ItemTax,
+    barcodes: ItemBarcode,
+    uoms: UOMConversionDetail,
+  };
   static override previewMethod = 'preview';
 
   // The server checks these too; mirrored to show the message at the field.
   validations: ValidationMap = {
-    barcode: (value: DocValue) => {
-      if (value && !(value as string).match(/^\d{12}$/)) {
-        throw new ValidationError(
-          this.fyo.t`Barcode must be exactly 12 digits.`
-        );
-      }
-    },
-    rate: (value: DocValue) => {
+    standard_rate: (value: DocValue) => {
       if ((value as Money).isNegative()) {
         throw new ValidationError(this.fyo.t`Rate can't be negative.`);
       }
     },
-    hsn_code: (value: DocValue) => {
+    gst_hsn_code: (value: DocValue) => {
       if (isHsnCodeHidden(this.fyo)) {
         return;
       }
@@ -68,34 +122,45 @@ export class Item extends FrappeDoc {
     },
   };
 
-  // Fields of features turned off in the settings. The DocType's depends_on hides the rest.
-  hidden: HiddenMap = {
-    hsn_code: () => isHsnCodeHidden(this.fyo),
-    track_item: () => !this.fyo.singles.AccountingSettings?.enable_inventory,
-    barcode: () => !this.fyo.singles.InventorySettings?.enable_barcodes,
-    has_batch: () => !this.fyo.singles.InventorySettings?.enable_batches,
-    has_serial_number: () =>
-      !this.fyo.singles.InventorySettings?.enable_serial_number,
-    uom_conversions: () =>
-      !this.fyo.singles.InventorySettings?.enable_uom_conversions,
-    item_group: () => !this.fyo.singles.AccountingSettings?.enableitem_group,
+  static filters: FiltersMap = {
+    income_account: () => getIncomeAccountFilters(),
+    expense_account: (doc: FrappeDoc) => getExpenseAccountFilters(doc),
   };
 
-  static filters: FiltersMap = {
-    income_account: () => [
-      ['is_group', '=', 0],
-      ['root_type', '=', AccountRootTypeEnum.Income],
-    ],
-    expense_account: (doc) => [
-      ['is_group', '=', 0],
-      [
-        'root_type',
-        '=',
-        doc.track_item
-          ? AccountRootTypeEnum.Liability
-          : AccountRootTypeEnum.Expense,
-      ],
-    ],
+  get income_account(): DocValue {
+    return getCompanyRowValue(this, 'item_defaults', 'income_account');
+  }
+
+  set income_account(value: DocValue) {
+    setCompanyRowValue(this, 'item_defaults', 'income_account', value);
+  }
+
+  get expense_account(): DocValue {
+    return getCompanyRowValue(this, 'item_defaults', 'expense_account');
+  }
+
+  set expense_account(value: DocValue) {
+    setCompanyRowValue(this, 'item_defaults', 'expense_account', value);
+  }
+
+  get default_warehouse(): DocValue {
+    return getCompanyRowValue(this, 'item_defaults', 'default_warehouse');
+  }
+
+  set default_warehouse(value: DocValue) {
+    setCompanyRowValue(this, 'item_defaults', 'default_warehouse', value);
+  }
+
+  // Fields of features turned off in the settings. The DocType's depends_on hides the rest.
+  hidden: HiddenMap = {
+    default_warehouse: () => !this.fyo.isFeatureOn('enable_inventory'),
+    gst_hsn_code: () => isHsnCodeHidden(this.fyo),
+    is_stock_item: () => !this.fyo.isFeatureOn('enable_inventory'),
+    barcodes: () => !this.fyo.isFeatureOn('show_barcode_field'),
+    has_batch_no: () => !this.fyo.isFeatureOn('enable_batches'),
+    has_serial_no: () => !this.fyo.isFeatureOn('enable_serial_number'),
+    uoms: () => !this.fyo.isFeatureOn('enable_uom_conversions'),
+    item_group: () => !this.fyo.isFeatureOn('enable_item_group'),
   };
 
   static getActions(fyo: Fyo): Action[] {
@@ -103,37 +168,25 @@ export class Item extends FrappeDoc {
       getMappedDocAction(fyo, {
         group: fyo.t`Create`,
         label: fyo.t`Sales Invoice`,
-        condition: (doc) => !doc.notInserted && doc.item_usage !== 'Purchases',
+        condition: (doc) => !doc.notInserted,
         target: () => [ModelNameEnum.SalesInvoice, 'make_sales_invoice'],
       }),
       getMappedDocAction(fyo, {
         group: fyo.t`Create`,
         label: fyo.t`Purchase Invoice`,
-        condition: (doc) => !doc.notInserted && doc.item_usage !== 'Sales',
+        condition: (doc) => !doc.notInserted,
         target: () => [ModelNameEnum.PurchaseInvoice, 'make_purchase_invoice'],
       }),
     ];
   }
 
-  static getListViewSettings(): ListViewSettings {
-    return {
-      columns: ['name', 'unit', 'tax', 'rate'],
-    };
+  static override getLinkedRecords(fyo: Fyo): LinkedRecords | undefined {
+    return getItemPrices(fyo, 'item_code', fyo.t`No item prices for this item`);
   }
 
-  /** The documents that take all the items; the server refuses one kept for the other side. */
-  static async getInvoiceSchemaNames(
-    fyo: Fyo,
-    names: string[]
-  ): Promise<string[]> {
-    const rows = await getFrappeRows(fyo, ModelNameEnum.Item, names, [
-      'item_usage',
-    ]);
-    const usages = rows.map(({ item_usage }) => item_usage);
-    const sales = [ModelNameEnum.SalesQuote, ModelNameEnum.SalesInvoice];
-    return [
-      ...(usages.includes('Purchases') ? [] : sales),
-      ...(usages.includes('Sales') ? [] : [ModelNameEnum.PurchaseInvoice]),
-    ];
+  static getListViewSettings(): ListViewSettings {
+    return {
+      columns: ['name', 'stock_uom', 'standard_rate'],
+    };
   }
 }

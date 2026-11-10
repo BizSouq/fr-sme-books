@@ -30,6 +30,15 @@ export abstract class Report extends Observable<RawValue> {
   static serverReportName: string;
   static isInventory = false;
   static phoneLayout?: PhoneLayout;
+  /** The filters that pick one document's entries: its doctype and name. */
+  static referenceFilters: [type: string, name: string] = [
+    'voucherType',
+    'voucherNo',
+  ];
+  /** The filters of a date range: From and To. */
+  static dateFilters: [from: string, to: string] = ['fromDate', 'toDate'];
+  /** The filters that pick one party's entries: its doctype and name. */
+  static partyFilters: [type: string, name: string] = ['partyType', 'party'];
 
   fyo: Fyo;
   columns: ColumnField[] = [];
@@ -59,6 +68,57 @@ export abstract class Report extends Observable<RawValue> {
 
   get phoneLayout(): PhoneLayout | undefined {
     return (this.constructor as typeof Report).phoneLayout;
+  }
+
+  get referenceFilters(): [type: string, name: string] {
+    return (this.constructor as typeof Report).referenceFilters;
+  }
+
+  /** Select filters shown as tabs, while their options fit. */
+  get tabFilters(): string[] {
+    return ['periodicity'];
+  }
+
+  get dateFilters(): [from: string, to: string] {
+    return (this.constructor as typeof Report).dateFilters;
+  }
+
+  /** The filter values that show one document's entries, which all post on its date. */
+  static getVoucherFilters(
+    doctype: string,
+    name: string,
+    date: DocValue
+  ): Record<string, DocValue> {
+    const [typeFilter, nameFilter] = this.referenceFilters;
+    const [fromFilter, toFilter] = this.dateFilters;
+    return {
+      [typeFilter]: doctype,
+      [nameFilter]: name,
+      [fromFilter]: date,
+      [toFilter]: date,
+    };
+  }
+
+  /**
+   * Ref filters pick one document, so they last only while a link sets them,
+   * as do the dates its ledger link sets with them; cleared dates take defaults.
+   */
+  getDocumentFilterResets(): Record<string, DocValue> {
+    const [typeFilter, nameFilter] = this.referenceFilters;
+    const resets = { [typeFilter]: 'All', [nameFilter]: null };
+    const [fromFilter, toFilter] = this.dateFilters;
+    return this.get(nameFilter)
+      ? { ...resets, [fromFilter]: null, [toFilter]: null }
+      : resets;
+  }
+
+  /** The fiscal year the date presets offer, from Accounting Settings. */
+  getFiscalYear(): { start?: Date; end?: Date } {
+    const settings = this.fyo.singles.AccountingSettings;
+    return {
+      start: settings?.year_start_date as Date | undefined,
+      end: settings?.year_end_date as Date | undefined,
+    };
   }
 
   /** Loads the report once with the given filter values set. */
@@ -191,7 +251,7 @@ export abstract class Report extends Observable<RawValue> {
       return '';
     }
 
-    if (column.fieldname === 'reference_type') {
+    if (column.fieldname === 'voucher_type') {
       return getDoctypeLabel(String(rawValue));
     }
 

@@ -9,11 +9,12 @@
         :key="item.name"
         type="button"
         class="flex flex-col gap-2 rounded-6 border border-outline-gray-1 bg-surface-base p-1.5 pb-2.5 text-start transition-colors hover:border-outline-gray-2 hover:bg-surface-gray-1 active:bg-surface-gray-2"
-        :aria-label="t`Add ${item.name}`"
+        :aria-label="t`Add ${item.itemName}`"
         @click="$emit('addItem', item)"
       >
         <div
-          class="relative flex h-21 w-full items-center justify-center overflow-hidden rounded-4 bg-surface-gray-2"
+          class="relative flex h-21 w-full items-center justify-center overflow-hidden rounded-4"
+          :class="getItemTint(item.itemName)"
         >
           <img
             v-if="item.image && !brokenImages.has(item.image)"
@@ -22,18 +23,23 @@
             class="h-full w-full object-cover"
             @error="brokenImages.add(item.image)"
           />
-          <span v-else class="select-none text-4xl-semibold text-ink-gray-4">
-            {{ getItemInitials(item.name) }}
+          <span v-else class="select-none text-4xl-semibold">
+            {{ getItemInitials(item.itemName) }}
           </span>
           <FrappeBadge
+            v-if="item.trackItem"
             class="absolute end-1.5 top-1.5"
             :theme="item.availableQty > 0 ? 'green' : 'red'"
             :label="t`${item.availableQty} in stock`"
           />
         </div>
         <div class="flex flex-col gap-1 px-1">
-          <span class="text-p-base-medium text-ink-gray-8">{{ item.name }}</span>
-          <span class="text-sm tabular-nums text-ink-gray-6">
+          <span class="text-p-base-medium text-ink-gray-8">{{
+            item.itemName
+          }}</span>
+          <span
+            class="text-sm-medium tabular-nums text-[color:var(--books-brand)]"
+          >
             {{ fyo.format(item.rate, 'Currency') }}
           </span>
         </div>
@@ -48,7 +54,7 @@ import {
   Badge as FrappeBadge,
   ScrollArea as FrappeScrollArea,
 } from 'frappe-ui';
-import { getItemInitials } from 'src/utils/pos';
+import { getItemInitials, getItemTint } from 'src/utils/pos';
 import { POSItem } from './types';
 
 export default defineComponent({
@@ -64,6 +70,6 @@ export default defineComponent({
   data() {
     return { brokenImages: new Set<string>() };
   },
-  methods: { getItemInitials },
+  methods: { getItemInitials, getItemTint },
 });
 </script>

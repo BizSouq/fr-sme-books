@@ -27,6 +27,7 @@
   <div v-else-if="isMobile" :style="containerStyles">
     <MobileFieldTrigger
       :label="showLabel ? df.label : undefined"
+      :description="showLabel ? df.sub_label : undefined"
       :required="isRequired"
       :placeholder="inputPlaceholder"
       :display-value="linkValue || String(value ?? '')"
@@ -67,7 +68,7 @@
     :trigger="triggerButton ? 'button' : 'input'"
     v-bind="
       triggerButton
-        ? { query: searchQuery, 'onUpdate:query': searchOptions }
+        ? { query: searchQuery, 'onUpdate:query': filterByQuery }
         : {}
     "
     class="min-w-0"
@@ -104,16 +105,19 @@
         </template>
       </FrappeButton>
     </template>
+    <!-- frappe-ui's footer slot is unpadded; inset Clear as the options are, below a rule as MultiSelect's footer is. -->
     <template v-if="triggerButton && value" #footer="{ clear, close }">
-      <FrappeButton
-        class="w-full"
-        variant="ghost"
-        :label="t`Clear`"
-        @click="
-          clear();
-          close();
-        "
-      />
+      <div class="border-t border-outline-gray-1 p-1">
+        <FrappeButton
+          class="w-full"
+          variant="ghost"
+          :label="t`Clear`"
+          @click="
+            clear();
+            close();
+          "
+        />
+      </div>
     </template>
     <template v-if="inlineLabel && !triggerButton" #prefix>
       <span class="shrink-0 text-base text-ink-gray-5">{{ df.label }}</span>
@@ -182,7 +186,7 @@ export default {
     ReadOnlyValue,
   },
   extends: Base,
-  emits: ['focus', 'enter', 'search'],
+  emits: ['focus', 'enter', 'search', 'close'],
   props: {
     closeOnEnter: { type: Boolean, default: false },
     showClearButton: { type: Boolean, default: false },
@@ -233,7 +237,10 @@ export default {
     },
     emptyMessage() {
       const { schemaName, fieldname } = this.df ?? {};
-      const getMessage = getModel(schemaName)?.emptyMessages?.[fieldname];
+      // An import grid's cells have no document to word the message by.
+      const getMessage = this.doc
+        ? getModel(schemaName)?.emptyMessages?.[fieldname]
+        : undefined;
       return getMessage?.(this.doc) ?? this.t`No results found`;
     },
     linkSchemaName() {
@@ -409,11 +416,15 @@ export default {
     onComboboxBlur() {
       this.isFocused = false;
       this.clearUnlistedValue();
+      if (!this.isDropdownOpen) {
+        this.$emit('close');
+      }
     },
     onPickerOpen(isOpen) {
       if (!isOpen) {
         this.searchQuery = '';
         this.clearUnlistedValue();
+        this.$emit('close');
       }
     },
     /** Frappe desk's Autocomplete takes a typed label as its value and drops one not listed. */
@@ -431,8 +442,12 @@ export default {
       const option = this.options.find(({ label }) => label === this.value);
       this.triggerChange(option?.value ?? '');
     },
+    /** `close` tells a parent the picking is over, with or without a new value. */
     onComboboxOpen(isOpen) {
       this.isDropdownOpen = isOpen;
+      if (!isOpen) {
+        this.$emit('close');
+      }
       // Button mode's search box starts empty on every open.
       if (!isOpen || this.triggerButton) {
         this.searchQuery = '';
@@ -442,12 +457,12 @@ export default {
       }
     },
     /** Button mode's search only narrows the options; picking one sets the value. */
-    searchOptions(query) {
+    filterByQuery(query) {
       this.searchQuery = query;
       this.updateSuggestions(query);
     },
     onComboboxInput(event) {
-      // Button mode's search box only narrows the options (searchOptions).
+      // Button mode's search box only narrows the options (filterByQuery).
       if (
         this.isReadOnly ||
         this.triggerButton ||
@@ -506,7 +521,7 @@ export default {
       }
     },
     async routeToLinkedDoc() {
-      if (!this.linkSchemaName || !this.value) {
+      if (!this.canLink) {
         return;
       }
       // Imported on use: src/utils/ui imports the router, whose pages import this control.

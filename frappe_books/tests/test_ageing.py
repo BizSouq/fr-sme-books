@@ -10,9 +10,10 @@ from frappe_books.reports.filters import get_default_filters
 from frappe_books.tests.accounting import (
 	enable_features,
 	make_account,
+	make_customer,
 	make_invoice,
 	make_item,
-	make_party,
+	make_supplier,
 )
 
 RECEIVABLE = "Books Accounts Receivable"
@@ -30,7 +31,7 @@ class IntegrationTestAgeingReports(IntegrationTestCase):
 		self.income = make_account("Ageing Income", root_type="Income", account_type="Income Account")
 		self.expense = make_account("Ageing Expense", root_type="Expense", account_type="Expense Account")
 		self.item = make_item(self.income.name, self.expense.name)
-		self.customer = make_party(self.receivable.name).name
+		self.customer = make_customer(self.receivable.name).name
 
 	def test_opens_on_today(self):
 		self.assertEqual(get_default_filters(RECEIVABLE), {"to_date": getdate()})
@@ -79,7 +80,7 @@ class IntegrationTestAgeingReports(IntegrationTestCase):
 		rows = self._entries(_run(RECEIVABLE, party=self.customer))
 
 		self.assertEqual(
-			[(row["reference_name"], row["outstanding"]) for row in rows], [(part.name, Decimal(150))]
+			[(row["voucher_no"], row["outstanding"]) for row in rows], [(part.name, Decimal(150))]
 		)
 
 	def test_a_payment_after_the_date_still_counts_as_owed_on_it(self):
@@ -121,7 +122,7 @@ class IntegrationTestAgeingReports(IntegrationTestCase):
 		self.assertEqual(rows[-1]["outstanding"], 0)
 
 	def test_grouped_by_party_each_party_ends_with_its_total(self):
-		other = make_party(self.receivable.name).name
+		other = make_customer(self.receivable.name).name
 		self._invoice()
 		self._invoice(party=other)
 
@@ -134,23 +135,24 @@ class IntegrationTestAgeingReports(IntegrationTestCase):
 		self.assertEqual([row.get("type") for row in rows[start : start + 3]], ["invoice", "total", None])
 
 	def test_payables_age_purchase_invoices(self):
-		supplier = make_party(self.payable.name, role="Supplier").name
+		supplier = make_supplier(self.payable.name).name
 		invoice = make_invoice(
 			"Books Purchase Invoice",
 			supplier,
 			self.payable.name,
 			self.item.name,
 			self.expense.name,
-			date=add_days(nowdate(), -40),
+			posting_date=add_days(nowdate(), -40),
 		)
-		invoice.items[0].item_discount_percent = 0
+		invoice.items[0].discount_percentage = 0
+		invoice.items[0].discount_amount = 0
 		invoice.save()
 		invoice.submit()
 
 		rows = self._entries(_run(PAYABLE, party=supplier))
 
 		self.assertEqual(
-			[(row["reference_name"], row["reference_type"], row["range_31_60"]) for row in rows],
+			[(row["voucher_no"], row["voucher_type"], row["range_31_60"]) for row in rows],
 			[(invoice.name, "Books Purchase Invoice", Decimal(200))],
 		)
 
@@ -161,9 +163,10 @@ class IntegrationTestAgeingReports(IntegrationTestCase):
 			self.receivable.name,
 			self.item.name,
 			self.income.name,
-			date=add_days(nowdate(), -days_ago),
+			posting_date=add_days(nowdate(), -days_ago),
 		)
-		invoice.items[0].item_discount_percent = 0
+		invoice.items[0].discount_percentage = 0
+		invoice.items[0].discount_amount = 0
 		invoice.save()
 		invoice.submit()
 		return invoice
@@ -171,16 +174,21 @@ class IntegrationTestAgeingReports(IntegrationTestCase):
 	def _pay(self, invoice, amount):
 		payment = frappe.get_doc(
 			{
-				"doctype": "Books Payment",
-				"party": invoice.party,
-				"date": frappe.utils.now_datetime(),
+				"doctype": "Books Payment Entry",
+				"party_type": "Books Customer",
+				"party": invoice.customer,
+				"posting_date": nowdate(),
 				"payment_type": "Receive",
-				"account": self.receivable.name,
-				"payment_account": self.cash.name,
-				"payment_method": "Cash",
-				"amount": amount,
-				"payment_references": [
-					{"reference_type": invoice.doctype, "reference_name": invoice.name, "amount": amount}
+				"paid_from": self.receivable.name,
+				"paid_to": self.cash.name,
+				"mode_of_payment": "Cash",
+				"paid_amount": amount,
+				"references": [
+					{
+						"reference_doctype": invoice.doctype,
+						"reference_name": invoice.name,
+						"allocated_amount": amount,
+					}
 				],
 			}
 		).insert()

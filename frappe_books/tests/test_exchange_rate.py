@@ -9,9 +9,9 @@ from frappe_books.currency import RATES_URL, get_exchange_rate
 from frappe_books.tests.accounting import (
 	foreign_currency,
 	make_account,
+	make_customer,
 	make_invoice,
 	make_item,
-	make_party,
 )
 
 REQUEST = "frappe_books.currency.make_get_request"
@@ -43,10 +43,10 @@ class IntegrationTestExchangeRate(IntegrationTestCase):
 		receivable = make_account("FX Receivable", account_type="Receivable")
 		income = make_account("FX Sales", root_type="Income", account_type="Income Account")
 		item = make_item(income.name, make_account("FX Expense", root_type="Expense").name)
-		party = make_party(receivable.name, currency=foreign_currency())
+		party = make_customer(receivable.name, default_currency=foreign_currency())
 
 		with patch("frappe_books.accounting.invoice.get_exchange_rate", return_value=80) as rate:
 			invoice = make_invoice("Books Sales Invoice", party.name, receivable.name, item.name, income.name)
 
-		self.assertEqual(invoice.exchange_rate, 80)
-		rate.assert_called_with(invoice.currency, company_currency(), invoice.date)
+		self.assertEqual(invoice.conversion_rate, 80)
+		rate.assert_called_with(invoice.currency, company_currency(), invoice.posting_date)

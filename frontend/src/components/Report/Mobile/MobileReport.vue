@@ -54,21 +54,23 @@
         @click="emit('clear-filters')"
       />
     </EmptyState>
-    <MobileReportTree
-      v-else-if="tree"
-      :rows="treeRows"
-      :values="valueColumns"
-      :label-header="report.columns[tree.headerIndex]?.label ?? ''"
-      :grouped="!!tree.layout.groupBy"
-      :icon="tree.layout.icon"
-      :scroll="isScrollable"
-      @open="openDetail"
-    />
-    <MobileReportEntries
-      v-else-if="entries"
-      :entries="entries"
-      @open="openDetail"
-    />
+    <template v-else>
+      <MobileReportTree
+        v-if="tree"
+        :rows="treeRows"
+        :values="valueColumns"
+        :label-header="report.columns[tree.headerIndex]?.label ?? ''"
+        :grouped="!!tree.layout.groupBy"
+        :icon="tree.layout.icon"
+        :scroll="isScrollable"
+        @open="openDetail"
+      />
+      <MobileReportEntries
+        v-else-if="entries"
+        :entries="entries"
+        @open="openDetail"
+      />
+    </template>
 
     <MobileReportDetail
       v-model:open="detailOpen"

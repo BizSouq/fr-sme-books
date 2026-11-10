@@ -1,17 +1,18 @@
 from collections import defaultdict
 from decimal import Decimal
 
-import frappe
 from frappe.tests import IntegrationTestCase
 
 from frappe_books.accounting.returns import map_return
 from frappe_books.tests.accounting import (
 	ledger_entries,
 	make_account,
+	make_customer,
 	make_invoice,
 	make_item,
-	make_party,
+	make_supplier,
 	make_tax,
+	set_company_value,
 )
 
 NO_FOLLOW_UPS = {"make_auto_payment": 0, "make_auto_stock_transfer": 0}
@@ -29,7 +30,7 @@ class IntegrationTestInvoicePosting(IntegrationTestCase):
 		self.expense = make_account("Purchases", root_type="Expense", account_type="Expense Account").name
 		self.tax_account = make_account("Tax", root_type="Liability", account_type="Tax").name
 		self.discount = make_account("Discount", root_type="Expense", account_type="Expense Account").name
-		frappe.db.set_single_value("Books Accounting Settings", "discount_account", self.discount)
+		set_company_value("default_discount_account", self.discount)
 		self.item = make_item(self.income, self.expense, make_tax(self.tax_account).name).name
 
 	def test_party_and_discount_post_opposite_the_items_and_taxes(self):
@@ -57,9 +58,9 @@ class IntegrationTestInvoicePosting(IntegrationTestCase):
 				self.assertEqual(outstanding, Decimal("-198" if is_return else "198"))
 
 	def submit_invoice(self, doctype, is_return):
-		role = "Supplier" if doctype == "Books Purchase Invoice" else "Customer"
-		party = make_party(self.ledgers[doctype], role=role).name
-		item_account = self.expense if role == "Supplier" else self.income
+		is_purchase = doctype == "Books Purchase Invoice"
+		party = (make_supplier if is_purchase else make_customer)(self.ledgers[doctype]).name
+		item_account = self.expense if is_purchase else self.income
 		invoice = make_invoice(
 			doctype, party, self.ledgers[doctype], self.item, item_account, **NO_FOLLOW_UPS
 		).submit()

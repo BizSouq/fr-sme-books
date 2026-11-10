@@ -1,0 +1,42 @@
+# Copyright (c) 2026, Frappe Technologies Pvt. Ltd. and contributors
+# For license information, please see license.txt
+
+import frappe
+
+from frappe_books.accounting.party import PartyController, map_invoice
+
+
+class BooksSupplier(PartyController):
+	# begin: auto-generated types
+	# This code is auto-generated. Do not modify anything in this block.
+
+	from typing import TYPE_CHECKING
+
+	if TYPE_CHECKING:
+		from frappe.types import DF
+
+		from frappe_books.frappe_books.doctype.books_party_account.books_party_account import (
+			BooksPartyAccount,
+		)
+
+		accounts: DF.Table[BooksPartyAccount]
+		default_currency: DF.Link | None
+		email_id: DF.ReadOnly | None
+		gst_category: DF.Literal["Registered Regular", "Unregistered"]
+		gstin: DF.Data | None
+		image: DF.AttachImage | None
+		mobile_no: DF.ReadOnly | None
+		outstanding_amount: DF.Currency
+		primary_address: DF.TextEditor | None
+		supplier_name: DF.Data
+		supplier_primary_address: DF.Link | None
+		supplier_primary_contact: DF.Link | None
+		tax_id: DF.Data | None
+	# end: auto-generated types
+
+	_DOCTYPE_NAME = "Books Supplier"
+
+
+@frappe.whitelist()
+def make_purchase_invoice(source_name: str):
+	return map_invoice("Books Supplier", source_name, "Books Purchase Invoice")

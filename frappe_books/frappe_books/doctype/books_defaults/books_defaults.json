@@ -10,31 +10,31 @@
   "sales_payment_account",
   "purchase_payment_account",
   "auto_stock_transfer_section_break_4",
-  "shipment_location",
+  "delivery_note_location",
   "purchase_receipt_location",
   "number_series_section_break_7",
   "sales_invoice_number_series",
   "purchase_invoice_number_series",
   "journal_entry_number_series",
   "payment_number_series",
-  "stock_movement_number_series",
-  "shipment_number_series",
+  "stock_entry_number_series",
+  "delivery_note_number_series",
   "purchase_receipt_number_series",
-  "sales_quote_number_series",
+  "quotation_number_series",
   "terms_section_break_16",
   "sales_invoice_terms",
   "purchase_invoice_terms",
-  "shipment_terms",
+  "delivery_note_terms",
   "purchase_receipt_terms",
   "print_templates_section_break_21",
-  "sales_quote_print_template",
+  "quotation_print_template",
   "sales_invoice_print_template",
   "purchase_invoice_print_template",
   "journal_entry_print_template",
   "payment_print_template",
-  "shipment_print_template",
+  "delivery_note_print_template",
   "purchase_receipt_print_template",
-  "stock_movement_print_template",
+  "stock_entry_print_template",
   "pos_print_template",
   "point_of_sale_section_break_31",
   "pos_customer",
@@ -71,16 +71,16 @@
    "label": "Auto Stock Transfer"
   },
   {
-   "fieldname": "shipment_location",
+   "fieldname": "delivery_note_location",
    "fieldtype": "Link",
-   "label": "Shipment Location",
-   "options": "Books Location"
+   "label": "Delivery Note Warehouse",
+   "options": "Books Warehouse"
   },
   {
    "fieldname": "purchase_receipt_location",
    "fieldtype": "Link",
-   "label": "Purchase Receipt Location",
-   "options": "Books Location"
+   "label": "Purchase Receipt Warehouse",
+   "options": "Books Warehouse"
   },
   {
    "fieldname": "number_series_section_break_7",
@@ -112,15 +112,15 @@
    "options": "Books Number Series"
   },
   {
-   "fieldname": "stock_movement_number_series",
+   "fieldname": "stock_entry_number_series",
    "fieldtype": "Link",
-   "label": "Stock Movement Number Series",
+   "label": "Stock Entry Number Series",
    "options": "Books Number Series"
   },
   {
-   "fieldname": "shipment_number_series",
+   "fieldname": "delivery_note_number_series",
    "fieldtype": "Link",
-   "label": "Shipment Number Series",
+   "label": "Delivery Note Number Series",
    "options": "Books Number Series"
   },
   {
@@ -130,9 +130,9 @@
    "options": "Books Number Series"
   },
   {
-   "fieldname": "sales_quote_number_series",
+   "fieldname": "quotation_number_series",
    "fieldtype": "Link",
-   "label": "Sales Quote Number Series",
+   "label": "Quotation Number Series",
    "options": "Books Number Series"
   },
   {
@@ -151,9 +151,9 @@
    "label": "Purchase Invoice Terms"
   },
   {
-   "fieldname": "shipment_terms",
+   "fieldname": "delivery_note_terms",
    "fieldtype": "Text",
-   "label": "Shipment Terms"
+   "label": "Delivery Note Terms"
   },
   {
    "fieldname": "purchase_receipt_terms",
@@ -166,11 +166,11 @@
    "label": "Print Templates"
   },
   {
-   "fieldname": "sales_quote_print_template",
+   "fieldname": "quotation_print_template",
    "fieldtype": "Link",
    "is_virtual": 1,
-   "label": "Sales Quote Print Template",
-   "link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Books Sales Quote\"]]",
+   "label": "Quotation Print Template",
+   "link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Books Quotation\"]]",
    "options": "Print Format"
   },
   {
@@ -202,15 +202,15 @@
    "fieldtype": "Link",
    "is_virtual": 1,
    "label": "Payment Print Template",
-   "link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Books Payment\"]]",
+   "link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Books Payment Entry\"]]",
    "options": "Print Format"
   },
   {
-   "fieldname": "shipment_print_template",
+   "fieldname": "delivery_note_print_template",
    "fieldtype": "Link",
    "is_virtual": 1,
-   "label": "Shipment Print Template",
-   "link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Books Shipment\"]]",
+   "label": "Delivery Note Print Template",
+   "link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Books Delivery Note\"]]",
    "options": "Print Format"
   },
   {
@@ -222,11 +222,11 @@
    "options": "Print Format"
   },
   {
-   "fieldname": "stock_movement_print_template",
+   "fieldname": "stock_entry_print_template",
    "fieldtype": "Link",
    "is_virtual": 1,
-   "label": "Stock Movement Print Template",
-   "link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Books Stock Movement\"]]",
+   "label": "Stock Entry Print Template",
+   "link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Books Stock Entry\"]]",
    "options": "Print Format"
   },
   {
@@ -245,7 +245,7 @@
    "fieldname": "pos_customer",
    "fieldtype": "Link",
    "label": "POS Customer",
-   "options": "Books Party"
+   "options": "Books Customer"
   },
   {
    "fieldname": "pos_cash_denominations",
@@ -293,7 +293,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-05 14:00:00.000000",
+ "modified": "2026-10-30 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Frappe Books",
  "name": "Books Defaults",
@@ -324,6 +324,12 @@
    "print": 1,
    "read": 1,
    "role": "Books User"
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Books Cashier"
   }
  ],
  "row_format": "Dynamic",

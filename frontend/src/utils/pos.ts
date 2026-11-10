@@ -2,6 +2,7 @@ import { t } from 'fyo';
 import { ValidationError } from 'fyo/utils/errors';
 import type { Item } from 'models/baseModels/Item/Item';
 import { validatePOSStock } from 'models/inventory/posStock';
+import type { SalesInvoiceItem } from 'models/invoices/InvoiceItem';
 import type { SalesInvoice } from 'models/invoices/SalesInvoice';
 import { ModelNameEnum } from 'models/types';
 import { Money } from 'pesa';
@@ -9,6 +10,7 @@ import { ItemQtyMap, ItemVisibility, POSItem } from 'src/components/POS/types';
 import type { DocValueMap } from 'fyo/core/types';
 import type { Field } from 'schemas/types';
 import {
+  getAllDocuments,
   getCount,
   getList,
   type DocValues,
@@ -19,20 +21,21 @@ import { getFrappeDoc } from 'src/frappe/documents';
 import { toDocValues } from 'src/frappe/values';
 import { fyo } from 'src/initFyo';
 import { call } from 'src/web/api';
+import { reactive } from 'vue';
 
 export { getTotalQuantity } from './posCart';
 
 /** The item fields the POS lists, searches and adds items by. */
 export const POS_ITEM_FIELDS = [
   'name',
-  'item_code',
-  'barcode',
+  'item_name',
+  { barcodes: ['barcode'] },
   'image',
-  'rate',
-  'unit',
-  'track_item',
-  'has_batch',
-  'has_serial_number',
+  'standard_rate',
+  'stock_uom',
+  'is_stock_item',
+  'has_batch_no',
+  'has_serial_no',
 ];
 
 const TRACKED_ITEMS: Partial<Record<ItemVisibility, number>> = {
@@ -69,11 +72,11 @@ export function getQuickQtyBuffer(
  * the stock it ships; a return brings stock back.
  */
 export async function validateSinv(sinvDoc: SalesInvoice) {
-  const rows = (sinvDoc.items ?? []).filter((row) => row.item);
+  const rows = (sinvDoc.items ?? []).filter((row) => row.item_code);
   const isReturn = !!sinvDoc.return_against;
-  for (const { item, quantity = 0 } of rows) {
-    if (!quantity || (quantity < 0 && !isReturn)) {
-      throw new ValidationError(t`Invalid quantity for item ${item!}`);
+  for (const { item_code, stock_qty = 0 } of rows) {
+    if (!stock_qty || (stock_qty < 0 && !isReturn)) {
+      throw new ValidationError(t`Invalid quantity for item ${item_code!}`);
     }
   }
 
@@ -104,16 +107,40 @@ export async function getPOSRowItem(item?: string): Promise<POSRowItem> {
   }
 
   const doc = await getItemDoc(item);
-  const conversions = (doc.uom_conversions ?? []) as { uom?: string }[];
-  const units = [doc.unit as string, ...conversions.map(({ uom }) => uom)];
+  const conversions = (doc.uoms ?? []) as { uom?: string }[];
+  const units = [doc.stock_uom as string, ...conversions.map(({ uom }) => uom)];
   return {
-    hasBatch: !!doc.has_batch,
-    hasSerialNumber: !!doc.has_serial_number,
+    hasBatch: !!doc.has_batch_no,
+    hasSerialNumber: !!doc.has_serial_no,
     units: [...new Set(units.filter((unit): unit is string => !!unit))],
   };
 }
 
 /** Up to two initials that stand in for an item without an image. */
+/**
+ * Tile colors for items without an image, so neighbours read apart. Semantic
+ * tokens, so dark mode gets its own shades; literal so Tailwind keeps them.
+ */
+const ITEM_TINTS = [
+  'bg-surface-violet-2 text-ink-violet-7',
+  'bg-surface-orange-2 text-ink-orange-7',
+  'bg-surface-green-2 text-ink-green-8',
+  'bg-surface-blue-2 text-ink-blue-8',
+  'bg-surface-pink-2 text-ink-pink-7',
+  'bg-surface-amber-2 text-ink-amber-8',
+  'bg-surface-teal-2 text-ink-teal-8',
+  'bg-surface-cyan-2 text-ink-cyan-8',
+];
+
+/** The same tile color for an item every time, from its name. */
+export function getItemTint(name: string): string {
+  let hash = 0;
+  for (const char of name) {
+    hash = (hash * 31 + char.codePointAt(0)!) | 0;
+  }
+  return ITEM_TINTS[Math.abs(hash) % ITEM_TINTS.length];
+}
+
 export function getItemInitials(name: string): string {
   return name
     .trim()
@@ -157,7 +184,7 @@ export function getPOSItemFilters(
   const filters: Filter[] = [];
   const tracked = visibility && TRACKED_ITEMS[visibility];
   if (tracked !== undefined) {
-    filters.push(['track_item', '=', tracked]);
+    filters.push(['is_stock_item', '=', tracked]);
   }
 
   if (itemGroup) {
@@ -167,20 +194,40 @@ export function getPOSItemFilters(
   return filters;
 }
 
+/** The items the POS lists, with the fields `toPOSItem` reads. */
+export async function getPOSItemRecords(
+  filters: Filter[]
+): Promise<DocValues[]> {
+  return await getAllDocuments('Books Item', {
+    fields: POS_ITEM_FIELDS,
+    filters,
+  });
+}
+
+/** The item groups the POS filters by: every group that holds items. */
+export async function getPOSItemGroups(): Promise<string[]> {
+  const groups = await getAllDocuments('Books Item Group', {
+    fields: ['name'],
+  });
+  return groups.map(({ name }) => name as string);
+}
+
 /** An item as the POS lists it, from its `POS_ITEM_FIELDS`. */
 export function toPOSItem(item: DocValues, itemQtyMap: ItemQtyMap): POSItem {
   const name = item.name as string;
   return {
     availableQty: itemQtyMap[name]?.availableQty ?? 0,
-    trackItem: !!item.track_item,
+    trackItem: !!item.is_stock_item,
     name,
-    itemCode: item.item_code as string,
-    barcode: item.barcode as string,
+    itemName: (item.item_name as string | undefined) || name,
+    barcodes: ((item.barcodes ?? []) as { barcode: string }[]).map(
+      ({ barcode }) => barcode
+    ),
     image: item.image as string,
-    rate: fyo.pesa((item.rate as number) ?? 0),
-    unit: item.unit as string,
-    hasBatch: !!item.has_batch,
-    hasSerialNumber: !!item.has_serial_number,
+    rate: fyo.pesa((item.standard_rate as number) ?? 0),
+    unit: item.stock_uom as string,
+    hasBatch: !!item.has_batch_no,
+    hasSerialNumber: !!item.has_serial_no,
   };
 }
 
@@ -203,12 +250,17 @@ export function getPOSInvoiceFields(): Field[] {
   return [
     { fieldname: 'name', label: t`Name`, fieldtype: 'Data', readOnly: true },
     {
-      fieldname: 'party',
+      fieldname: 'customer',
       label: t`Customer`,
       fieldtype: 'Data',
       readOnly: true,
     },
-    { fieldname: 'date', label: t`Date`, fieldtype: 'Date', readOnly: true },
+    {
+      fieldname: 'posting_date',
+      label: t`Date`,
+      fieldtype: 'Date',
+      readOnly: true,
+    },
     {
       fieldname: 'grand_total',
       label: t`Grand Total`,
@@ -230,7 +282,7 @@ export async function getPOSInvoices(
 ): Promise<DocValueMap[]> {
   const schema = getSchema(ModelNameEnum.SalesInvoice)!;
   const rows = await getList('Books Sales Invoice', {
-    fields: ['name', 'party', 'date', 'grand_total', 'docstatus'],
+    fields: ['name', 'customer', 'posting_date', 'grand_total', 'docstatus'],
     filters: getPOSInvoiceFilters(filters, search),
     orderBy: 'creation desc',
     start,
@@ -250,6 +302,15 @@ export async function getPOSInvoiceCount(
   return await getCount('Books Sales Invoice', filtersWithSearch, []);
 }
 
+/** Submitted sales that are not returns and have something left to return. */
+export function getReturnableFilters(): Filter[] {
+  return [
+    ['docstatus', '=', 1],
+    ['return_against', 'is', 'not set'],
+    ['is_fully_returned', '=', 0],
+  ];
+}
+
 function getPOSInvoiceFilters(filters: Filter[], search: string): Filter[] {
   const nameFilters: Filter[] = search ? [['name', 'like', `%${search}%`]] : [];
   return [['is_pos', '=', 1], ...filters, ...nameFilters];
@@ -258,11 +319,11 @@ function getPOSInvoiceFilters(filters: Filter[], search: string): Filter[] {
 /** The payments of a sales invoice, oldest first; at checkout, those the server made with its submit. */
 export async function getInvoicePayments(invoice: string): Promise<string[]> {
   const rows = await call<DocValues[]>('frappe.client.get_list', {
-    doctype: 'Books Payment For',
-    parent: 'Books Payment',
+    doctype: 'Books Payment Entry Reference',
+    parent: 'Books Payment Entry',
     fields: ['parent'],
     filters: [
-      ['reference_type', '=', 'Books Sales Invoice'],
+      ['reference_doctype', '=', 'Books Sales Invoice'],
       ['reference_name', '=', invoice],
     ],
     order_by: 'creation asc',
@@ -276,18 +337,6 @@ async function getItemDoc(name: string): Promise<Item> {
   return (await getFrappeDoc(ModelNameEnum.Item, name)) as Item;
 }
 
-export function getTotalTaxedAmount(sinvDoc: SalesInvoice): Money {
-  let totalTaxedAmount = fyo.pesa(0);
-  if (!sinvDoc.items?.length || !sinvDoc.taxes?.length) {
-    return totalTaxedAmount;
-  }
-
-  for (const row of sinvDoc.taxes) {
-    totalTaxedAmount = totalTaxedAmount.add(row.amount ?? 0);
-  }
-  return totalTaxedAmount;
-}
-
 export interface CostLine {
   label: string;
   value: Money;
@@ -295,26 +344,113 @@ export interface CostLine {
   isDiscount?: boolean;
 }
 
-/** The net total, then each amount that takes it to the grand total. */
+/** The rows' total before their discounts, which the rows' amounts are net of. */
+export function getGrossTotal(invoice: SalesInvoice): Money {
+  return (invoice.items ?? []).reduce(
+    (total, row) => total.add(getRowGrossAmount(invoice, row)),
+    fyo.pesa(0)
+  );
+}
+
+/** The item discounts, before or after tax, as the server posts them. */
+export function getItemDiscount(invoice: SalesInvoice): Money {
+  return getGrossTotal(invoice)
+    .add(invoice.total_taxes_and_charges ?? 0)
+    .sub(invoice.grand_total ?? 0);
+}
+
+/** What the customer pays: the grand total less what redeemed points pay. */
+export function getPayableTotal(invoice: SalesInvoice): Money {
+  const loyalty = (invoice.loyalty_amount ?? fyo.pesa(0)).div(
+    invoice.conversion_rate || 1
+  );
+  return (invoice.grand_total ?? fyo.pesa(0)).sub(loyalty);
+}
+
+/** What the Pay or Refund button takes, as a positive amount: what a submitted sale still owes, else its payable total. */
+export function getAmountToPay(invoice: SalesInvoice): Money {
+  const amount = invoice.isSubmitted
+    ? (invoice.outstanding_amount ?? fyo.pesa(0))
+    : getPayableTotal(invoice);
+  return amount.abs();
+}
+
+/** The rows' total before discounts, then each amount that takes it to the payable total. */
 export function getCostLines(invoice: SalesInvoice): CostLine[] {
   const getLabel = (fieldname: string) =>
     getField(invoice.schemaName, fieldname)?.label ?? fieldname;
   const changes = [
+    { label: t`Discount`, value: getItemDiscount(invoice), isDiscount: true },
     {
-      label: getLabel('total_discount'),
-      value: invoice.total_discount,
-      isDiscount: true,
+      label: getLabel('taxes'),
+      value: invoice.total_taxes_and_charges,
     },
-    { label: getLabel('taxes'), value: getTotalTaxedAmount(invoice) },
     {
-      label: getLabel('loyalty_points_amount'),
-      value: invoice.loyalty_points_amount,
+      label: getLabel('loyalty_amount'),
+      value: invoice.loyalty_amount,
       isDiscount: true,
     },
   ].filter((line): line is CostLine => !!line.value && !line.value.isZero());
 
   return [
-    { label: getLabel('net_total'), value: invoice.net_total ?? fyo.pesa(0) },
+    { label: getLabel('net_total'), value: getGrossTotal(invoice) },
     ...changes,
   ];
+}
+
+/** Titles of the pricing rules cart rows got, by rule name; see `loadPricingRuleTitles`. */
+const pricingRuleTitles = reactive<Record<string, string>>({});
+
+/** What a cart row says of the rule it got: the rule's title, else "Free item" on a free row. */
+export function getRowPricingRule(row: SalesInvoiceItem): string {
+  const rule = getRowPricingRuleName(row);
+  const title = rule && pricingRuleTitles[rule];
+  if (title) {
+    return title;
+  }
+
+  return row.is_free_item ? t`Free item` : '';
+}
+
+/** The first rule a cart row got, as ERPNext lists a row's pricing rules. */
+function getRowPricingRuleName(row: SalesInvoiceItem): string {
+  const rules = row.pricing_rules ?? '';
+  if (!rules.startsWith('[')) {
+    return rules.split(',')[0] ?? '';
+  }
+
+  return (JSON.parse(rules) as string[])[0] ?? '';
+}
+
+/** Reads the titles of the cart rows' rules not read yet, in one call; a user who cannot read rules sees none. */
+export async function loadPricingRuleTitles(rows: SalesInvoiceItem[]) {
+  const names = [...new Set(rows.map(getRowPricingRuleName))].filter(
+    (name) => name && !(name in pricingRuleTitles)
+  );
+  if (!names.length || !fyo.can(ModelNameEnum.PricingRule, 'read')) {
+    return;
+  }
+
+  // A rule that is gone keeps the fallback instead of being asked for again.
+  names.forEach((name) => (pricingRuleTitles[name] = ''));
+  const rules = await getList('Books Pricing Rule', {
+    fields: ['name', 'title'],
+    filters: [['name', 'in', names]],
+    limit: names.length,
+  });
+  for (const { name, title } of rules) {
+    pricingRuleTitles[String(name)] = String(title ?? '');
+  }
+}
+
+/** A row's amount before its discount, as the cart lists it above the discount. */
+export function getRowGrossAmount(
+  invoice: SalesInvoice,
+  row: SalesInvoiceItem
+): Money {
+  if (invoice.discount_after_tax) {
+    return row.amount ?? fyo.pesa(0);
+  }
+
+  return (row.price_list_rate ?? fyo.pesa(0)).mul(row.qty ?? 0).clip();
 }

@@ -33,8 +33,8 @@ Frappe Books started as a desktop app that keeps one company in one file on one 
 ### Key Features
 
 - **Accounting**: Double-entry ledger, chart of accounts, journal entries, and the General Ledger, Profit and Loss, Balance Sheet, and Trial Balance reports.
-- **Sales and Purchases**: Quotes, invoices, payments, and returns, with a print format for each document.
-- **Inventory**: Stock movements, shipments, receipts, batches, serial numbers, and FIFO valuation, with the Stock Ledger and Stock Balance reports.
+- **Sales and Purchases**: Quotations, invoices, payments, and returns, with a print format for each document.
+- **Inventory**: Stock entries, delivery notes, purchase receipts, batches, serial numbers, and FIFO valuation, with the Stock Ledger and Stock Balance reports.
 - **Point of Sale**: POS shifts, checkout, barcode scanning, pricing rules, coupons, and loyalty points.
 - **Phone App**: A phone layout with bottom tabs. Install it from the browser to your home screen.
 - **Regional**: India GST with the GSTR-1 and GSTR-2 reports, Swiss fields, and translations for more than 15 languages.

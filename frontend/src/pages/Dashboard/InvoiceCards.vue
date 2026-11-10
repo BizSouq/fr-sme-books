@@ -1,5 +1,10 @@
 <template>
-  <div v-for="card in cards" :key="card.title" :class="cardClass">
+  <div
+    v-for="card in cards"
+    :key="card.title"
+    class="books-kpi p-3 md:p-5"
+    :style="{ '--kpi': card.color }"
+  >
     <!-- The card clips at its top edge and the link button overflows the
       title row; the negative margin makes room without moving the card
       (frappe/frappe-ui#1255). -->
@@ -32,8 +37,10 @@
 import { t } from 'fyo';
 import { Button as FrappeButton } from 'frappe-ui';
 import { NumberCard as FrappeNumberCard } from 'frappe-ui/charts';
-import { getDoctypeLabel, toSchemaName } from 'src/frappe/registry';
+import { getDocType } from 'src/frappe/doctypes';
+import { getSchema } from 'src/frappe/registry';
 import { fyo } from 'src/initFyo';
+import { ModelNameEnum } from 'models/types';
 import {
   getInvoiceListFilters,
   getInvoiceSummary,
@@ -53,7 +60,7 @@ export default defineComponent({
   },
   extends: BaseDashboardChart,
   props: {
-    doctype: { type: String, required: true },
+    schemaName: { type: String, required: true },
     paidTitle: { type: String, required: true },
     unpaidTitle: { type: String, required: true },
   },
@@ -63,6 +70,8 @@ export default defineComponent({
   computed: {
     cards() {
       const { summary, paidTitle, unpaidTitle } = this;
+      // Sales in green and orange, purchases in blue and pink (styles/theme.css).
+      const isSales = this.schemaName === ModelNameEnum.SalesInvoice;
       return [
         {
           paid: true,
@@ -70,6 +79,7 @@ export default defineComponent({
           value: summary?.paid ?? null,
           count: summary?.paid_count ?? 0,
           linkLabel: t`View paid invoices`,
+          color: isSales ? 'var(--books-green)' : 'var(--books-blue)',
         },
         {
           paid: false,
@@ -77,6 +87,7 @@ export default defineComponent({
           value: summary?.unpaid ?? null,
           count: summary?.unpaid_count ?? 0,
           linkLabel: t`View unpaid invoices`,
+          color: isSales ? 'var(--books-orange)' : 'var(--books-pink)',
         },
       ];
     },
@@ -88,16 +99,17 @@ export default defineComponent({
   },
   methods: {
     getListRoute(summary: InvoiceSummary, paid: boolean) {
-      const schemaLabel = getDoctypeLabel(this.doctype);
+      const schemaLabel = getSchema(this.schemaName)!.label;
       const label = paid ? t`Paid ${schemaLabel}` : t`Unpaid ${schemaLabel}`;
       const filters = getInvoiceListFilters(summary, paid);
       return {
-        path: `/list/${toSchemaName(this.doctype)}/${label}`,
+        path: `/list/${this.schemaName}/${label}`,
         query: { filters: JSON.stringify(filters) },
       };
     },
     async setData() {
-      this.summary = await getInvoiceSummary(this.doctype, this.period);
+      const { doctype } = getDocType(this.schemaName);
+      this.summary = await getInvoiceSummary(doctype, this.period);
     },
   },
 });

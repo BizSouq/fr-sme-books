@@ -7,13 +7,13 @@ REGIONAL_CODES = {"in", "ch"}
 
 # Feature switches the server enforces, by the settings that hold them.
 FEATURES = {
-	"enable_discounting": "Books Accounting Settings",
+	"enable_discounts_and_margin": "Books Accounting Settings",
 	"enable_invoice_returns": "Books Accounting Settings",
 	"enable_inventory": "Books Accounting Settings",
 	"enable_lead": "Books Accounting Settings",
-	"enable_loyalty_program": "Books Accounting Settings",
+	"enable_loyalty_point_program": "Books Accounting Settings",
 	"enable_coupon_code": "Books Accounting Settings",
-	"enableitem_group": "Books Accounting Settings",
+	"enable_item_group": "Books Accounting Settings",
 	"enable_batches": "Books Inventory Settings",
 	"enable_serial_number": "Books Inventory Settings",
 	"enable_uom_conversions": "Books Inventory Settings",
@@ -23,10 +23,10 @@ FEATURES = {
 
 # The Books Defaults terms each new document starts with.
 DEFAULT_TERMS = {
-	"Books Sales Quote": "sales_invoice_terms",
+	"Books Quotation": "sales_invoice_terms",
 	"Books Sales Invoice": "sales_invoice_terms",
 	"Books Purchase Invoice": "purchase_invoice_terms",
-	"Books Shipment": "shipment_terms",
+	"Books Delivery Note": "delivery_note_terms",
 	"Books Purchase Receipt": "purchase_receipt_terms",
 }
 

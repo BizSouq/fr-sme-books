@@ -1,7 +1,9 @@
 import { t } from 'fyo';
 import { dialog, toast } from 'frappe-ui';
 import { shallowRef } from 'vue';
+import type { ServerMessage } from 'src/web/api';
 import { renderSafeRichText } from './safeRichText';
+import { serverHtmlToText } from './serverHtml';
 import { DialogButton, DialogOptions, ToastOptions, ToastType } from './types';
 import { isMobile } from './viewport';
 
@@ -17,6 +19,8 @@ export interface DialogSheet {
   detail?: string;
   actions: DialogSheetAction[];
   dismissible: boolean;
+  /** An action runs with the sheet open, which shows its error; see `DialogOptions`. */
+  keepsOpenOnError?: boolean;
   onCancel: () => Promise<void>;
 }
 
@@ -40,7 +44,10 @@ export async function showDialog(options: DialogOptions) {
         resolve(await config.action());
       } catch (error) {
         settled = false;
-        reject(error);
+        // The dialog shows the error and stays open.
+        if (!options.keepsOpenOnError) {
+          reject(error);
+        }
         throw error;
       }
     };
@@ -74,8 +81,8 @@ export async function showDialog(options: DialogOptions) {
       : options.detail;
     const isDestructive = Boolean(
       options.destructive ||
-        options.type === 'warning' ||
-        options.type === 'error'
+      options.type === 'warning' ||
+      options.type === 'error'
     );
 
     if (isMobile.value) {
@@ -88,6 +95,7 @@ export async function showDialog(options: DialogOptions) {
           settleFromAction
         ),
         dismissible: Boolean(escapeButton),
+        keepsOpenOnError: options.keepsOpenOnError,
         onCancel: settleFromDismiss,
       };
       return;
@@ -159,6 +167,33 @@ export function showToast(options: ToastOptions) {
   }
 
   return toast.info(options.message, toastOptions);
+}
+
+// Frappe's indicator colours, as toast types.
+const INDICATOR_TOASTS: Record<string, ToastType | undefined> = {
+  green: 'success',
+  red: 'error',
+  orange: 'warning',
+  yellow: 'warning',
+};
+
+/** As Desk: alerts show as toasts, other messages in one message dialog. */
+export function showServerMessages(messages: ServerMessage[]) {
+  for (const { message, indicator } of messages.filter((m) => m.alert)) {
+    showToast({
+      type: INDICATOR_TOASTS[indicator ?? ''] ?? 'info',
+      message: serverHtmlToText(message),
+    });
+  }
+
+  const shown = messages.filter(({ alert }) => !alert);
+  if (shown.length) {
+    void showDialog({
+      title: shown.find(({ title }) => title)?.title ?? t`Message`,
+      detail: shown.map(({ message }) => serverHtmlToText(message)),
+      type: 'info',
+    });
+  }
 }
 
 function getPrimaryButton(buttons: DialogButton[]): DialogButton {

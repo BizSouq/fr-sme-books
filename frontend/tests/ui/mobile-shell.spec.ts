@@ -29,7 +29,7 @@ test('bottom tabs open each section and light the page owner', async ({
   await expect(page).toHaveURL(/\/books\/report\/GeneralLedger$/);
   await expect(tab(page, 'Reports')).toHaveAttribute('data-state', 'active');
 
-  await page.goto('/books/list/Payment/Purchase%20Payments');
+  await page.goto('/books/list/PaymentEntry/Purchase%20Payment');
   await expect(tab(page, 'Purchases')).toHaveAttribute('data-state', 'active');
   await expect(tab(page, 'Sales')).toHaveAttribute('data-state', 'inactive');
 });
@@ -49,7 +49,7 @@ test('the menu opens a nav sheet that works as an accordion', async ({
   await navSheet(page).getByRole('button', { name: 'Purchases' }).click();
   await expect(sales).toHaveAttribute('aria-expanded', 'false');
 
-  await navSheet(page).getByRole('link', { name: 'Purchase Invoices' }).click();
+  await navSheet(page).getByRole('link', { name: 'Purchase Invoice' }).click();
   await expect(navSheet(page)).toBeHidden();
   await expect(page).toHaveURL(/\/books\/list\/PurchaseInvoice$/);
 });
@@ -63,7 +63,7 @@ test('desktop-only pages are left out and redirect home', async ({ page }) => {
   for (const name of [
     'Chart of Accounts',
     'Import Wizard',
-    'Print Templates',
+    'Print Template',
   ]) {
     await expect(navSheet(page).getByRole('link', { name })).toHaveCount(0);
   }
@@ -113,15 +113,15 @@ test('back closes the nav sheet before leaving the page', async ({ page }) => {
   await navSheet(page)
     .getByRole('button', { name: 'Sales', exact: true })
     .click();
-  await navSheet(page).getByRole('link', { name: 'Sales Quotes' }).click();
-  await expect(page).toHaveURL(/\/books\/list\/SalesQuote$/);
+  await navSheet(page).getByRole('link', { name: 'Quotation' }).click();
+  await expect(page).toHaveURL(/\/books\/list\/Quotation$/);
 
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(navSheet(page)).toBeVisible();
   await page.evaluate(() => history.back());
 
   await expect(navSheet(page)).toBeHidden();
-  await expect(page).toHaveURL(/\/books\/list\/SalesQuote$/);
+  await expect(page).toHaveURL(/\/books\/list\/Quotation$/);
 });
 
 test('back closes an open menu before leaving the page', async ({ page }) => {

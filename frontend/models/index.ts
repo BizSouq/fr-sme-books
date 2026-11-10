@@ -1,10 +1,12 @@
 import type { FrappeModel } from 'src/frappe/doctypes';
 import { Account } from './baseModels/Account/Account';
-import { AccountingLedgerEntry } from './baseModels/AccountingLedgerEntry/AccountingLedgerEntry';
+import { GLEntry } from './baseModels/GLEntry/GLEntry';
 import { AccountingSettings } from './baseModels/AccountingSettings/AccountingSettings';
+import { Company } from './baseModels/Company/Company';
 import { Country } from './baseModels/Country';
 import { Currency } from './baseModels/Currency/Currency';
 import { Address } from './baseModels/Address/Address';
+import { Contact } from './baseModels/Contact/Contact';
 import { CustomForm } from './baseModels/CustomForm/CustomForm';
 import { Defaults } from './baseModels/Defaults/Defaults';
 import { GetStarted } from './baseModels/GetStarted/GetStarted';
@@ -16,9 +18,11 @@ import { LoyaltyProgram } from './baseModels/LoyaltyProgram/LoyaltyProgram';
 import { LoyaltyPointEntry } from './baseModels/LoyaltyPointEntry/LoyaltyPointEntry';
 import { Lead } from './baseModels/Lead/Lead';
 import { CouponCode } from './baseModels/CouponCode/CouponCode';
-import { Payment } from './baseModels/Payment/Payment';
-import { Party } from './baseModels/Party/Party';
-import { PaymentMethod } from './baseModels/PaymentMethod/PaymentMethod';
+import { PaymentEntry } from './baseModels/PaymentEntry/PaymentEntry';
+import { Customer } from './baseModels/Customer/Customer';
+import { Supplier } from './baseModels/Supplier/Supplier';
+import { ModeOfPayment } from './baseModels/ModeOfPayment/ModeOfPayment';
+import { ItemPrice } from './baseModels/ItemPrice/ItemPrice';
 import { PriceList } from './baseModels/PriceList/PriceList';
 import { PricingRule } from './baseModels/PricingRule/PricingRule';
 import { PrintFormat } from './baseModels/PrintFormat';
@@ -26,20 +30,20 @@ import { PrintSettings } from './baseModels/PrintSettings/PrintSettings';
 import { SetupWizard } from './baseModels/SetupWizard/SetupWizard';
 import { SystemSettings } from './baseModels/SystemSettings/SystemSettings';
 import { ItemGroup } from './baseModels/ItemGroup/ItemGroup';
-import { Tax } from './baseModels/Tax/Tax';
+import { ItemTaxTemplate } from './baseModels/ItemTaxTemplate/ItemTaxTemplate';
 import { UOM } from './baseModels/UOM/UOM';
 import { Batch } from './inventory/Batch';
 import { InventorySettings } from './inventory/InventorySettings';
-import { Location } from './inventory/Location';
+import { Warehouse } from './inventory/Warehouse';
 import { PurchaseReceipt } from './inventory/PurchaseReceipt';
-import { SerialNumber } from './inventory/SerialNumber';
-import { Shipment } from './inventory/Shipment';
+import { SerialNo } from './inventory/SerialNo';
+import { DeliveryNote } from './inventory/DeliveryNote';
 import { StockLedgerEntry } from './inventory/StockLedgerEntry';
-import { StockMovement } from './inventory/StockMovement';
+import { StockEntry } from './inventory/StockEntry';
 import { POSSettings } from './inventory/Point of Sale/POSSettings';
 import { POSProfile } from './baseModels/POSProfile/PosProfile';
-import { POSOpeningShift } from './inventory/Point of Sale/POSOpeningShift';
-import { POSClosingShift } from './inventory/Point of Sale/POSClosingShift';
+import { POSOpeningEntry } from './inventory/Point of Sale/POSOpeningEntry';
+import { POSClosingEntry } from './inventory/Point of Sale/POSClosingEntry';
 import { ItemEnquiry } from './baseModels/ItemEnquiry/ItemEnquiry';
 import * as invoices from './invoices';
 
@@ -59,38 +63,44 @@ export const frappeModels: Record<string, FrappeModel> = {
   PrintSettings,
   Account,
   AccountingSettings,
-  AccountingLedgerEntry,
-  Party,
+  Company,
+  GLEntry,
+  Customer,
+  Supplier,
   Lead,
+  Contact,
   Address,
   ItemGroup,
   Item,
   UOM,
   LoyaltyProgram,
   LoyaltyPointEntry,
-  Payment,
-  PaymentMethod,
+  PaymentEntry,
+  ModeOfPayment,
   JournalEntry,
   ItemEnquiry,
   CouponCode,
   PriceList,
+  ItemPrice,
   PricingRule,
-  Tax,
+  ItemTaxTemplate,
   InventorySettings,
-  Location,
+  Warehouse,
   StockLedgerEntry,
-  StockMovement,
+  StockEntry,
   Batch,
-  SerialNumber,
+  SerialNo,
   CustomForm,
   POSSettings,
   POSProfile,
-  POSOpeningShift,
-  POSClosingShift,
+  POSOpeningEntry,
+  POSClosingEntry,
   SalesInvoice: invoices.SalesInvoice,
   PurchaseInvoice: invoices.PurchaseInvoice,
-  SalesQuote: invoices.SalesQuote,
-  Shipment,
+  Quotation: invoices.Quotation,
+  SalesTaxesAndChargesTemplate: invoices.SalesTaxesAndChargesTemplate,
+  PurchaseTaxesAndChargesTemplate: invoices.PurchaseTaxesAndChargesTemplate,
+  DeliveryNote,
   PurchaseReceipt,
   SystemSettings,
 };
@@ -103,10 +113,9 @@ export async function getRegionalFrappeModels(
     return {};
   }
 
-  const [{ Account }, { Address }, { Party }] = await Promise.all([
+  const [{ Account }, { Customer, Supplier }] = await Promise.all([
     import('./regionalModels/in/Account'),
-    import('./regionalModels/in/Address'),
     import('./regionalModels/in/Party'),
   ]);
-  return { Account, Address, Party };
+  return { Account, Customer, Supplier };
 }

@@ -75,7 +75,7 @@ test('deleting a cancelled entry says its ledger entries go too', () => {
   assert.match(message({ isCancelled: true }), /ledger entries/);
   assert.match(
     message({
-      schemaName: 'Shipment',
+      schemaName: 'DeliveryNote',
       isTransactional: false,
       isCancelled: true,
     }),
@@ -84,16 +84,15 @@ test('deleting a cancelled entry says its ledger entries go too', () => {
   assert.equal(message({ isCancelled: false }), 'This action is permanent.');
 });
 
-test('deleting a party names it the way its list does', () => {
+test('deleting a customer or supplier names it the way its list does', () => {
   const calls = captureDangerDialogs();
-  const keepLabel = (role) => {
-    deleteDocWithPrompt(newFrappeDoc('Party', { name: 'Acme', role }));
+  const keepLabel = (schemaName) => {
+    deleteDocWithPrompt(newFrappeDoc(schemaName, { name: 'Acme' }));
     return calls.at(-1).cancelLabel;
   };
 
   assert.equal(keepLabel('Customer'), 'Keep Customer');
   assert.equal(keepLabel('Supplier'), 'Keep Supplier');
-  assert.equal(keepLabel('Both'), 'Keep Party');
 });
 
 test('deleting an account group offers to keep the group', () => {

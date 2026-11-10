@@ -1,5 +1,15 @@
-import { getFieldProperties, isReferenceField } from './fieldProperties';
-import type { Field, Naming, OptionField, Schema } from 'schemas/types';
+import {
+  getFieldProperties,
+  isReferenceField,
+  isTableDocField,
+} from './fieldProperties';
+import type {
+  Field,
+  MobileBlock,
+  Naming,
+  OptionField,
+  Schema,
+} from 'schemas/types';
 import type { Filter } from './api';
 import type { DocField, DocTypeMeta } from './meta';
 
@@ -26,10 +36,39 @@ export interface Presentation {
   omitFields?: string[];
   /** Values of omitted fields that each document /books creates gets, e.g. an enabled Currency. */
   insertValues?: Record<string, unknown>;
+  /**
+   * Fields a new document asks for that its DocType does not hold, like the
+   * address a new customer makes its primary Address from, as ERPNext's quick
+   * entry does. The server reads them on insert; a saved document hides them.
+   */
+  insertFields?: Field[];
+  /**
+   * Fields a form shows, each after the field it names, that the DocType does
+   * not hold: the model keeps their values in DocType fields, like a
+   * payment's positive Write Off in its signed deductions.
+   */
+  clientFields?: ClientField[];
   /** The field a link to the doctype shows instead of the name. */
   linkDisplayField?: string;
+  /**
+   * The field that titles a document its DocType names by script, like an
+   * Address's address_title; a link's typed text goes in it on Create.
+   */
+  titleField?: string;
   /** Table columns, where /books orders them unlike the DocType's in_list_view fields. */
   tableFields?: string[];
+  /** A phone row's fields, title first and amount last, where they differ from `tableFields`. */
+  mobileTableFields?: string[];
+  /** The field a phone row shows under its amount, labelled. */
+  mobileRowDetail?: string;
+  /** Phone row fields shown with their labels, like a reference's Outstanding; the amount's label goes under it. */
+  mobileLabelledFields?: string[];
+  /** A desktop form's field columns, where the design draws three instead of two, like a payment's. */
+  formColumns?: 3;
+  /** Fields a phone form shows side by side, each pair in form order, like a party's type and name. */
+  mobileFieldPairs?: [string, string][];
+  /** A phone table's rows as blocks of fields, like a closing count's Expected, Closing and Difference. */
+  mobileBlock?: MobileBlock;
   /**
    * The fields of list exports, import templates and quick views, in Books'
    * order, where it differs from the DocType's; fields the server fills are
@@ -37,6 +76,8 @@ export interface Presentation {
    */
   fileFields?: string[];
 }
+
+export type ClientField = Field & { after: string };
 
 /**
  * Field properties that no DocField property says, like Select option labels,
@@ -49,6 +90,7 @@ export type FieldPresentation = Partial<Field> &
   Pick<OptionField, 'optionLabels' | 'allowCustom'> & {
     create?: boolean;
     edit?: boolean;
+    card?: boolean;
   };
 
 /** Presentations of Links that offer no Create, by fieldname. */
@@ -77,8 +119,10 @@ export interface SchemaContext {
   placements: Placements;
 }
 
-const LAYOUT_FIELDTYPES = ['Section Break', 'Column Break', 'Tab Break'];
+// Fields every Books document has that the server sets, e.g. the one company it belongs to.
+const SERVER_FIELDS = ['company'];
 const DEFAULT_SECTION = 'Default';
+const LAYOUT_FIELDTYPES = ['Section Break', 'Column Break', 'Tab Break'];
 
 // Standard columns, labelled as the list filters show them.
 const STANDARD_FIELDS = [
@@ -98,9 +142,17 @@ export function toSchema(
   presentation: Presentation,
   context: SchemaContext
 ): Schema {
-  const docFields = getDocFields(meta, context, presentation);
+  // An insert field takes the place of the DocType's field of its name, which the insert then saves too.
+  const insertFields = getInsertFields(presentation);
+  const docFields = withClientFields(
+    getDocFields(meta, context, presentation).filter(
+      ({ fieldname }) => !insertFields.some((f) => f.fieldname === fieldname)
+    ),
+    presentation
+  );
   const fields = [
     ...getNameFields(meta, presentation, docFields),
+    ...insertFields,
     ...getMetaFields(meta),
   ].map((field) => ({ ...field, schemaName: name }) as Field);
 
@@ -109,21 +161,36 @@ export function toSchema(
     label: presentation.label,
     fields,
     naming: getNaming(meta),
-    titleField: meta.title_field || getNamingField(meta) || 'name',
+    titleField:
+      presentation.titleField ||
+      meta.title_field ||
+      getNamingField(meta) ||
+      'name',
     quickEditFields: presentation.quickEditFields,
-    linkDisplayField: presentation.linkDisplayField,
+    linkDisplayField:
+      presentation.linkDisplayField ??
+      (meta.show_title_field_in_link ? meta.title_field : undefined),
     create: presentation.create,
     fileFields: presentation.fileFields,
-    tableFields:
-      presentation.tableFields ??
-      meta.fields
-        .filter((field) => field.in_list_view)
-        .map((field) => field.fieldname),
+    mobileTableFields: presentation.mobileTableFields,
+    mobileRowDetail: presentation.mobileRowDetail,
+    mobileLabelledFields: presentation.mobileLabelledFields,
+    formColumns: presentation.formColumns,
+    mobileFieldPairs: presentation.mobileFieldPairs,
+    mobileBlock: presentation.mobileBlock,
+    tableFields: presentation.tableFields ?? getListViewFields(meta),
     isChild: !!meta.istable,
     isSingle: !!meta.issingle,
     isSubmittable: !!meta.is_submittable,
     isTree: !!meta.is_tree,
   };
+}
+
+/** The in_list_view columns. */
+function getListViewFields(meta: DocTypeMeta): string[] {
+  return meta.fields
+    .filter((field) => field.in_list_view)
+    .map((field) => field.fieldname);
 }
 
 /** The field that names a document of a DocType named `field:<fieldname>`. */
@@ -132,7 +199,10 @@ export function getNamingField(meta: DocTypeMeta): string | undefined {
   return rule.toLowerCase() === 'field' ? fieldname : undefined;
 }
 
-/** Fields in DocType order; custom fields placed by a Books Custom Form come last, as Books adds them. */
+/**
+ * Fields in DocType order; custom fields placed by a Books Custom Form come
+ * last, as Books adds them.
+ */
 function getDocFields(
   meta: DocTypeMeta,
   context: SchemaContext,
@@ -145,33 +215,24 @@ function getDocFields(
     fields: presentation.fields ?? {},
     states: getStates(meta),
   };
+  const omitted = [...SERVER_FIELDS, ...(presentation.omitFields ?? [])];
+  const shown = {
+    ...meta,
+    fields: meta.fields.filter(({ fieldname }) => !omitted.includes(fieldname)),
+  };
   const fields: Field[] = [];
   const placed: Field[] = [];
-  let tab: string | undefined;
-  let section = DEFAULT_SECTION;
-  const omitted = presentation.omitFields ?? [];
-  for (const docfield of meta.fields) {
-    if (omitted.includes(docfield.fieldname)) {
-      continue;
-    }
-
-    if (docfield.fieldtype === 'Tab Break') {
-      tab = docfield.label;
-      section = DEFAULT_SECTION;
-    } else if (docfield.fieldtype === 'Section Break') {
-      section = docfield.label || DEFAULT_SECTION;
-    } else if (!LAYOUT_FIELDTYPES.includes(docfield.fieldtype)) {
-      const field = toField(docfield, fieldContext);
-      const placement = context.placements[docfield.fieldname];
-      if (placement) {
-        placed.push({
-          ...field,
-          section: placement.section || DEFAULT_SECTION,
-          tab: placement.tab || undefined,
-        });
-      } else {
-        fields.push({ ...field, section, tab });
-      }
+  for (const { docfield, section, tab } of getPositionedFields(shown)) {
+    const field = toField(docfield, fieldContext);
+    const placement = context.placements[docfield.fieldname];
+    if (placement) {
+      placed.push({
+        ...field,
+        section: placement.section || DEFAULT_SECTION,
+        tab: placement.tab || undefined,
+      });
+    } else {
+      fields.push({ ...field, section, tab });
     }
   }
 
@@ -181,6 +242,27 @@ function getDocFields(
     (a, b) => order.indexOf(a.fieldname) - order.indexOf(b.fieldname)
   );
   return [...fields, ...placed];
+}
+
+type Positioned = { docfield: DocField; section: string; tab?: string };
+
+/** The data fields of a DocType with the tab and section their breaks put them in. */
+function getPositionedFields(meta: DocTypeMeta): Positioned[] {
+  const positioned: Positioned[] = [];
+  let tab: string | undefined;
+  let section = DEFAULT_SECTION;
+  for (const docfield of meta.fields) {
+    if (docfield.fieldtype === 'Tab Break') {
+      tab = docfield.label;
+      section = DEFAULT_SECTION;
+    } else if (docfield.fieldtype === 'Section Break') {
+      section = docfield.label || DEFAULT_SECTION;
+    } else if (!LAYOUT_FIELDTYPES.includes(docfield.fieldtype)) {
+      positioned.push({ docfield, section, tab });
+    }
+  }
+
+  return positioned;
 }
 
 /**
@@ -217,10 +299,12 @@ function toField(docfield: DocField, context: FieldContext): Field {
     ...shown,
   } as Field & { target?: string; create?: boolean; allowCustom?: boolean };
 
-  if (docfield.fieldtype === 'Table') {
+  if (isTableDocField(docfield)) {
     field.target = getTableSchemaName(docfield.options!);
   } else if (properties.target) {
     field.target = schemaNames[properties.target] ?? properties.target;
+    // Books has no form to create a record of a doctype it does not show.
+    field.create &&= !!schemaNames[properties.target];
   }
 
   return field;
@@ -233,7 +317,12 @@ export function getCustomFieldname(fieldname: string): string {
 
 /** The schema of a table's rows: its DocType without `Books ` and spaces, e.g. `SalesInvoiceItem`. */
 export function getTableSchemaName(doctype: string): string {
-  return doctype.replace(/^Books /, '').replaceAll(' ', '');
+  return withoutBooksPrefix(doctype).replaceAll(' ', '');
+}
+
+/** A DocType as users read it: without `Books `, e.g. `Payment Entry Deduction`. */
+export function withoutBooksPrefix(doctype: string): string {
+  return doctype.replace(/^Books /, '');
 }
 
 /** A DocField's link_filters as list filters; `eval:` values need Desk's form script, so they are left out. */
@@ -305,6 +394,37 @@ function getNameFields(
   return [...fields.slice(0, index), nameField, ...fields.slice(index)];
 }
 
+/** Client fields go after the fields they name, in their sections; they filter no list. */
+function withClientFields(
+  fields: Field[],
+  { clientFields = [] }: Presentation
+): Field[] {
+  const placed = [...fields];
+  for (const { after, ...field } of clientFields) {
+    const index = placed.findIndex(({ fieldname }) => fieldname === after);
+    const { section, tab } = placed[index] ?? {};
+    const clientField = {
+      ...field,
+      section,
+      tab,
+      clientOnly: true,
+      filter: false,
+    };
+    placed.splice(index + 1, 0, clientField as Field);
+  }
+
+  return placed;
+}
+
+/** Insert-only fields filter no list, as no column holds them. */
+function getInsertFields({ insertFields = [] }: Presentation): Field[] {
+  return insertFields.map((field) => ({
+    ...field,
+    insertOnly: true,
+    filter: false,
+  }));
+}
+
 function getMetaFields(meta: DocTypeMeta): Field[] {
   if (meta.istable) {
     return [];
@@ -331,7 +451,7 @@ function getNaming(meta: DocTypeMeta): Naming {
 
   // Books names these by script from their number series; see SeriesNamingMixin.
   const hasSeries = meta.fields.some(
-    ({ fieldname }) => fieldname === 'number_series'
+    ({ fieldname }) => fieldname === 'naming_series'
   );
   if (hasSeries || (!rule && meta.naming_rule === 'By script')) {
     return 'numberSeries';

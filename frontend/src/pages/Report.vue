@@ -33,7 +33,7 @@
     <template v-if="isMobile">
       <MobileReport
         v-if="report"
-        :report="(report as Report)"
+        :report="report as Report"
         :defaults="filterDefaults"
         :loading="loading || (report.loading && !report.reportData.length)"
         @open-filters="filtersOpen = true"
@@ -44,7 +44,7 @@
       <MobileReportFilters
         v-if="report"
         v-model:open="filtersOpen"
-        :report="(report as Report)"
+        :report="report as Report"
         :defaults="filterDefaults"
         @apply="reload"
       />
@@ -52,7 +52,7 @@
 
     <ReportFilters
       v-else-if="report && report.filters.length"
-      :report="(report as Report)"
+      :report="report as Report"
       :loading="loading"
     />
 
@@ -64,7 +64,7 @@
 import { Button as FrappeButton } from 'frappe-ui';
 import { t } from 'fyo';
 import { DocValue } from 'fyo/core/types';
-import { reports } from 'reports';
+import { getReports, type ReportName } from 'reports';
 import { Report } from 'reports/Report';
 import DropdownWithActions from 'src/components/DropdownWithActions.vue';
 import PageHeader from 'src/components/PageHeader.vue';
@@ -105,7 +105,7 @@ export default defineComponent({
   },
   props: {
     reportClassName: {
-      type: String as PropType<keyof typeof reports>,
+      type: String as PropType<ReportName>,
       required: true,
     },
     defaultFilters: {
@@ -126,25 +126,28 @@ export default defineComponent({
   },
   computed: {
     title() {
-      return reports[this.reportClassName]?.title ?? t`Report`;
+      return getReports()[this.reportClassName]?.title ?? t`Report`;
     },
     groupedActions() {
       const actions = this.report?.getActions() ?? [];
-      const actionsMap = actions.reduce((acc, ac) => {
-        if (!ac.group) {
-          ac.group = 'none';
-        }
+      const actionsMap = actions.reduce(
+        (acc, ac) => {
+          if (!ac.group) {
+            ac.group = 'none';
+          }
 
-        acc[ac.group] ??= {
-          group: ac.group,
-          label: ac.label ?? '',
-          type: ac.type ?? 'secondary',
-          actions: [],
-        };
+          acc[ac.group] ??= {
+            group: ac.group,
+            label: ac.label ?? '',
+            type: ac.type ?? 'secondary',
+            actions: [],
+          };
 
-        acc[ac.group].actions.push(ac);
-        return acc;
-      }, {} as Record<string, ActionGroup>);
+          acc[ac.group].actions.push(ac);
+          return acc;
+        },
+        {} as Record<string, ActionGroup>
+      );
 
       return Object.values(actionsMap);
     },

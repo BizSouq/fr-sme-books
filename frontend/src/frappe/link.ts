@@ -9,13 +9,19 @@ export type LinkRecord = Record<string, string | null | undefined> & {
   name: string;
   label?: string | null;
 };
-export type LinkOption = { label: string; value: string; record: LinkRecord };
+export type LinkOption = {
+  label: string;
+  value: string;
+  record: LinkRecord;
+  description?: string;
+};
 
 /**
  * Link options from Frappe's link search, each with its record's `fields`.
  * Letters typed are matched in order, e.g. `rce` finds `Rice`, as Books'
  * link search always has; Frappe matches a translated doctype's names, in the
- * user's language, by the text typed. Labels are those of Frappe's link search.
+ * user's language, and those of a doctype Books has no screen for, by the
+ * text typed. Labels are those of Frappe's link search.
  */
 export async function searchFrappeLink(
   schemaName: string,
@@ -24,11 +30,11 @@ export async function searchFrappeLink(
   limit: number,
   fields: string[] = []
 ): Promise<LinkOption[]> {
-  const { doctype, meta } = getDocType(schemaName);
+  const { doctype, asTyped } = getLinkDoctype(schemaName);
   const words = text.trim();
   const records = await call<LinkRecord[]>('frappe.desk.search.search_widget', {
     doctype,
-    txt: meta.translated_doctype ? words : [...words].join('%'),
+    txt: asTyped ? words : [...words].join('%'),
     filters: filters ?? [],
     filter_fields: fields,
     page_length: limit,
@@ -43,9 +49,22 @@ export async function searchFrappeLink(
 
 /** A linked record's name or title as Frappe shows it: in the user's language for a translated doctype. */
 export function getLinkLabel(schemaName: string, label: string): string {
-  return getDocType(schemaName).meta.translated_doctype
-    ? translateValue(label)
-    : label;
+  return getLinkDoctype(schemaName).translated ? translateValue(label) : label;
+}
+
+/**
+ * The doctype a link searches: its schema's, or, for a doctype Books has no
+ * screen for, the target itself. Books has no meta of those, which may be
+ * translated, so their search takes the text as typed, as Desk's does.
+ */
+function getLinkDoctype(schemaName: string) {
+  if (!isFrappeBacked(schemaName)) {
+    return { doctype: schemaName, translated: false, asTyped: true };
+  }
+
+  const { doctype, meta } = getDocType(schemaName);
+  const translated = !!meta.translated_doctype;
+  return { doctype, translated, asTyped: translated };
 }
 
 /**

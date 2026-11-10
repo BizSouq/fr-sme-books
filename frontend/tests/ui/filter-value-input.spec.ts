@@ -12,7 +12,7 @@ const cases = [
   [
     'JournalEntry',
     'Entry Type',
-    'entry_type',
+    'voucher_type',
     [
       'Journal Entry',
       'Bank Entry',
@@ -27,28 +27,34 @@ const cases = [
       'Depreciation Entry',
     ],
   ],
-  ['Item', 'Purpose', 'item_usage', ['Purchases', 'Sales', 'Both']],
   ['Item', 'Type', 'item_type', ['Product', 'Service']],
   [
     'SalesInvoice',
     'Status',
     'status',
     [
-      'Saved',
+      'Draft',
       'Unpaid',
       'Partly Paid',
       'Paid',
       'Return',
-      'Return Issued',
+      'Credit Note Issued',
       'Cancelled',
     ],
   ],
-  ['JournalEntry', 'Status', 'status', ['Saved', 'Submitted', 'Cancelled']],
   [
-    'Shipment',
+    'DeliveryNote',
     'Status',
     'status',
-    ['Saved', 'Submitted', 'Return', 'Return Issued', 'Cancelled'],
+    [
+      'Draft',
+      'To Bill',
+      'Partially Billed',
+      'Completed',
+      'Return',
+      'Return Issued',
+      'Cancelled',
+    ],
   ],
 ] as const;
 
@@ -57,7 +63,7 @@ for (const [schema, label, field, options] of cases) {
     page,
   }) => {
     // The narrowest desktop window; phones get the filter sheet instead.
-    if (schema === 'JournalEntry' && field === 'entry_type')
+    if (schema === 'JournalEntry' && field === 'voucher_type')
       await page.setViewportSize({ width: 768, height: 560 });
     await openField(page, schema, label);
     const value = page.getByRole('combobox', { name: 'Value', exact: true });
@@ -67,7 +73,7 @@ for (const [schema, label, field, options] of cases) {
     ).toHaveText('Is');
     await value.click();
     await expect(page.getByRole('option')).toHaveText([...options]);
-    if (schema === 'JournalEntry' && field === 'entry_type') {
+    if (schema === 'JournalEntry' && field === 'voucher_type') {
       const menu = page.getByRole('listbox');
       await expect(menu).toBeInViewport();
       const bounds = (await menu.boundingBox())!;
@@ -86,9 +92,7 @@ for (const [schema, label, field, options] of cases) {
     ).toBeVisible();
     await expect(page.getByRole('listbox')).toBeHidden();
     await page.getByRole('button', { name: 'Apply', exact: true }).click();
-    expect(await appliedFilters(page)).toEqual([
-      [field, '=', options.at(-1)],
-    ]);
+    expect(await appliedFilters(page)).toEqual([[field, '=', options.at(-1)]]);
     await page
       .getByRole('button', { name: '1 filter applied', exact: true })
       .click();
@@ -126,26 +130,31 @@ for (const condition of ['Is', 'Contains']) {
 test('changing Select fields resets choices and supports keyboard selection', async ({
   page,
 }) => {
-  await openField(page, 'Item', 'Purpose');
-  await setValue(page, 'Both');
-  await choose(page, 'Field', 'Type');
+  await openField(page, 'Item', 'Type');
+  await setValue(page, 'Service');
+  await choose(page, 'Field', 'Custom Choice');
   const value = page.getByRole('combobox', { name: 'Value', exact: true });
   await expect(value).toHaveText('Select a value');
   await value.press('Enter');
-  await expect(page.getByRole('option')).toHaveText(['Product', 'Service']);
+  await expect(page.getByRole('option')).toHaveText([
+    'First label',
+    'Second label',
+  ]);
   await page
-    .getByRole('option', { name: 'Product', exact: true })
+    .getByRole('option', { name: 'First label', exact: true })
     .press('ArrowDown');
   await expect(
-    page.getByRole('option', { name: 'Service', exact: true })
+    page.getByRole('option', { name: 'Second label', exact: true })
   ).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(value).toHaveText('Service');
+  await expect(value).toHaveText('Second label');
   await expect(
     page.getByRole('region', { name: 'Filters', exact: true })
   ).toBeVisible();
   await page.getByRole('button', { name: 'Apply', exact: true }).click();
-  expect(await appliedFilters(page)).toEqual([['item_type', '=', 'Service']]);
+  expect(await appliedFilters(page)).toEqual([
+    ['customChoice', '=', 'code-two'],
+  ]);
 });
 
 test('Link filters offer records, search by name, clear, and use text for Contains', async ({
@@ -188,7 +197,7 @@ test('Link field changes load the correct records and lookup errors are visible'
 }) => {
   await openField(page, 'Item', 'Item Group');
   await setValue(page, 'ItemGroup-001');
-  await choose(page, 'Field', 'Unit Type');
+  await choose(page, 'Field', 'Default Unit of Measure');
   const input = page.getByRole('combobox', { name: 'Value', exact: true });
   await input.click();
   await expect(page.getByRole('option')).toHaveText(['UOM-001', 'UOM-002']);
@@ -206,11 +215,11 @@ test('Link field changes load the correct records and lookup errors are visible'
 test('Dynamic Link filters follow the selected type and clear stale selections', async ({
   page,
 }) => {
-  await openField(page, 'SalesQuote', 'Type');
-  await setValue(page, 'Party');
+  await openField(page, 'Quotation', 'Type');
+  await setValue(page, 'Customer');
   await page.getByRole('button', { name: 'Add a filter', exact: true }).click();
   await choose(page, 'Field', 'Customer', 1);
-  await setValue(page, 'Party-001', 1);
+  await setValue(page, 'Customer-001', 1);
   await setValue(page, 'Lead');
   const input = page
     .getByRole('combobox', { name: 'Value', exact: true })
@@ -221,22 +230,22 @@ test('Dynamic Link filters follow the selected type and clear stale selections',
   await page.getByRole('option', { name: 'Lead-002', exact: true }).click();
   await page.getByRole('button', { name: 'Apply', exact: true }).click();
   expect(await appliedFilters(page)).toEqual([
-    ['reference_type', '=', 'Books Lead'],
-    ['party', '=', 'Lead-002'],
+    ['quotation_to', '=', 'Books Lead'],
+    ['party_name', '=', 'Lead-002'],
   ]);
 });
 
 test('unresolved Dynamic Links allow text until their type is selected', async ({
   page,
 }) => {
-  await openField(page, 'SalesQuote', 'Customer');
+  await openField(page, 'Quotation', 'Customer');
   await expect(
     page.getByRole('combobox', { name: 'Value', exact: true })
   ).toHaveCount(0);
   await setValue(page, 'Known customer');
   await page.getByRole('button', { name: 'Apply', exact: true }).click();
   expect(await appliedFilters(page)).toEqual([
-    ['party', '=', 'Known customer'],
+    ['party_name', '=', 'Known customer'],
   ]);
 });
 
@@ -281,19 +290,19 @@ test('Autocomplete filters offer configured suggestions and still accept text', 
 test('changing a Dynamic Link type preserves implicit record restrictions', async ({
   page,
 }) => {
-  await openField(page, 'SalesQuote', 'Type');
+  await openField(page, 'Quotation', 'Type');
   await page.evaluate(() => {
     (window as any).filterFixture.filter.value.addFilter(
-      'party',
+      'party_name',
       '=',
-      'Party-001',
+      'Customer-001',
       true
     );
   });
   await setValue(page, 'Lead');
   await page.getByRole('button', { name: 'Apply', exact: true }).click();
   expect(await appliedFilters(page)).toEqual([
-    ['reference_type', '=', 'Books Lead'],
-    ['party', '=', 'Party-001'],
+    ['quotation_to', '=', 'Books Lead'],
+    ['party_name', '=', 'Customer-001'],
   ]);
 });

@@ -4,8 +4,12 @@ Frappe Books is small-business accounting, inventory and point of sale on Frappe
 
 ## Invoicing
 
+**Party**:
+The customer or supplier a document is made out to. A business that buys and sells is two records, a customer and a supplier.
+_Avoid_: contact, role
+
 **Invoice kind**:
-Whether an invoice is a sale, a purchase or a quote, which decides its party role, ledger account type, item account and posting side.
+Whether an invoice is a sale, a purchase or a quotation, which decides its party type (customer or supplier), ledger account type, item account and posting side.
 _Avoid_: transaction type
 
 **Return**:
@@ -23,8 +27,8 @@ _Avoid_: balance, outstanding (for the unsigned amount)
 ## Inventory
 
 **Stock transfer**:
-A Shipment or Purchase Receipt: the document that moves an invoice's stock out of or into a location.
-_Avoid_: delivery note, goods receipt
+A Delivery Note or Purchase Receipt: the document that moves an invoice's stock out of or into a warehouse.
+_Avoid_: shipment, goods receipt
 
 **Automatic transfer**:
 The stock transfer an invoice makes when it is submitted, for the stock no transfer it bills has moved.
@@ -43,7 +47,7 @@ _Avoid_: stock entry
 ## Point of sale
 
 **POS shift**:
-The period a cashier works the counter, opened with counted cash and closed with counted cash.
+The period a cashier works the counter, opened with counted cash and closed with counted cash. Each cashier has their own, which sells with the POS profile it names.
 _Avoid_: session, register
 
 **Cash method**:

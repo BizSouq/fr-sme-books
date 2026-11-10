@@ -6,4 +6,8 @@ export class AccountsPayable extends AccountsReceivable {
   static title = t`Accounts Payable`;
   static reportName = 'accounts-payable';
   static serverReportName = 'Books Accounts Payable';
+
+  override get partySchema(): string {
+    return 'Supplier';
+  }
 }

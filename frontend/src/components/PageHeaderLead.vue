@@ -24,7 +24,7 @@ import { inject } from 'vue';
 
 /**
  * Phone top bars lead with back on pushed pages and the nav sheet elsewhere.
- * The back chevron is flipped for RTL by hand (frappe/frappe-ui#1220).
+ * frappe-ui's back button doesn't flip its chevron for RTL, so Books does.
  */
 const openNavSheet = inject(openNavSheetKey, undefined);
 </script>

@@ -4,7 +4,7 @@ import frappe
 from frappe.core.doctype.data_import.data_import import form_start_import, get_import_status
 from frappe.tests import IntegrationTestCase
 
-from frappe_books.tests.accounting import make_account, make_item, make_party, unique_name
+from frappe_books.tests.accounting import make_account, make_customer, make_item, unique_name
 from frappe_books.tests.test_books_page import _make_user
 
 MANAGER = "books-data-import-manager@example.com"
@@ -20,11 +20,11 @@ class IntegrationTestDataImport(IntegrationTestCase):
 		receivable = make_account("Import Receivable", account_type="Receivable")
 		income = make_account("Import Income", root_type="Income", account_type="Income Account")
 		expense = make_account("Import Expense", root_type="Expense", account_type="Expense Account")
-		party = make_party(receivable.name)
+		party = make_customer(receivable.name)
 		item = make_item(income.name, expense.name)
 		rows = [
-			"docstatus,party,account,date,items.item,items.quantity,items.rate",
-			f"0,{party.name},{receivable.name},2031-01-05 10:00:00,{item.name},2,10",
+			"docstatus,customer,debit_to,posting_date,items.item_code,items.qty,items.price_list_rate",
+			f"0,{party.name},{receivable.name},2031-01-05,{item.name},2,10",
 			f",,,,{item.name},1,5",
 		]
 
@@ -32,10 +32,10 @@ class IntegrationTestDataImport(IntegrationTestCase):
 			data_import = _run_import("Books Sales Invoice", "\r\n".join(rows))
 
 		self.assertEqual(get_import_status(data_import)["status"], "Success")
-		invoice = frappe.get_last_doc("Books Sales Invoice", filters={"party": party.name})
+		invoice = frappe.get_last_doc("Books Sales Invoice", filters={"customer": party.name})
 		self.assertTrue(invoice.name.startswith("SINV-"))
 		self.assertEqual(invoice.docstatus, 1)
-		self.assertEqual([row.quantity for row in invoice.items], [2, 1])
+		self.assertEqual([row.qty for row in invoice.items], [2, 1])
 
 
 def _run_import(doctype, csv):

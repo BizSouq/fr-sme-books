@@ -5,18 +5,19 @@
   >
     <PageHeader :title="isMobile ? name : t`Print view`">
       <SelectControl
-        v-if="templateList.length"
+        v-for="picker in pickers"
+        :key="picker.title"
         :df="{
           fieldtype: 'Select',
-          fieldname: 'templateName',
-          label: t`Template Name`,
-          options: templateList.map((n) => ({ label: n, value: n })),
+          fieldname: picker.title,
+          label: picker.name,
+          options: picker.options,
         }"
         size="small"
         class="w-40"
         :border="true"
-        :value="templateName ?? ''"
-        @change="onTemplateNameChange"
+        :value="picker.value ?? ''"
+        @change="(value: string | null) => picker.select(value ?? '')"
       />
       <DropdownWithActions :actions="actions" :label="t`More`" />
       <template v-if="doc?.can('print')">
@@ -30,13 +31,17 @@
     </PageHeader>
 
     <div
-      v-if="isMobile && templateList.length"
-      class="sticky top-0 z-10 bg-surface-base px-4 py-3"
+      v-if="isMobile && pickers.length"
+      class="sticky top-0 z-10 flex flex-col gap-2 bg-surface-base px-4 py-3"
     >
-      <MobilePrintTemplatePicker
-        :model-value="templateName"
-        :templates="templateList"
-        @update:model-value="onTemplateNameChange"
+      <MobilePrintPicker
+        v-for="picker in pickers"
+        :key="picker.title"
+        :label="picker.label"
+        :title="picker.title"
+        :options="picker.options"
+        :model-value="picker.value"
+        @update:model-value="picker.select"
       />
     </div>
 
@@ -81,7 +86,7 @@
           size="lg"
           icon="lucide-download"
           :label="t`Save as PDF`"
-          :disabled="!printDocument"
+          :disabled="!canPrint"
           @click="savePDF()"
         />
         <FrappeButton
@@ -90,7 +95,7 @@
           icon-left="lucide-share"
           :label="t`Share`"
           :loading="isSharing"
-          :disabled="!printDocument"
+          :disabled="!canPrint"
           @click="sharePDF()"
         />
       </template>
@@ -100,7 +105,7 @@
         size="lg"
         icon-left="lucide-download"
         :label="t`Save as PDF`"
-        :disabled="!printDocument"
+        :disabled="!canPrint"
         @click="savePDF()"
       />
       <FrappeButton
@@ -109,7 +114,7 @@
         variant="solid"
         icon-left="lucide-printer"
         :label="t`Print`"
-        :disabled="!printDocument"
+        :disabled="!canPrint"
         @click="openPrintDialog()"
       />
     </MobileFooter>
@@ -150,13 +155,33 @@ import {
   PageSize,
   PrintHTML,
 } from 'src/utils/printFormats';
+import { getPOSProfileName } from 'src/utils/posSetup';
 import { showSidebar } from 'src/utils/refs';
 import { getFormRoute, openSettings, routeTo } from 'src/utils/ui';
 import { isMobile } from 'src/utils/viewport';
 import { defineComponent } from 'vue';
-import MobilePrintTemplatePicker from './MobilePrintTemplatePicker.vue';
+import MobilePrintPicker from './MobilePrintPicker.vue';
 import { usePDFShare } from './pdfShare';
 import { usePinchZoom } from './pinchZoom';
+
+/** A print choice the header (desktop) or the sticky bar (phone) offers. */
+/** A choice of the print, as the desktop select and the phone sheet both take it. */
+type PickerOption = { label: string; value: string };
+
+interface PrintPicker {
+  /** What the desktop select is called. */
+  name: string;
+  /** The phone trigger's label and its sheet's title. */
+  label: string;
+  title: string;
+  options: PickerOption[];
+  value: string | null;
+  select: (value: string) => unknown;
+}
+
+function toOptions(names: string[]): PickerOption[] {
+  return names.map((name) => ({ label: name, value: name }));
+}
 
 export default defineComponent({
   name: 'PrintView',
@@ -169,7 +194,7 @@ export default defineComponent({
     DropdownWithActions,
     EmptyState,
     MobileFooter,
-    MobilePrintTemplatePicker,
+    MobilePrintPicker,
   },
   props: {
     schemaName: { type: String, required: true },
@@ -219,6 +244,25 @@ export default defineComponent({
       }
 
       return '';
+    },
+    canPrint(): boolean {
+      return !!this.printDocument;
+    },
+    pickers(): PrintPicker[] {
+      if (!this.templateList.length) {
+        return [];
+      }
+
+      return [
+        {
+          name: this.t`Template Name`,
+          label: this.t`Template`,
+          title: this.t`Print Template`,
+          options: toOptions(this.templateList),
+          value: this.templateName,
+          select: this.onTemplateNameChange,
+        },
+      ];
     },
     printDocument(): string | null {
       return this.print && getPrintDocument(this.print);
@@ -392,7 +436,7 @@ export default defineComponent({
     },
     /** Hands the PDF to the system share sheet, as messaging apps expect a file. */
     async sharePDF() {
-      const templateName = this.templateName;
+      const { templateName } = this;
       if (!templateName) {
         return;
       }
@@ -423,14 +467,10 @@ export default defineComponent({
       if (this.schemaName == ModelNameEnum.SalesInvoice && this.doc?.is_pos) {
         templateName = this.fyo.singles.Defaults?.pos_print_template;
 
-        const posProfileName = this.fyo.singles.POSSettings?.pos_profile;
+        const posProfileName = await getPOSProfileName();
         const profileTemplate =
           posProfileName &&
-          (await getValue(
-            'Books Pos Profile',
-            posProfileName,
-            'pos_print_template'
-          ));
+          (await getValue('Books POS Profile', posProfileName, 'print_format'));
         if (profileTemplate) {
           templateName = profileTemplate;
         }

@@ -14,17 +14,14 @@
       >
         <FrappeListCell>
           <div class="flex flex-col gap-2">
-            <FrappeSkeleton
-              class="h-4 rounded-4"
-              :style="{ width: `${width}px` }"
-            />
-            <FrappeSkeleton class="h-3.5 w-28 rounded-4" />
+            <Skeleton class="h-4 rounded-4" :style="{ width: `${width}px` }" />
+            <Skeleton class="h-3.5 w-28 rounded-4" />
           </div>
         </FrappeListCell>
         <FrappeListCell class="justify-end">
           <div class="flex flex-col items-end gap-2">
-            <FrappeSkeleton class="h-4 w-20 rounded-4" />
-            <FrappeSkeleton class="h-3.5 w-12 rounded-full" />
+            <Skeleton class="h-4 w-20 rounded-4" />
+            <Skeleton class="h-3.5 w-12 rounded-full" />
           </div>
         </FrappeListCell>
       </FrappeListRow>
@@ -64,8 +61,8 @@
       v-else
       class="flex-1 py-16"
       :icon="isFiltered ? 'lucide-search-x' : 'lucide-inbox'"
-      :title="t`No entries found`"
-      :description="isFiltered ? t`No results match the current filters` : ''"
+      :title="emptyState.title"
+      :description="emptyState.description"
     >
       <FrappeButton
         v-if="isFiltered"
@@ -80,24 +77,26 @@
         variant="solid"
         size="lg"
         icon-left="lucide-plus"
-        :label="t`Make entry`"
+        :label="emptyState.createLabel"
         @click="$emit('makeNewDoc')"
       />
     </EmptyState>
   </MobilePullToRefresh>
 </template>
 <script lang="ts">
-import { Button as FrappeButton, Skeleton as FrappeSkeleton } from 'frappe-ui';
+import { Button as FrappeButton } from 'frappe-ui';
+import Skeleton from 'src/components/Skeleton.vue';
 import {
   List as FrappeList,
   ListCell as FrappeListCell,
   ListRow as FrappeListRow,
 } from 'frappe-ui/list';
-import type { RenderData } from 'fyo/model/types';
+import { t } from 'fyo';
+import type { ListViewSettings, RenderData } from 'fyo/model/types';
 import EmptyState from 'src/components/EmptyState.vue';
 import MobilePullToRefresh from 'src/mobile/MobilePullToRefresh.vue';
 import { defineComponent, type PropType } from 'vue';
-import type { ListColumn } from './listColumns';
+import { getEmptyState, type ListColumn } from './listColumns';
 import MobileListRow from './MobileListRow.vue';
 import { getMobileRowLayout, type MobileRowLayout } from './mobileRowLayout';
 
@@ -108,7 +107,7 @@ export default defineComponent({
     FrappeList,
     FrappeListCell,
     FrappeListRow,
-    FrappeSkeleton,
+    Skeleton,
     EmptyState,
     MobileListRow,
     MobilePullToRefresh,
@@ -122,6 +121,10 @@ export default defineComponent({
     isLoadingMore: Boolean,
     isFiltered: Boolean,
     canCreate: Boolean,
+    listConfig: {
+      type: Object as PropType<ListViewSettings | undefined>,
+      default: undefined,
+    },
     isSelectionMode: Boolean,
     selectedItems: { type: Array as PropType<string[]>, default: () => [] },
     refresh: {
@@ -142,6 +145,15 @@ export default defineComponent({
   computed: {
     layout(): MobileRowLayout {
       return getMobileRowLayout(this.schemaName, this.columns);
+    },
+    emptyState(): { title: string; description?: string; createLabel: string } {
+      return getEmptyState(this.listConfig, this.isFiltered, {
+        title: t`No entries found`,
+        description: this.isFiltered
+          ? t`No results match the current filters`
+          : '',
+        createLabel: t`Make entry`,
+      });
     },
   },
 });

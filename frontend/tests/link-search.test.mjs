@@ -16,7 +16,7 @@ const metas = [
     fields: [{ fieldname: 'root_type', fieldtype: 'Select', label: 'Root' }],
   },
   {
-    name: 'Books Party',
+    name: 'Books Customer',
     permissions: [],
     fields: [
       { fieldname: 'phone', fieldtype: 'Data', label: 'Phone' },
@@ -45,11 +45,11 @@ class Account extends FrappeDoc {
   static doctype = 'Books Account';
   static presentation = { label: 'Account' };
 }
-class Party extends FrappeDoc {
-  static doctype = 'Books Party';
-  static presentation = { label: 'Party' };
+class Customer extends FrappeDoc {
+  static doctype = 'Books Customer';
+  static presentation = { label: 'Customer' };
 }
-registerFrappeModels({ Account, Party });
+registerFrappeModels({ Account, Customer });
 await loadFrappeDocTypes();
 
 function makeControl(component, props) {
@@ -81,7 +81,7 @@ test("a multi-label link shows its records' other fields from one search", async
   requests.length = 0;
   records = [{ name: 'Asha', phone: '98200', email: 'asha@example.com' }];
   const link = makeControl(MultiLabelLink, {
-    df: { target: 'Party' },
+    df: { target: 'Customer' },
     secondaryLink: 'phone',
     thirdLink: 'email',
   });
@@ -102,7 +102,7 @@ test("a multi-label link shows its records' other fields from one search", async
 
 test("a link without model filters searches by its DocField's link_filters", async (t) => {
   t.after(() => delete fyo.singles.SystemSettings);
-  const linkFilters = { account_type: ['in', ['Cash', 'Bank']] };
+  const linkFilters = [['account_type', 'in', ['Cash', 'Bank']]];
   const link = makeControl(Link, {
     df: { target: 'Account', schemaName: 'Defaults', linkFilters },
   });

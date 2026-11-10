@@ -9,17 +9,17 @@ import {
   type PrintHTML,
 } from 'src/utils/printFormats';
 
-// The doctypes /books prints, as the Template Type offers them.
+// The doctypes /books prints, as the Template Type offers them, named by the mode.
 const PRINTED_DOCTYPES = [
-  { value: 'Books Sales Invoice', label: 'Sales Invoice' },
-  { value: 'Books Sales Quote', label: 'Quote' },
-  { value: 'Books Purchase Invoice', label: 'Purchase Invoice' },
-  { value: 'Books Journal Entry', label: 'Journal Entry' },
-  { value: 'Books Payment', label: 'Payment' },
-  { value: 'Books Shipment', label: 'Shipment' },
-  { value: 'Books Purchase Receipt', label: 'Purchase Receipt' },
-  { value: 'Books Stock Movement', label: 'Stock Movement' },
-];
+  'Sales Invoice',
+  'Quotation',
+  'Purchase Invoice',
+  'Journal Entry',
+  'Payment Entry',
+  'Delivery Note',
+  'Purchase Receipt',
+  'Stock Entry',
+].map((label) => ({ value: `Books ${label}`, label }));
 
 /** Frappe's Print Format. /books edits the ones with custom HTML that no app ships. */
 export class PrintFormat extends FrappeDoc {

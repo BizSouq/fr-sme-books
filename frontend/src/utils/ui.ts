@@ -9,7 +9,6 @@ import { Action } from 'fyo/model/types';
 import { getActions } from 'fyo/utils';
 import { ValueError } from 'fyo/utils/errors';
 import { canOpenLedger, getLedgerLink } from 'models/helpers';
-import { Invoice } from 'models/invoices/Invoice';
 import { ModelNameEnum } from 'models/types';
 import { Schema } from 'schemas/types';
 import { handleErrorWithDialog } from 'src/errorHandling';
@@ -24,6 +23,7 @@ import type { LinkedDoc } from 'utils/db/types';
 import { SelectFileOptions } from 'utils/types';
 import { RouteLocationRaw } from 'vue-router';
 import { selectFile } from './browser';
+import { isFieldShown } from './doc';
 import { showDialog, showToast } from './interactive';
 import { showSidebar } from './refs';
 import {
@@ -108,7 +108,7 @@ export async function deleteDocWithPrompt(doc: FrappeDoc) {
           try {
             await doc.delete();
           } catch (err) {
-            await handleErrorWithDialog(err as Error, doc);
+            await handleErrorWithDialog(err as Error, doc, true);
             return false;
           }
 
@@ -127,15 +127,13 @@ export async function deleteDocWithPrompt(doc: FrappeDoc) {
   })) as boolean;
 }
 
-export async function cancelDocWithPrompt(doc: FrappeDoc) {
-  let payments: LinkedDoc[] = [];
-  if (['SalesInvoice', 'PurchaseInvoice'].includes(doc.schemaName)) {
-    payments = await getInvoicePayments(doc);
-  }
-
+export async function cancelDocWithPrompt(
+  doc: FrappeDoc,
+  linkedDocs: LinkedDoc[]
+) {
   return (await showDialog({
     title: t`Cancel ${getDocReferenceLabel(doc)}?`,
-    detail: getCancelDetail(payments),
+    detail: getCancelDetail(linkedDocs),
     type: 'warning',
     // Buttons name the outcome: "Cancel" alone could mean either answer.
     buttons: [
@@ -143,9 +141,9 @@ export async function cancelDocWithPrompt(doc: FrappeDoc) {
         label: t`Cancel ${doc.typeLabel}`,
         async action() {
           try {
-            await doc.cancel(payments);
+            await doc.cancel(linkedDocs);
           } catch (err) {
-            await handleErrorWithDialog(err as Error, doc);
+            await handleErrorWithDialog(err as Error, doc, true);
             return false;
           }
 
@@ -162,6 +160,15 @@ export async function cancelDocWithPrompt(doc: FrappeDoc) {
       },
     ],
   })) as boolean;
+}
+
+/** The submitted documents that cancelling `doc` also cancels: an invoice's payments. */
+async function getDocsToCancel(doc: FrappeDoc): Promise<LinkedDoc[]> {
+  if (!['SalesInvoice', 'PurchaseInvoice'].includes(doc.schemaName)) {
+    return [];
+  }
+
+  return await getInvoicePayments(doc);
 }
 
 /** The submitted payments that cancelling the invoice `doc` also cancels. */
@@ -227,7 +234,7 @@ export function getGroupedActionsForDoc(doc?: FrappeDoc): ActionGroup[] {
       acc[ac.group].actions.push(ac);
       return acc;
     },
-    {} as Record<string, ActionGroup>,
+    {} as Record<string, ActionGroup>
   );
 
   const grouped = Object.keys(actionsMap)
@@ -285,7 +292,7 @@ function getDuplicateAction(doc: FrappeDoc): Action {
         const dupe = await doc.duplicate();
         await openEdit(dupe);
       } catch (err) {
-        await handleErrorWithDialog(err as Error, doc);
+        await handleErrorWithDialog(err as Error, doc, true);
       }
     },
   };
@@ -295,13 +302,15 @@ function getNewAction(doc: FrappeDoc): Action {
   return {
     label: t`New entry`,
     group: t`Create`,
-    condition: (doc: FrappeDoc) => fyo.can(doc.schemaName, 'create'),
+    // An unsaved document is already a new entry.
+    condition: (doc: FrappeDoc) =>
+      !doc.notInserted && fyo.can(doc.schemaName, 'create'),
     async action() {
       try {
         const newDoc = newFrappeDoc(doc.schemaName);
         await openEdit(newDoc);
       } catch (err) {
-        await handleErrorWithDialog(err as Error, doc);
+        await handleErrorWithDialog(err as Error, doc, true);
       }
     },
   };
@@ -309,7 +318,7 @@ function getNewAction(doc: FrappeDoc): Action {
 
 export function getFieldsGroupedByTabAndSection(
   schema: Schema,
-  doc: FrappeDoc,
+  doc: FrappeDoc
 ): UIGroupedFields {
   const grouped: UIGroupedFields = new Map();
   for (const field of doc.getFormFields(schema?.fields ?? [])) {
@@ -324,11 +333,7 @@ export function getFieldsGroupedByTabAndSection(
       tabbed.set(section, []);
     }
 
-    if (field.meta) {
-      continue;
-    }
-
-    if (doc.getFieldState(field).hidden) {
+    if (field.meta || !isFieldShown(doc, field)) {
       continue;
     }
 
@@ -358,6 +363,16 @@ export function getFieldsGroupedByTabAndSection(
   return grouped;
 }
 
+/** A form's tabs; the unnamed first one reads Details, as Desk's does, once app tabs join it. */
+export function getTabOptions(
+  grouped: UIGroupedFields | null | undefined
+): { value: string; label: string }[] {
+  return [...(grouped?.keys() ?? [])].map((value) => ({
+    value,
+    label: value === 'Main' ? t`Details` : value,
+  }));
+}
+
 export function getFormRoute(schemaName: string, name: string): string {
   const route = getModel(schemaName)
     ?.getListViewSettings(fyo)
@@ -367,8 +382,12 @@ export function getFormRoute(schemaName: string, name: string): string {
     return route;
   }
 
-  // Use `encodeURIComponent` if more name issues
-  return `/edit/${schemaName}/${name.replaceAll('/', '%2F')}`;
+  // Names may hold any character, like the % of "GST 18%".
+  return `/edit/${schemaName}/${encodeURIComponent(name)}`;
+}
+
+export function getPrintRoute(schemaName: string, name: string): string {
+  return `/print/${schemaName}/${encodeURIComponent(name)}`;
 }
 
 export async function openNewDoc(schemaName: string, initData?: DocValueMap) {
@@ -400,7 +419,7 @@ export function toggleSidebar(value?: boolean) {
 export function focusOrSelectFormControl(
   doc: FrappeDoc,
   ref: unknown,
-  shouldClear = true,
+  shouldClear = true
 ) {
   if (!doc?.fyo) {
     return;
@@ -486,7 +505,7 @@ export enum ShortcutKey {
 
 export async function commonDocDelete(
   doc: FrappeDoc,
-  routeBack = true,
+  routeBack = true
 ): Promise<boolean> {
   const res = await deleteDocWithPrompt(doc);
   if (!res) {
@@ -501,42 +520,23 @@ export async function commonDocDelete(
 }
 
 export async function commonDocCancel(doc: FrappeDoc): Promise<boolean> {
-  const res = await cancelDocWithPrompt(doc);
-  if (!res) {
-    return false;
+  const linkedDocs = await getDocsToCancel(doc);
+  const cancelled = await cancelDocWithPrompt(doc, linkedDocs);
+  if (cancelled) {
+    showActionToast(doc, 'cancel');
   }
-
-  showActionToast(doc, 'cancel');
-  return true;
+  return cancelled;
 }
 
-export async function commonDocSync(
-  doc: FrappeDoc,
-  useDialog = false,
-): Promise<boolean> {
-  let success: boolean;
-  if (useDialog) {
-    success = !!(await showSubmitOrSyncDialog(doc, 'sync'));
-  } else {
-    success = await syncWithoutDialog(doc);
-  }
-
-  if (!success) {
+export async function commonDocSync(doc: FrappeDoc): Promise<boolean> {
+  try {
+    await doc.sync();
+  } catch (error) {
+    await handleErrorWithDialog(error, doc, true);
     return false;
   }
 
   showActionToast(doc, 'sync');
-  return true;
-}
-
-async function syncWithoutDialog(doc: FrappeDoc): Promise<boolean> {
-  try {
-    await doc.sync();
-  } catch (error) {
-    await handleErrorWithDialog(error, doc);
-    return false;
-  }
-
   return true;
 }
 
@@ -545,7 +545,7 @@ export async function commonDocSubmit(doc: FrappeDoc): Promise<boolean> {
     return false;
   }
 
-  const success = await showSubmitOrSyncDialog(doc, 'submit');
+  const success = await showSubmitDialog(doc);
   if (!success) {
     return false;
   }
@@ -576,24 +576,14 @@ async function confirmSubmitWarning(doc: FrappeDoc): Promise<boolean> {
   })) as boolean;
 }
 
-async function showSubmitOrSyncDialog(doc: FrappeDoc, type: 'submit' | 'sync') {
-  const label = getDocReferenceLabel(doc);
-  let title = t`Save ${label}?`;
-  if (type === 'submit') {
-    title = t`Submit ${label}?`;
-  }
-
-  let detail: string;
-  if (type === 'submit') {
-    detail = getDocSubmitMessage(doc);
-  } else {
-    detail = getDocSyncMessage(doc);
-  }
+async function showSubmitDialog(doc: FrappeDoc) {
+  const title = t`Submit ${getDocReferenceLabel(doc)}?`;
+  const detail = getDocSubmitMessage(doc);
 
   let actionError: unknown;
   const yesAction = async () => {
     try {
-      await doc[type]();
+      await doc.submit();
     } catch (error) {
       actionError = error;
       return false;
@@ -630,24 +620,6 @@ async function showSubmitOrSyncDialog(doc: FrappeDoc, type: 'submit' | 'sync') {
   return success;
 }
 
-function getDocSyncMessage(doc: FrappeDoc): string {
-  const label = getDocReferenceLabel(doc);
-  const detail = t`Create new ${doc.schema.label} entry?`;
-  if (doc.inserted) {
-    return t`Save changes made to ${label}?`;
-  }
-
-  if (doc instanceof Invoice && doc.grand_total?.isZero()) {
-    const gt = doc.fyo.format(doc.grand_total ?? doc.fyo.pesa(0), 'Currency');
-    return [
-      detail,
-      t`Entry has Grand Total ${gt}. Please verify amounts.`,
-    ].join(' ');
-  }
-
-  return detail;
-}
-
 function getDocSubmitMessage(doc: FrappeDoc): string {
   const question = t`Mark ${doc.schema.label} as submitted?`;
   return [question, doc.submitNote].filter(Boolean).join(' ');
@@ -678,8 +650,8 @@ function showSubmitToast(doc: FrappeDoc) {
 
 // Documents that move stock; their submit toast opens their stock entries.
 const stockSchemas: string[] = [
-  ModelNameEnum.StockMovement,
-  ModelNameEnum.Shipment,
+  ModelNameEnum.StockEntry,
+  ModelNameEnum.DeliveryNote,
   ModelNameEnum.PurchaseReceipt,
 ];
 

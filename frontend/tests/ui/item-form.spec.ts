@@ -11,24 +11,45 @@ test('a new item takes its accounts from the server and saves', async ({
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await expect(page).toHaveURL(/\/books\/edit\/Item\//);
 
-  await page.getByRole('textbox', { name: 'Item Name' }).fill(name);
+  await page
+    .getByRole('textbox', { name: 'Item Code (required)', exact: true })
+    .fill(name);
   await page.keyboard.press('Tab');
   // The server's preview fills the accounts a save would.
   await expect(
-    page.getByRole('combobox', { name: 'Sales Acc. (required)' })
+    page.getByRole('combobox', { name: 'Income Account', exact: true })
   ).toHaveValue('Sales');
 
   await page.getByRole('combobox', { name: 'Type', exact: true }).click();
   await page.getByRole('option', { name: 'Service', exact: true }).click();
   await expect(
-    page.getByRole('combobox', { name: 'Sales Acc. (required)' })
+    page.getByRole('combobox', { name: 'Income Account', exact: true })
   ).toHaveValue('Service');
 
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.getByRole('button', { name: 'Yes', exact: true }).click();
   await expect(page).toHaveURL(
     new RegExp(`/books/edit/Item/${encodeURIComponent(name)}$`)
   );
+  await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+});
+
+test('an item named with URL characters stays open and reopens', async ({
+  page,
+}) => {
+  const name = `ITEM-${Date.now()}#-BLUE 50% A/B?&`;
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Item Code (required)', exact: true })
+    .fill(name);
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  const route = new RegExp(`/books/edit/Item/${encodeURIComponent(name)}$`);
+  await expect(page).toHaveURL(route);
+  await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+
+  // A new form would show 'Not Saved' under a new route.
+  await page.reload();
+  await waitForBooks(page);
+  await expect(page).toHaveURL(route);
   await expect(page.getByText('Saved', { exact: true })).toBeVisible();
 });
 
@@ -60,7 +81,7 @@ async function insertItem(page: Page, name: string) {
         'Content-Type': 'application/json',
         'X-Frappe-CSRF-Token': (window as any).csrf_token,
       },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ item_code: name }),
     });
     return response.status;
   }, name);

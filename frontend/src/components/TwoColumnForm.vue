@@ -9,7 +9,8 @@
         :show-label="true"
         :value="(doc[df.fieldname] ?? []) as unknown[]"
         @change="
-          async (value: FrappeDoc[] | DocValueMap[]) => await onChange(df, value)
+          async (value: FrappeDoc[] | DocValueMap[]) =>
+            await onChange(df, value)
         "
       />
       <div v-else class="min-w-0">
@@ -31,7 +32,7 @@
   </div>
   <div v-else class="text-base">
     <template v-for="df in formFields">
-      <!-- Table Field Form (Eg: PaymentFor) -->
+      <!-- Table Field Form (Eg: PaymentEntryReference) -->
       <Table
         v-if="df.fieldtype === 'Table'"
         :key="`${df.fieldname}-table`"
@@ -40,7 +41,8 @@
         :df="df"
         :value="(doc[df.fieldname] ?? []) as unknown[]"
         @change="
-          async (value: FrappeDoc[] | DocValueMap[]) => await onChange(df, value)
+          async (value: FrappeDoc[] | DocValueMap[]) =>
+            await onChange(df, value)
         "
       />
 
@@ -51,7 +53,9 @@
         class="grid min-h-14 items-start gap-x-3 border-b border-outline-gray-1 px-3 py-3"
         :style="style"
       >
-        <div class="flex min-h-8 min-w-0 items-center break-words text-ink-gray-6">
+        <div
+          class="flex min-h-8 min-w-0 items-center break-words text-ink-gray-6"
+        >
           {{ df.label }}
         </div>
 
@@ -99,6 +103,11 @@ export default defineComponent({
       type: Array as PropType<number[]>,
       default: () => [1, 1],
     },
+    /** Messages to show by fieldname, e.g. a required field a save found empty. */
+    fieldErrors: {
+      type: Object as PropType<Record<string, string>>,
+      default: () => ({}),
+    },
   },
   setup() {
     return { isMobile };
@@ -123,12 +132,24 @@ export default defineComponent({
     doc() {
       this.setFormFields();
     },
+    fields() {
+      this.setFormFields();
+    },
+    fieldErrors: {
+      immediate: true,
+      handler(given: Record<string, string>) {
+        Object.assign(this.errors, given);
+      },
+    },
   },
   mounted() {
     this.setFormFields();
   },
   methods: {
-    async onChange(field: Field, value: DocValue | FrappeDoc[] | DocValueMap[]) {
+    async onChange(
+      field: Field,
+      value: DocValue | FrappeDoc[] | DocValueMap[]
+    ) {
       const { fieldname } = field;
       delete this.errors[fieldname];
 

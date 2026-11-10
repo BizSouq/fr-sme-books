@@ -52,7 +52,8 @@
         variant="solid"
         :disabled="!selectedInvoiceName"
         @click="openSelectedInvoice"
-        >{{ t`Open invoice` }}</FrappeButton>
+        >{{ t`Open invoice` }}</FrappeButton
+      >
     </template>
   </Modal>
 </template>
@@ -61,9 +62,10 @@
 import Modal from 'src/components/POS/POSDialog.vue';
 import InvoiceSelectionTable from 'src/components/POS/InvoiceSelectionTable.vue';
 import type { DocValueMap } from 'fyo/core/types';
-import { defineComponent } from 'vue';
+import { defineComponent, inject } from 'vue';
 import { Field } from 'schemas/types';
 import type { Filter } from 'src/frappe/api';
+import type { SalesInvoice } from 'models/invoices/SalesInvoice';
 import { getPOSInvoiceFields, getPOSInvoices } from 'src/utils/pos';
 import {
   Badge as FrappeBadge,
@@ -98,7 +100,7 @@ export default defineComponent({
   },
   emits: ['toggleModal', 'selectedInvoiceName'],
   setup() {
-    return { isMobile };
+    return { isMobile, sinvDoc: inject('sinvDoc') as SalesInvoice };
   },
   data() {
     return {
@@ -124,7 +126,9 @@ export default defineComponent({
       return getPOSInvoiceFields();
     },
     filteredInvoices() {
-      return this.savedInvoiceList ? this.savedInvoices : this.submittedInvoices;
+      return this.savedInvoiceList
+        ? this.savedInvoices
+        : this.submittedInvoices;
     },
   },
   watch: {
@@ -166,7 +170,7 @@ export default defineComponent({
     },
     openSelectedInvoice() {
       const selectedInvoice = this.filteredInvoices.find(
-        (invoice) => invoice.name === this.selectedInvoiceName,
+        (invoice) => invoice.name === this.selectedInvoiceName
       );
       if (!selectedInvoice) {
         return;

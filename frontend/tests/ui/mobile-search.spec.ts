@@ -20,11 +20,8 @@ let hasCustomer = false;
 
 test.beforeEach(async ({ page }) => {
   if (hasCustomer || !bench || !site) return;
-  await insertDocument(page, 'Books Party', {
-    name: customer,
-    role: 'Customer',
-  });
-  await indexForSearch('Books Party', [customer]);
+  await insertDocument(page, 'Books Customer', { customer_name: customer });
+  await indexForSearch('Books Customer', [customer]);
   hasCustomer = true;
 });
 
@@ -78,7 +75,7 @@ test('a result opens its record, back keeps the search and Recent reopens it', a
   skipWithoutIndex();
   await openSearch(page, customer);
   await result(page, customer).click();
-  await expect(page).toHaveURL(/\/books\/edit\/Party\//);
+  await expect(page).toHaveURL(/\/books\/edit\/Customer\//);
 
   await page.goBack();
   await expect(searchbox(page)).toHaveValue(customer);
@@ -87,7 +84,7 @@ test('a result opens its record, back keeps the search and Recent reopens it', a
   const recent = result(page, customer);
   await expect(recent).toContainText('Recent');
   await recent.click();
-  await expect(page).toHaveURL(/\/books\/edit\/Party\//);
+  await expect(page).toHaveURL(/\/books\/edit\/Customer\//);
 });
 
 test('group chips and the filters sheet narrow the results', async ({
@@ -107,7 +104,7 @@ test('group chips and the filters sheet narrow the results', async ({
 
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
   const sheet = page.getByRole('dialog', { name: 'Search filters' });
-  await sheet.getByRole('button', { name: 'Party', exact: true }).click();
+  await sheet.getByRole('button', { name: 'Customer', exact: true }).click();
   await sheet.getByRole('button', { name: 'Done' }).click();
   await expect(record).toBeHidden();
   await expect(page.getByRole('button', { name: 'Filters (1)' })).toBeVisible();

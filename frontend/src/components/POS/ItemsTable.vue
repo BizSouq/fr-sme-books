@@ -19,22 +19,25 @@
           <template #default="{ item: row, value }">
             <FrappeListRow
               :value="value"
-              :aria-label="t`Add ${row.name}`"
+              :aria-label="t`Add ${row.itemName}`"
               @click="$emit('addItem', row)"
             >
               <FrappeListCell>
-                <span class="truncate text-base text-ink-gray-8" :title="row.name">
-                  {{ row.name }}
+                <span class="truncate text-base text-ink-gray-8" :title="row.itemName">
+                  {{ row.itemName }}
                 </span>
               </FrappeListCell>
               <FrappeListCell>
                 <span class="truncate text-sm text-ink-gray-6">{{ row.unit }}</span>
               </FrappeListCell>
               <FrappeListCell class="justify-end">
+                <!-- Stock is counted only for inventory items, as on phones. -->
                 <FrappeBadge
+                  v-if="row.trackItem"
                   :theme="row.availableQty > 0 ? 'green' : 'red'"
                   :label="t`${row.availableQty} in stock`"
                 />
+                <span v-else class="text-sm text-ink-gray-5">—</span>
               </FrappeListCell>
               <FrappeListCell class="justify-end">
                 <span class="truncate text-base tabular-nums text-ink-gray-8">

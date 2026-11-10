@@ -39,7 +39,7 @@
       :doc="doc"
       :fieldname="row.fieldname"
       :index="row.index"
-      @close="() => (row = null)"
+      @close="closeRow"
     />
   </div>
   <FormContainer v-else :use-full-width="useFullWidth">
@@ -75,12 +75,17 @@
           <FrappeButton
             v-if="doc.canSave"
             variant="solid"
-            :disabled="doc.isSyncing"
-            @click="sync"
+            :disabled="doc.isSyncing || !doc.canSave"
+            @click="sync()"
           >
             {{ t`Save` }}
           </FrappeButton>
-          <FrappeButton v-else-if="doc.canSubmit" variant="solid" @click="submit">{{ t`Submit` }}</FrappeButton>
+          <FrappeButton
+            v-else-if="doc.canSubmit"
+            variant="solid"
+            @click="submit"
+            >{{ t`Submit` }}</FrappeButton
+          >
         </template>
       </PageHeader>
     </template>
@@ -98,6 +103,13 @@
             variant="underline"
           />
         </div>
+        <FrappeAlert
+          v-if="doc.previewError"
+          class="mt-4"
+          theme="red"
+          :title="t`Not saved`"
+          :description="doc.previewError"
+        />
         <div class="divide-y divide-outline-gray-1">
           <CommonFormSection
             v-for="([n, fields], idx) in activeGroup.entries()"
@@ -105,6 +117,7 @@
             class="py-5"
             :show-title="activeGroup.size > 1 && n !== t`Default`"
             :title="n"
+            :description="doc.getSectionDescription(n)"
             :fields="fields"
             :doc="doc"
             :errors="errors"
@@ -117,6 +130,11 @@
               <Barcode @item-selected="addItem" />
             </template>
           </CommonFormSection>
+          <LinkedRecordsSection
+            v-if="linkedRecords && activeTab === tabOptions[0]?.value"
+            :doc="doc"
+            :config="linkedRecords"
+          />
         </div>
       </template>
     </template>
@@ -135,9 +153,9 @@
           :doc="doc"
           :fieldname="row.fieldname"
           :index="row.index"
-          @previous="(i: number) => (row!.index = i)"
-          @next="(i: number) => (row!.index = i)"
-          @close="() => (row = null)"
+          @previous="showRowAt"
+          @next="showRowAt"
+          @close="closeRow"
         />
       </Transition>
     </template>
@@ -145,11 +163,12 @@
 </template>
 <script lang="ts">
 import { DocValue } from 'fyo/core/types';
-import { Action } from 'fyo/model/types';
-import { FrappeDoc } from 'src/frappe/document';
+import { Action, LinkedRecords } from 'fyo/model/types';
+import { FrappeDoc, setFormShowsPreviewErrors } from 'src/frappe/document';
 import { DEFAULT_CURRENCY } from 'fyo/utils/consts';
 import { ValidationError } from 'fyo/utils/errors';
 import {
+  Alert as FrappeAlert,
   Breadcrumbs as FrappeBreadcrumbs,
   Button as FrappeButton,
   TabButtons as FrappeTabButtons,
@@ -164,6 +183,8 @@ import FormContainer from 'src/components/FormContainer.vue';
 import PageHeader from 'src/components/PageHeader.vue';
 import StatusPill from 'src/components/StatusPill.vue';
 import { handleErrorWithDialog } from 'src/errorHandling';
+import type { EvalDoc } from 'src/frappe/dependsOn';
+import { getEvalDoc } from 'src/frappe/fieldState';
 import { getSchema } from 'src/frappe/registry';
 import { useBooksDoc } from 'src/frappe/useBooksDoc';
 import { getErrorMessage } from 'src/utils';
@@ -178,6 +199,8 @@ import {
   getFieldsGroupedByTabAndSection,
   getFormRoute,
   getGroupedActionsForDoc,
+  getPrintRoute,
+  getTabOptions,
   isPrintable,
   routeTo,
 } from 'src/utils/ui';
@@ -187,11 +210,13 @@ import { computed, defineComponent, inject, nextTick } from 'vue';
 import CommonFormSection from './CommonFormSection.vue';
 import FormSkeleton from './FormSkeleton.vue';
 import LinkedEntries from './LinkedEntries.vue';
+import LinkedRecordsSection from './LinkedRecordsSection.vue';
 import MobileForm from './MobileForm.vue';
 import RowEditForm from './RowEditForm.vue';
 
 export default defineComponent({
   components: {
+    FrappeAlert,
     FormContainer,
     CommonFormSection,
     FormSkeleton,
@@ -202,6 +227,7 @@ export default defineComponent({
     Barcode,
     ExchangeRate,
     LinkedEntries,
+    LinkedRecordsSection,
     MobileForm,
     RowEditForm,
     StatusPill,
@@ -254,8 +280,12 @@ export default defineComponent({
     };
   },
   computed: {
+    /** The values the fields' conditions read; a preview's fills change them after an edit, or with none. */
+    conditionValues(): EvalDoc | null {
+      return this.hasDoc ? getEvalDoc(this.doc) : null;
+    },
     canShowBarcode(): boolean {
-      if (!this.fyo.singles.InventorySettings?.enable_barcodes) {
+      if (!this.fyo.isFeatureOn('show_barcode_field')) {
         return false;
       }
 
@@ -274,11 +304,11 @@ export default defineComponent({
     },
     exchangeRate(): number {
       // 0 shows the rate as missing, to be entered by the user.
-      if (!this.hasDoc || typeof this.doc.exchange_rate !== 'number') {
+      if (!this.hasDoc || typeof this.doc.conversion_rate !== 'number') {
         return 0;
       }
 
-      return this.doc.exchange_rate;
+      return this.doc.conversion_rate;
     },
     exchangeRateProps() {
       return {
@@ -333,7 +363,9 @@ export default defineComponent({
     doc(): FrappeDoc {
       const doc = this.docOrNull;
       if (!doc) {
-        throw new ValidationError(this.t`Doc ${this.schema.label} ${this.name} not set`);
+        throw new ValidationError(
+          this.t`Doc ${this.schema.label} ${this.name} not set`
+        );
       }
       return doc;
     },
@@ -343,14 +375,22 @@ export default defineComponent({
         return '';
       }
 
-      if (this.schema.isSubmittable && this.docOrNull.notInserted) {
+      // A random temporary name means nothing to the user.
+      const { isSubmittable, naming } = this.schema;
+      if (
+        this.docOrNull.notInserted &&
+        (isSubmittable || naming === 'random')
+      ) {
         return this.t`New entry`;
       }
 
       return this.docOrNull.formTitle || this.t`New entry`;
     },
     breadcrumbs(): BreadcrumbsProps['items'] {
-      const list = { label: this.schema.label, route: `/list/${this.schemaName}` };
+      const list = {
+        label: this.schema.label,
+        route: `/list/${this.schemaName}`,
+      };
       return this.title ? [list, { label: this.title }] : [list];
     },
     schema(): Schema {
@@ -360,6 +400,11 @@ export default defineComponent({
       }
 
       return schema;
+    },
+    /** Records the model lists on its saved documents, e.g. an item's prices. */
+    linkedRecords(): LinkedRecords | undefined {
+      const Model = this.docOrNull?.constructor as typeof FrappeDoc | undefined;
+      return Model?.getLinkedRecords(this.fyo);
     },
     activeGroup(): Map<string, Field[]> {
       if (!this.groupedFields) {
@@ -375,10 +420,7 @@ export default defineComponent({
       return group;
     },
     tabOptions(): { value: string; label: string }[] {
-      return [...(this.groupedFields?.keys() ?? [])].map((value) => ({
-        value,
-        label: value,
-      }));
+      return getTabOptions(this.groupedFields);
     },
     groupedActions(): ActionGroup[] {
       if (!this.hasDoc) {
@@ -389,7 +431,12 @@ export default defineComponent({
       const more = groups.find(({ group }) => !group)?.actions ?? [];
       return [
         ...groups.filter(({ group }) => group),
-        { group: '', label: '', type: 'secondary', actions: [...this.viewActions, ...more] },
+        {
+          group: '',
+          label: '',
+          type: 'secondary',
+          actions: [...this.viewActions, ...more],
+        },
       ];
     },
     /** Linked entries and the width toggle lead the … menu, as on phones. */
@@ -411,6 +458,16 @@ export default defineComponent({
   },
   watch: {
     'docOrNull.schema': 'updateGroupedFields',
+    conditionValues: 'updateGroupedFields',
+    // The form shows a failed preview as an Alert, so the document need not toast it.
+    docOrNull(doc: FrappeDoc | null, previous: FrappeDoc | null) {
+      if (previous) {
+        setFormShowsPreviewErrors(previous, false);
+      }
+      if (doc) {
+        setFormShowsPreviewErrors(doc, true);
+      }
+    },
   },
   beforeMount() {
     this.useFullWidth = !!this.fyo.singles.Misc?.use_full_width;
@@ -457,10 +514,10 @@ export default defineComponent({
       await this.doc.addItem(name, quantity);
     },
     async setExchangeRate(exchangeRate: number) {
-      await this.doc.set('exchange_rate', exchangeRate);
+      await this.doc.set('conversion_rate', exchangeRate);
     },
     async openPrintView() {
-      await routeTo(`/print/${this.doc.schemaName}/${this.doc.name}`);
+      await routeTo(getPrintRoute(this.doc.schemaName, this.doc.name!));
     },
     async toggleWidth() {
       const value = !this.useFullWidth;
@@ -474,17 +531,20 @@ export default defineComponent({
         return;
       }
 
-      this.groupedFields = getFieldsGroupedByTabAndSection(this.schema, this.doc);
+      this.groupedFields = getFieldsGroupedByTabAndSection(
+        this.schema,
+        this.doc
+      );
       if (!this.groupedFields.has(this.activeTab)) {
         this.activeTab = [...this.groupedFields.keys()][0] ?? this.t`Default`;
       }
     },
-    async sync(useDialog?: boolean) {
+    async sync() {
       if (this.isMobile && !this.checkRequiredFields()) {
         return;
       }
 
-      if (await commonDocSync(this.doc, useDialog)) {
+      if (await commonDocSync(this.doc)) {
         this.updateGroupedFields();
       }
     },
@@ -496,6 +556,12 @@ export default defineComponent({
       if (await commonDocSubmit(this.doc)) {
         this.updateGroupedFields();
       }
+    },
+    closeRow() {
+      this.row = null;
+    },
+    showRowAt(index: number) {
+      this.row!.index = index;
     },
     /** Phones mark missing fields in place instead of in a dialog. */
     checkRequiredFields(): boolean {
@@ -555,7 +621,11 @@ export default defineComponent({
     },
     onRowRemove({ idx, parentFieldname }: FrappeDoc) {
       const row = this.row;
-      if (!row || row.fieldname !== parentFieldname || typeof idx !== 'number') {
+      if (
+        !row ||
+        row.fieldname !== parentFieldname ||
+        typeof idx !== 'number'
+      ) {
         return;
       }
 

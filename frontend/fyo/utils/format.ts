@@ -132,8 +132,15 @@ function formatCurrency(
   doc: FrappeDoc | null,
   fyo: Fyo
 ): string {
-  const currency = getCurrency(field, doc, fyo);
+  return formatCurrencyValue(value, getCurrency(field, doc, fyo), fyo);
+}
 
+/** An amount in the locale's number format, after its currency's symbol. */
+export function formatCurrencyValue(
+  value: unknown,
+  currency: string,
+  fyo: Fyo
+): string {
   let valueString;
   try {
     valueString = formatNumber(value, fyo);
@@ -317,7 +324,7 @@ function getNumberFormatter(fyo: Fyo) {
   const locale =
     (fyo.singles.SystemSettings?.locale as string) ?? DEFAULT_LOCALE;
   const display =
-    (fyo.singles.SystemSettings?.display_precision as number) ??
+    (fyo.singles.SystemSettings?.currency_precision as number) ??
     DEFAULT_DISPLAY_PRECISION;
 
   // Force Latin (Western) digits for all locales by appending the Unicode

@@ -3,16 +3,20 @@ import type { DocPermissionMap } from 'fyo/utils/permissions';
 import { t } from 'fyo/utils/translation';
 import {
   call,
-  getServerError,
+  getFailure,
+  getHeaders,
   leaveIfSessionExpired,
   reachServer,
+  showServerMessages,
+  type ServerMessage,
 } from 'src/web/api';
 
 /** A document or row as Frappe sends it: Frappe fieldnames and raw values. */
 export type DocValues = Record<string, unknown>;
 
-/** A Frappe list filter, `[fieldname, operator, value]`. */
-export type Filter = [string, string, unknown];
+/** A Frappe list filter, `[fieldname, operator, value]`, or `[table doctype, fieldname, operator, value]` on its rows. */
+export type Filter =
+  [string, string, unknown] | [string, string, string, unknown];
 
 export interface ListQuery {
   /** Fieldnames, or `{ table: [fieldnames] }` for a table's rows. */
@@ -26,7 +30,9 @@ export interface ListQuery {
 type ResponseBody<T> = {
   data: T;
   docs?: DocValues[];
-  errors?: { type?: string; message?: string }[];
+  errors?: (Partial<ServerMessage> & { type?: string; exception?: string })[];
+  /** Messages the server logged besides the error, in order. */
+  messages?: ServerMessage[];
 };
 
 export async function getDocument(
@@ -181,12 +187,31 @@ async function request<T>(
   const body = (await response.json()) as ResponseBody<T>;
   if (!response.ok) {
     await leaveIfSessionExpired(response.status);
-    const [error] = body.errors ?? [];
-    const message = error?.message ?? error?.type ?? response.statusText;
-    throw getServerError(message, error?.type, response.status);
+    throw toServerError(body, response);
   }
 
+  showServerMessages(body.messages);
   return body;
+}
+
+/**
+ * A failed response's error; a mandatory error says what is missing only in
+ * its messages. Frappe gives an error raised without a message, like a
+ * TypeError, the first message logged before it, such as an alert, which
+ * stays an alert.
+ */
+function toServerError(body: ResponseBody<unknown>, response: Response) {
+  const [error] = body.errors ?? [];
+  const messages = [...(body.messages ?? [])];
+  if (error?.message) {
+    messages.push({
+      message: error.message,
+      title: error.title,
+      alert: error.alert,
+    });
+  }
+
+  return getFailure(messages, error?.type, response.status, error?.exception);
 }
 
 /** Frappe refuses a copy older than the saved one; /books says so in its own words. */
@@ -217,19 +242,4 @@ function getQueryString(params: Record<string, unknown> = {}): string {
 
   const text = query.toString();
   return text ? `?${text}` : '';
-}
-
-/** Frappe's JSON request headers, with the session's CSRF token. */
-export function getHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json; charset=utf-8',
-    'X-Frappe-Site-Name': window.location.hostname,
-  };
-  const token = window.csrf_token;
-  if (token && token !== '{{ csrf_token }}') {
-    headers['X-Frappe-CSRF-Token'] = token;
-  }
-
-  return headers;
 }

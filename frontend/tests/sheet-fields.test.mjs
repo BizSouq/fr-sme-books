@@ -15,7 +15,7 @@ import {
 
 // The server requires a custom field only with a default.
 const customFields = {
-  'Books Party': {
+  'Books Customer': {
     fieldname: 'custom_books_region',
     fieldtype: 'Data',
     label: 'Region',
@@ -46,10 +46,10 @@ test('quick edit asks for required fields that have no default', () => {
   assert.ok(coupon.includes('coupon_name'));
   assert.ok(!coupon.includes('is_enabled'));
 
-  const party = getSchema('Party');
-  assert.ok(getQuickEditFieldnames(party).includes('custom_books_region'));
+  const customer = getSchema('Customer');
+  assert.ok(getQuickEditFieldnames(customer).includes('custom_books_region'));
   assert.ok(
-    !getQuickEditFieldnames(party, ['custom_books_region']).includes(
+    !getQuickEditFieldnames(customer, ['custom_books_region']).includes(
       'custom_books_region'
     )
   );
@@ -57,11 +57,13 @@ test('quick edit asks for required fields that have no default', () => {
 
 test('row editors add the custom fields of a row', () => {
   const fieldnames = getRowEditFieldnames(getSchema('SalesInvoiceItem'));
-  assert.ok(fieldnames.includes('item'));
+  assert.ok(fieldnames.includes('item_code'));
   assert.ok(fieldnames.includes('custom_books_warranty'));
   assert.deepEqual(getRowEditFieldnames(getSchema('JournalEntryAccount')), [
     'account',
-    'debit',
-    'credit',
+    'party_type',
+    'party',
+    'debit_in_account_currency',
+    'credit_in_account_currency',
   ]);
 });

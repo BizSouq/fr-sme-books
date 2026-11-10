@@ -2,13 +2,7 @@
   <FrappeUIProvider>
     <div
       id="books-app"
-      class="
-        h-screen
-        flex flex-col
-        overflow-hidden
-        bg-surface-base
-        antialiased
-      "
+      class="h-screen flex flex-col overflow-hidden bg-surface-base antialiased"
       :dir="languageDirection"
     >
       <div
@@ -40,19 +34,21 @@
 <script lang="ts">
 import type { FrappeDoc } from 'src/frappe/document';
 import { frappeModels, getRegionalFrappeModels } from 'models';
+import type { Company } from 'models/baseModels/Company/Company';
 import type { SystemSettings } from 'models/baseModels/SystemSettings/SystemSettings';
 import { ModelNameEnum } from 'models/types';
 import DialogSheet from 'src/mobile/DialogSheet.vue';
 import MobileDesk from 'src/mobile/MobileDesk.vue';
 import Desk from 'src/pages/Desk.vue';
 import SetupWizard from 'src/pages/SetupWizard/SetupWizard.vue';
-import { registerFrappeModels } from 'src/frappe/doctypes';
 import {
   getSchemaDoctypes,
   getSingleSchemaNames,
   loadFrappeDocTypes,
 } from 'src/frappe/registry';
+import { registerFrappeModels } from 'src/frappe/doctypes';
 import { getFrappeDoc } from 'src/frappe/documents';
+import { initializeAiSession } from 'src/ai/session';
 import { fyo } from 'src/initFyo';
 import { Search } from 'src/utils/search';
 import { Shortcuts } from 'src/utils/shortcuts';
@@ -140,20 +136,31 @@ export default defineComponent({
       fyo.store.indianStates = books.indian_states;
       fyo.setCurrencySymbols(boot.docs);
       fyo.user = boot.user.name;
+      initializeAiSession();
 
       registerFrappeModels(frappeModels);
       registerFrappeModels(await getRegionalFrappeModels(books.country_code));
-      fyo.store.permissions = { doctypes: getSchemaDoctypes(), user: boot.user };
+      fyo.store.permissions = {
+        doctypes: getSchemaDoctypes(),
+        user: boot.user,
+      };
       await loadFrappeDocTypes();
       // Amounts load in the currency and precision the system settings set.
       const systemSettings = ModelNameEnum.SystemSettings;
       fyo.initializeMoneyMaker(
         (await getFrappeDoc(systemSettings, systemSettings)) as SystemSettings
       );
+      // Some singles are only for some roles.
       const singles = getSingleSchemaNames().filter(
-        (name) => name !== ModelNameEnum.SetupWizard && name !== systemSettings
+        (name) =>
+          name !== ModelNameEnum.SetupWizard &&
+          name !== systemSettings &&
+          fyo.can(name, 'read')
       );
-      await Promise.all(singles.map((name) => getFrappeDoc(name, name)));
+      await Promise.all([
+        ...singles.map((name) => getFrappeDoc(name, name)),
+        loadCompany(books.company),
+      ]);
       this.needsSetup = !fyo.singles.AccountingSettings?.setup_complete;
       if (!this.needsSetup) {
         this.searcher = new Search(fyo);
@@ -173,6 +180,16 @@ export default defineComponent({
     },
   },
 });
+
+/** The one company is read from `fyo.singles`, as the settings are. */
+async function loadCompany(name: string | null) {
+  if (name) {
+    fyo.singles.Company = (await getFrappeDoc(
+      ModelNameEnum.Company,
+      name
+    )) as Company;
+  }
+}
 </script>
 
 <style>

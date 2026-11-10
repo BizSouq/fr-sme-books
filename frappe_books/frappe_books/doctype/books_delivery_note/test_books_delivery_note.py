@@ -1,0 +1,653 @@
+# Copyright (c) 2026, Frappe Technologies Pvt. Ltd. and Contributors
+# See license.txt
+
+from decimal import Decimal
+from unittest.mock import patch
+
+import frappe
+from frappe.model.mapper import make_mapped_doc
+from frappe.tests import IntegrationTestCase
+from frappe.utils import add_to_date, now_datetime
+
+from frappe_books.frappe_books.doctype.books_delivery_note.books_delivery_note import (
+	make_return,
+	make_sales_invoice,
+)
+from frappe_books.frappe_books.doctype.books_purchase_receipt.test_books_purchase_receipt import (
+	make_receipt,
+	stock_value_change,
+)
+from frappe_books.tests.accounting import (
+	ensure_user,
+	ledger_entries,
+	make_account,
+	make_customer,
+	make_invoice,
+	make_item,
+	make_warehouse,
+	posting_values,
+	set_company_value,
+	set_inventory_accounts,
+	stock_quantity,
+	unique_name,
+)
+
+READ_ONLY_USER = "books-delivery-note-preview-reader@example.com"
+
+
+class IntegrationTestBooksDeliveryNote(IntegrationTestCase):
+	def test_delivery_note_removes_stock_posts_cogs_and_reverses(self):
+		stock = make_account("Stock", account_type="Stock")
+		received = make_account("Received", root_type="Liability")
+		cogs = make_account("COGS", root_type="Expense", account_type="Cost of Goods Sold")
+		income = make_account("Income", root_type="Income")
+		receivable = make_account("Receivable", account_type="Receivable")
+		party = make_customer(receivable.name)
+		item = make_item(income.name, received.name, is_stock_item=1)
+		set_inventory_accounts(stock.name, received.name, cogs.name)
+		seed_stock(item.name, quantity=4, rate=25)
+
+		shipment = frappe.get_doc(
+			{
+				"doctype": "Books Delivery Note",
+				"customer": party.name,
+				"items": [{"item_code": item.name, "warehouse": "Stores", "qty": 2, "rate": 25}],
+			}
+		).insert()
+		shipment.submit()
+
+		self.assertEqual(stock_quantity(item.name, "Stores"), 2)
+		entries = ledger_entries(shipment.doctype, shipment.name)
+		self.assertEqual(sum(Decimal(str(row.debit or 0)) for row in entries), Decimal("50"))
+		self.assertEqual(sum(Decimal(str(row.credit or 0)) for row in entries), Decimal("50"))
+
+		shipment.cancel()
+		self.assertEqual(stock_quantity(item.name, "Stores"), 4)
+		self.assertEqual(len(ledger_entries(shipment.doctype, shipment.name)), 4)
+
+	def test_delivery_note_posts_fifo_cost_not_selling_rate(self):
+		item, cogs, stock = self._tracked_item()
+		seed_stock(item.name, quantity=4, rate=10)
+		seed_stock(item.name, quantity=2, rate=20)
+
+		shipment = self._make_delivery_note(item, quantity=5, rate=25)
+		shipment.submit()
+
+		entries = ledger_entries(shipment.doctype, shipment.name)
+		cogs_entry = next(row for row in entries if row.account == cogs.name)
+		stock_entry = next(row for row in entries if row.account == stock.name)
+		self.assertEqual(Decimal(str(cogs_entry.debit)), Decimal("60"))
+		self.assertEqual(Decimal(str(stock_entry.credit)), Decimal("60"))
+
+	def test_return_delivery_note_posts_the_shipped_cost(self):
+		item, cogs, stock = self._tracked_item()
+		seed_stock(item.name, quantity=4, rate=10)
+		seed_stock(item.name, quantity=2, rate=20)
+		shipment = self._make_delivery_note(item, quantity=5, rate=25)
+		shipment.submit()
+
+		return_delivery_note = self._make_delivery_note(
+			item, quantity=-1, rate=25, return_against=shipment.name
+		)
+		return_delivery_note.submit()
+
+		entries = ledger_entries(return_delivery_note.doctype, return_delivery_note.name)
+		stock_entry = next(row for row in entries if row.account == stock.name)
+		cogs_entry = next(row for row in entries if row.account == cogs.name)
+		self.assertEqual(Decimal(str(stock_entry.debit)), Decimal("12"))
+		self.assertEqual(Decimal(str(cogs_entry.credit)), Decimal("12"))
+		self.assertEqual(stock_quantity(item.name, "Stores"), 2)
+		self.assertEqual(stock_value_change(return_delivery_note), Decimal("12"))
+
+	def test_return_into_empty_stock_takes_the_shipped_cost(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=2, rate=10)
+		shipment = self._make_delivery_note(item, quantity=2, rate=25)
+		shipment.submit()
+
+		return_delivery_note = self._make_delivery_note(
+			item, quantity=-1, rate=25, return_against=shipment.name
+		)
+		return_delivery_note.submit()
+
+		self.assertEqual(stock_value_change(return_delivery_note), Decimal("10"))
+
+	def test_delivery_note_cannot_post_a_stock_value_increase(self):
+		item, _cogs, _stock = self._tracked_item()
+		# Stock checks keep stock from going negative, so skip them to get there.
+		with patch("frappe_books.inventory.transaction.validate_stock_available"):
+			self._make_delivery_note(item, quantity=5, rate=25).submit()
+		seed_stock(item.name, quantity=10, rate=10)
+
+		shipment = self._make_delivery_note(item, quantity=5, rate=25)
+
+		self.assertRaisesRegex(frappe.ValidationError, "the wrong way", shipment.submit)
+
+	def test_backdated_receipt_reposts_later_delivery_note_cost(self):
+		item, cogs, _stock = self._tracked_item()
+		now = now_datetime()
+		seed_stock(item.name, quantity=5, rate=10, date=add_to_date(now, hours=-2))
+		shipment = self._make_delivery_note(item, quantity=3, rate=25, date=add_to_date(now, hours=-1))
+		shipment.submit()
+
+		receipt = make_receipt(item.name, quantity=2, rate=20, date=add_to_date(now, hours=-3))
+		self.assertEqual(account_balance(shipment, cogs.name), 50)
+
+		receipt.cancel()
+		self.assertEqual(account_balance(shipment, cogs.name), 30)
+
+	def test_restated_delivery_note_cost_revalues_its_return(self):
+		item, cogs, _stock = self._tracked_item()
+		now = now_datetime()
+		seed_stock(item.name, quantity=5, rate=10, date=add_to_date(now, hours=-3))
+		shipment = self._make_delivery_note(item, quantity=3, rate=25, date=add_to_date(now, hours=-2))
+		shipment.submit()
+		returned = self._make_delivery_note(
+			item, quantity=-3, rate=25, return_against=shipment.name, date=add_to_date(now, hours=-1)
+		)
+		returned.submit()
+
+		receipt = make_receipt(item.name, quantity=3, rate=20, date=add_to_date(now, hours=-4))
+		self.assertEqual(stock_value_change(returned), 60)
+		self.assertEqual(account_balance(returned, cogs.name), -60)
+
+		receipt.cancel()
+		self.assertEqual(stock_value_change(returned), 30)
+		self.assertEqual(account_balance(returned, cogs.name), -30)
+
+	def test_return_cannot_be_dated_before_its_delivery_note(self):
+		item, _cogs, _stock = self._tracked_item()
+		now = now_datetime()
+		seed_stock(item.name, quantity=2, rate=10, date=add_to_date(now, hours=-3))
+		shipment = self._make_delivery_note(item, quantity=2, rate=25, date=add_to_date(now, hours=-1))
+		shipment.submit()
+
+		self.assertRaisesRegex(
+			frappe.ValidationError,
+			"cannot be dated before",
+			self._make_delivery_note,
+			item,
+			quantity=-1,
+			rate=25,
+			return_against=shipment.name,
+			date=add_to_date(now, hours=-2),
+		)
+
+	def test_delivery_note_against_invoice_updates_quantity_to_transfer(self):
+		item, cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=5, rate=10)
+		invoice = self._make_invoice(item, cogs)
+
+		first = self._make_delivery_note(item, quantity=1, rate=100, items=[invoice_row(invoice, 1)])
+		first.submit()
+		self.assertEqual(transfer_balance(invoice), [1, 1])
+
+		self._make_delivery_note(item, quantity=1, rate=100, items=[invoice_row(invoice, 1)]).submit()
+		self.assertEqual(transfer_balance(invoice), [0, 0])
+
+		first.cancel()
+		self.assertEqual(transfer_balance(invoice), [1, 1])
+
+	def test_delivery_note_cannot_move_more_than_invoice_has_left(self):
+		item, cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=5, rate=10)
+		invoice = self._make_invoice(item, cogs)
+		self._make_delivery_note(item, quantity=2, rate=100, items=[invoice_row(invoice, 2)]).submit()
+
+		again = self._make_delivery_note(item, quantity=1, rate=100, items=[invoice_row(invoice, 1)])
+
+		self.assertRaisesRegex(frappe.ValidationError, "left to transfer", again.submit)
+
+	def test_return_delivery_note_marks_original_returned_until_cancelled(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=2, rate=10)
+		shipment = self._make_delivery_note(item, quantity=2, rate=25)
+		shipment.submit()
+
+		return_delivery_note = self._make_delivery_note(
+			item, quantity=-2, rate=25, return_against=shipment.name
+		)
+		return_delivery_note.submit()
+		self.assertEqual(returned_state(shipment), (100, "Return Issued"))
+
+		return_delivery_note.cancel()
+		self.assertEqual(returned_state(shipment), (0, "To Bill"))
+
+	def test_partly_returned_delivery_note_keeps_its_billing_status(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=2, rate=10)
+		shipment = self._make_delivery_note(item, quantity=2, rate=25)
+		shipment.submit()
+
+		self._make_delivery_note(item, quantity=-1, rate=25, return_against=shipment.name).submit()
+
+		self.assertEqual(returned_state(shipment), (50, "To Bill"))
+
+	def test_shipped_serial_numbers_are_delivered_until_cancelled(self):
+		item, _cogs, _stock = self._tracked_item()
+		frappe.db.set_value("Books Item", item.name, "has_serial_no", 1)
+		serials = ["SHIP-A " + item.name, "SHIP-B " + item.name]
+		seed_stock(item.name, quantity=2, rate=10, serial_number="\n".join(serials))
+		shipment = frappe.get_doc(
+			{
+				"doctype": "Books Delivery Note",
+				"customer": make_customer(make_account("Receivable", account_type="Receivable").name).name,
+				"items": [
+					{
+						"item_code": item.name,
+						"warehouse": "Stores",
+						"qty": 2,
+						"rate": 25,
+						"serial_no": "\n".join(serials),
+					}
+				],
+			}
+		).insert()
+		shipment.submit()
+		self.assertEqual(serial_statuses(serials), {"Delivered"})
+
+		shipment.cancel()
+		self.assertEqual(serial_statuses(serials), {"Active"})
+
+	def test_returned_serial_numbers_are_delivered_again_when_the_return_is_cancelled(self):
+		item, _cogs, _stock = self._tracked_item(has_serial_no=1)
+		serial = unique_name("SER")
+		seed_stock(item.name, quantity=1, rate=10, serial_number=serial)
+		shipment = self._make_delivery_note(
+			item, quantity=1, rate=25, items=[self._row(item, 1, serial_number=serial)]
+		)
+		shipment.submit()
+		returned = self._return_serial(item, shipment, serial)
+		returned.submit()
+		self.assertEqual(serial_statuses([serial]), {"Active"})
+
+		returned.cancel()
+		self.assertEqual(serial_statuses([serial]), {"Delivered"})
+
+	def test_return_cannot_take_back_more_than_was_shipped(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=3, rate=10)
+		shipment = self._make_delivery_note(item, quantity=3, rate=25)
+		shipment.submit()
+		self._make_delivery_note(item, quantity=-2, rate=25, return_against=shipment.name).submit()
+
+		with self.assertRaisesRegex(frappe.ValidationError, "exceed the quantity of 3"):
+			self._make_delivery_note(item, quantity=-2, rate=25, return_against=shipment.name)
+
+	def test_return_takes_back_only_the_shipped_batch_quantity(self):
+		item, _cogs, _stock = self._tracked_item(has_batch_no=1)
+		batches = [make_batch(item.name), make_batch(item.name)]
+		for batch in batches:
+			seed_stock(item.name, quantity=2, rate=10, batch=batch)
+		shipment = self._make_delivery_note(
+			item, quantity=2, rate=25, items=[self._row(item, 1, batch) for batch in batches]
+		)
+		shipment.submit()
+
+		with self.assertRaisesRegex(frappe.ValidationError, rf"\({batches[1]}\) exceed"):
+			self._make_delivery_note(
+				item,
+				quantity=2,
+				rate=25,
+				return_against=shipment.name,
+				items=[self._row(item, -2, batches[1])],
+			)
+
+	def test_return_takes_back_only_shipped_serial_numbers(self):
+		item, _cogs, _stock = self._tracked_item(has_serial_no=1)
+		serials = [unique_name("SER") for _ in range(3)]
+		seed_stock(item.name, quantity=3, rate=10, serial_number="\n".join(serials))
+		shipment = self._make_delivery_note(
+			item, quantity=2, rate=25, items=[self._row(item, 2, serial_number="\n".join(serials[:2]))]
+		)
+		shipment.submit()
+
+		with self.assertRaisesRegex(frappe.ValidationError, f"{serials[2]} is not in"):
+			self._return_serial(item, shipment, serials[2])
+		self._return_serial(item, shipment, serials[0]).submit()
+		with self.assertRaisesRegex(frappe.ValidationError, f"{serials[0]} is already returned"):
+			self._return_serial(item, shipment, serials[0])
+
+	def test_returns_take_quantities_back_and_other_delivery_notes_send_them(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=2, rate=10)
+		shipment = self._make_delivery_note(item, quantity=-2, rate=25)
+		shipment.submit()
+
+		returned = self._make_delivery_note(item, quantity=1, rate=25, return_against=shipment.name)
+
+		self.assertEqual((shipment.items[0].stock_qty, shipment.items[0].qty), (2, 2))
+		self.assertEqual((returned.items[0].stock_qty, returned.items[0].qty), (-1, -1))
+
+	def test_rows_without_quantities_move_one_of_their_unit(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=2, rate=10)
+		shipment = self._make_delivery_note(item, quantity=None, rate=25)
+		shipment.submit()
+
+		returned = self._make_delivery_note(item, quantity=None, rate=25, return_against=shipment.name)
+
+		self.assertEqual((shipment.items[0].stock_qty, shipment.items[0].qty), (1, 1))
+		self.assertEqual((returned.items[0].stock_qty, returned.items[0].qty), (-1, -1))
+
+	def test_preview_fills_what_a_save_would_without_saving(self):
+		item, _cogs, _stock = self._tracked_item(has_serial_no=1, gst_hsn_code="012345")
+		serial_numbers = [unique_name("SN"), unique_name("SN")]
+		seed_stock(item.name, quantity=2, rate=10, serial_number="\n".join(serial_numbers))
+		set_company_value("default_warehouse", "Stores")
+		frappe.db.set_single_value("Books Defaults", "delivery_note_terms", "Ships in a week")
+		shipment = frappe.get_doc(
+			{"doctype": "Books Delivery Note", "items": [{"item_code": item.name, "qty": 2, "rate": 25}]}
+		)
+		shipment.set("__islocal", 1)
+
+		shipment.preview()
+
+		row = shipment.items[0]
+		self.assertEqual((shipment.naming_series, shipment.terms), ("SHPM-", "Ships in a week"))
+		self.assertEqual((row.warehouse, row.gst_hsn_code, row.amount), ("Stores", "012345", 50))
+		self.assertEqual(row.serial_no.splitlines(), sorted(serial_numbers))
+		self.assertEqual(shipment.grand_total, 50)
+		self.assertIsNone(shipment.name)
+
+	def test_preview_needs_the_right_to_make_delivery_notes(self):
+		shipment = frappe.new_doc("Books Delivery Note")
+		with self.set_user(ensure_user(READ_ONLY_USER)), self.assertRaises(frappe.PermissionError):
+			shipment.preview()
+
+	def test_rows_default_to_the_inventory_location(self):
+		item, _cogs, _stock = self._tracked_item()
+		set_company_value("default_warehouse", "Stores")
+		shipment = self._make_delivery_note(
+			item, quantity=1, rate=25, items=[{"item_code": item.name, "qty": 1}]
+		)
+
+		self.assertEqual(shipment.items[0].warehouse, "Stores")
+
+	def test_empty_serial_numbers_are_the_earliest_in_stock_at_the_row_location(self):
+		item, _cogs, _stock = self._tracked_item(has_serial_no=1)
+		shelf = make_warehouse("Shelf").name
+		serials = [unique_name("SER") for _ in range(3)]
+		now = now_datetime()
+		seed_stock(item.name, quantity=1, rate=10, serial_number=serials[0], date=add_to_date(now, hours=-3))
+		for serial_number, hours in ((serials[2], -1), (serials[1], -2)):
+			row = {"item_code": item.name, "t_warehouse": shelf, "qty": 1, "basic_rate": 10}
+			movement = frappe.get_doc(
+				{
+					"doctype": "Books Stock Entry",
+					"purpose": "Material Receipt",
+					**posting_values(add_to_date(now, hours=hours)),
+					"items": [{**row, "serial_no": serial_number}],
+				}
+			).insert()
+			movement.submit()
+
+		shipment = self._make_delivery_note(
+			item, quantity=1, rate=25, items=[{"item_code": item.name, "warehouse": shelf, "qty": 1}]
+		)
+
+		self.assertEqual(shipment.items[0].serial_no, serials[1])
+
+	def test_return_must_reference_a_submitted_original(self):
+		item, _cogs, _stock = self._tracked_item()
+		draft = self._make_delivery_note(item, quantity=1, rate=25)
+
+		with self.assertRaisesRegex(frappe.ValidationError, "submitted original"):
+			self._make_delivery_note(item, quantity=-1, rate=25, return_against=draft.name)
+
+	def test_invoice_bills_a_delivery_note_without_shipping_again(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=3, rate=10)
+		shipment = self._make_delivery_note(item, quantity=2, rate=25)
+		shipment.submit()
+
+		invoice = make_sales_invoice(shipment.name)
+
+		self.assertEqual((invoice.doctype, invoice.party), ("Books Sales Invoice", shipment.party))
+		self.assertEqual(
+			[(row.item_code, row.qty, row.price_list_rate, row.delivery_note) for row in invoice.items],
+			[(item.name, 2, 25, shipment.name)],
+		)
+		self.assertEqual(invoice.grand_total, 50)
+		invoice.make_auto_stock_transfer = 1
+		invoice.insert().submit()
+		self.assertEqual(stock_quantity(item.name, "Stores"), 1)
+
+	def test_invoice_cancel_and_delete_keep_the_delivery_note_it_bills(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=2, rate=10)
+		shipment = self._make_delivery_note(item, quantity=2, rate=25)
+		shipment.submit()
+		invoice = make_sales_invoice(shipment.name)
+		invoice.update({"make_auto_stock_transfer": 1, "make_auto_payment": 0})
+		invoice.insert().submit()
+		self.assertFalse(
+			frappe.db.exists("Books Delivery Note Item", {"against_sales_invoice": invoice.name})
+		)
+		self.assertEqual(transfer_balance(invoice), [0, 0])
+		self.assertEqual(billed_state(shipment), (100, "Completed"))
+
+		invoice.cancel()
+		self.assertEqual([shipment.db_get("docstatus"), *billed_state(shipment)], [1, 0, "To Bill"])
+
+		frappe.delete_doc(invoice.doctype, invoice.name)
+		self.assertTrue(frappe.db.exists("Books Delivery Note", shipment.name))
+
+	def test_invoices_bill_a_delivery_note_only_up_to_what_it_shipped(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=3, rate=10)
+		shipment = self._make_delivery_note(item, quantity=2, rate=25)
+		shipment.submit()
+		first = make_sales_invoice(shipment.name).insert()
+		second = make_sales_invoice(shipment.name).insert()
+
+		first.submit()
+
+		self.assertRaisesRegex(frappe.ValidationError, "exceed the quantity of 2", second.submit)
+		first.cancel()
+		second.reload().submit()
+
+	def test_invoice_maps_what_earlier_invoices_left_to_bill(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=3, rate=10)
+		shipment = self._make_delivery_note(item, quantity=3, rate=25)
+		shipment.submit()
+		first = make_sales_invoice(shipment.name)
+		first.items[0].update({"qty": 2, "stock_qty": 2})
+		first.insert().submit()
+
+		self.assertEqual([row.qty for row in make_sales_invoice(shipment.name).items], [1])
+		make_sales_invoice(shipment.name).insert().submit()
+		self.assertRaisesRegex(
+			frappe.ValidationError, "already fully billed", make_sales_invoice, shipment.name
+		)
+
+	def test_delivery_note_is_billed_by_what_its_submitted_invoices_bill(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=2, rate=10)
+		shipment = self._make_delivery_note(item, quantity=2, rate=25)
+		shipment.submit()
+		first = make_sales_invoice(shipment.name)
+		first.items[0].update({"qty": 1, "stock_qty": 1})
+		first.insert().submit()
+		self.assertEqual(billed_state(shipment), (50, "Partially Billed"))
+
+		second = make_sales_invoice(shipment.name).insert()
+		second.submit()
+		self.assertEqual(billed_state(shipment), (100, "Completed"))
+
+		second.cancel()
+		self.assertEqual(billed_state(shipment), (50, "Partially Billed"))
+
+	def test_invoice_of_a_delivery_note_can_bill_lines_it_did_not_ship(self):
+		item, cogs, _stock = self._tracked_item()
+		service = make_item(item.item_defaults[0].income_account, cogs.name)
+		seed_stock(item.name, quantity=2, rate=10)
+		shipment = self._make_delivery_note(item, quantity=2, rate=25)
+		shipment.submit()
+		invoice = make_sales_invoice(shipment.name)
+		invoice.append("items", {"item_code": service.name, "qty": 1, "price_list_rate": 5})
+
+		invoice.insert().submit()
+
+		self.assertEqual(invoice.docstatus, 1)
+
+	def test_delivery_note_made_from_an_invoice_is_not_billed_again(self):
+		item, cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=5, rate=10)
+		invoice = self._make_invoice(item, cogs)
+		shipment = self._make_delivery_note(item, quantity=2, rate=100, items=[invoice_row(invoice, 2)])
+		shipment.submit()
+
+		self.assertRaisesRegex(frappe.ValidationError, "made from invoice", make_sales_invoice, shipment.name)
+
+	def test_return_of_an_invoiced_delivery_note_leaves_the_invoice_balance(self):
+		item, cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=5, rate=10)
+		invoice = self._make_invoice(item, cogs)
+		shipment = self._make_delivery_note(item, quantity=2, rate=100, items=[invoice_row(invoice, 2)])
+		shipment.submit()
+
+		delivery_note_return = make_return(shipment.name)
+
+		self.assertEqual(delivery_note_return.return_against, shipment.name)
+		self.assertEqual(
+			[(row.qty, row.against_sales_invoice) for row in delivery_note_return.items], [(-2, None)]
+		)
+		delivery_note_return.insert().submit()
+		self.assertEqual(stock_quantity(item.name, "Stores"), 5)
+		self.assertEqual(transfer_balance(invoice), [0, 0])
+
+	def test_return_offers_only_what_earlier_returns_left(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=3, rate=10)
+		shipment = self._make_delivery_note(item, quantity=3, rate=25)
+		shipment.submit()
+		first = make_return(shipment.name)
+		first.items[0].update({"qty": -1, "stock_qty": -1})
+		first.insert().submit()
+
+		second = make_return(shipment.name)
+
+		self.assertEqual([row.qty for row in second.items], [-2])
+		second.insert().submit()
+		self.assertRaisesRegex(frappe.ValidationError, "fully returned", make_return, shipment.name)
+
+	def test_frappe_mapper_makes_delivery_note_returns(self):
+		item, _cogs, _stock = self._tracked_item()
+		seed_stock(item.name, quantity=1, rate=10)
+		shipment = self._make_delivery_note(item, quantity=1, rate=25)
+		shipment.submit()
+		method = "frappe_books.frappe_books.doctype.books_delivery_note.books_delivery_note.make_return"
+
+		delivery_note_return = make_mapped_doc(method, shipment.name)
+
+		self.assertEqual(delivery_note_return.return_against, shipment.name)
+		self.assertEqual(delivery_note_return.items[0].qty, -1)
+
+	def _return_serial(self, item, shipment, serial_number):
+		return self._make_delivery_note(
+			item,
+			quantity=1,
+			rate=25,
+			return_against=shipment.name,
+			items=[self._row(item, -1, serial_number=serial_number)],
+		)
+
+	def _row(self, item, quantity, batch=None, serial_number=None):
+		row = {"item_code": item.name, "warehouse": "Stores", "qty": quantity, "rate": 25}
+		return {**row, "batch_no": batch, "serial_no": serial_number}
+
+	def _make_invoice(self, item, account):
+		receivable = make_account("Receivable", account_type="Receivable")
+		set_company_value("default_discount_account", account.name)
+		invoice = make_invoice(
+			"Books Sales Invoice",
+			make_customer(receivable.name).name,
+			receivable.name,
+			item.name,
+			item.item_defaults[0].income_account,
+		)
+		invoice.submit()
+		return invoice
+
+	def _tracked_item(self, **values):
+		stock = make_account("Stock", account_type="Stock")
+		received = make_account("Received", root_type="Liability")
+		cogs = make_account("COGS", root_type="Expense", account_type="Cost of Goods Sold")
+		income = make_account("Income", root_type="Income")
+		set_inventory_accounts(stock.name, received.name, cogs.name)
+		return make_item(income.name, received.name, is_stock_item=1, **values), cogs, stock
+
+	def _make_delivery_note(self, item, quantity, rate, date=None, **values):
+		receivable = make_account("Receivable", account_type="Receivable")
+		party = make_customer(receivable.name)
+		return frappe.get_doc(
+			{
+				"doctype": "Books Delivery Note",
+				"customer": party.name,
+				**posting_values(date or now_datetime()),
+				"items": [{"item_code": item.name, "warehouse": "Stores", "qty": quantity, "rate": rate}],
+				**values,
+			}
+		).insert()
+
+
+def seed_stock(item, quantity, rate, serial_number=None, batch=None, date=None):
+	row = {"item_code": item, "t_warehouse": "Stores", "qty": quantity, "basic_rate": rate, "batch_no": batch}
+	movement = frappe.get_doc(
+		{
+			"doctype": "Books Stock Entry",
+			"purpose": "Material Receipt",
+			**posting_values(date or now_datetime()),
+			"items": [{**row, "serial_no": serial_number}],
+		}
+	).insert(ignore_permissions=True)
+	movement.submit()
+
+
+def make_batch(item):
+	return (
+		frappe.get_doc({"doctype": "Books Batch", "batch_id": unique_name("BATCH"), "item": item})
+		.insert()
+		.name
+	)
+
+
+def account_balance(voucher, account):
+	entries = ledger_entries(voucher.doctype, voucher.name)
+	return sum(
+		Decimal(str(row.debit)) - Decimal(str(row.credit)) for row in entries if row.account == account
+	)
+
+
+def serial_statuses(serial_numbers):
+	return set(frappe.get_all("Books Serial No", filters={"name": ["in", serial_numbers]}, pluck="status"))
+
+
+def invoice_row(invoice, quantity):
+	"""A delivery note row that moves `quantity` of the invoice's first row, linked to it."""
+	row = invoice.items[0]
+	return {
+		"item_code": row.item_code,
+		"warehouse": "Stores",
+		"qty": quantity,
+		"rate": row.rate,
+		"against_sales_invoice": invoice.name,
+		"si_detail": row.name,
+	}
+
+
+def billed_state(transfer):
+	return tuple(frappe.db.get_value(transfer.doctype, transfer.name, ["per_billed", "status"]))
+
+
+def returned_state(transfer):
+	return tuple(frappe.db.get_value(transfer.doctype, transfer.name, ["per_returned", "status"]))
+
+
+def transfer_balance(invoice):
+	"""Return the invoice's and its first row's quantity still to transfer."""
+	invoice.reload()
+	row = invoice.items[0]
+	return [invoice.stock_not_transferred, row.qty - row.delivered_qty]

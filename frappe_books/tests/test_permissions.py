@@ -19,10 +19,11 @@ from frappe_books.reports.financial_statements import get_account_balances
 from frappe_books.search import BooksSearch, build_search_index, search
 from frappe_books.tests.accounting import (
 	make_account,
+	make_customer,
 	make_invoice,
 	make_item,
-	make_party,
 	make_tax,
+	set_company_value,
 	unique_name,
 )
 
@@ -33,25 +34,33 @@ READ = {"read"}
 NONE = set()
 CREATE = {"read", "write", "create"}
 SUBMIT = CREATE | {"submit", "cancel", "amend"}
-ROLES = ("System Manager", "Books Manager", "Books User")
+# A cashier submits but never cancels; a return undoes a sale.
+SELL = CREATE | {"submit"}
+ROLES = ("System Manager", "Books Manager", "Books User", "Books Cashier")
 # Rights of each role, in ROLES order
 ROLE_MATRIX = {
-	"Books Sales Invoice": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT),
-	"Books Purchase Invoice": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT),
-	"Books Sales Quote": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT),
-	"Books Payment": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT),
-	"Books Stock Movement": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT),
-	"Books Journal Entry": (FULL_SUBMIT, FULL_SUBMIT, NONE),
-	"Books Party": (FULL, FULL, FULL),
-	"Books Item": (FULL, FULL, FULL),
-	"Books Account": (FULL, FULL, NONE),
-	"Books Tax": (FULL, FULL, READ),
-	"Books Defaults": (FULL, FULL, READ),
-	"Print Format": (FULL, FULL, READ),
-	"Books Custom Form": (FULL, READ, READ),
-	"Books Ledger Entry": (READ, READ, NONE),
-	"Books Stock Ledger Entry": (READ, READ, READ),
-	"Books Loyalty Point Entry": (READ, READ, READ),
+	"Books Sales Invoice": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT, SELL),
+	"Books Purchase Invoice": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT, NONE),
+	"Books Quotation": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT, NONE),
+	"Books Payment Entry": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT, READ),
+	"Books Stock Entry": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT, NONE),
+	"Books Journal Entry": (FULL_SUBMIT, FULL_SUBMIT, NONE, NONE),
+	"Books Customer": (FULL, FULL, FULL, CREATE),
+	"Books Supplier": (FULL, FULL, FULL, NONE),
+	"Books Item": (FULL, FULL, FULL, READ),
+	"Address": (FULL, FULL, FULL, CREATE),
+	"Contact": (FULL, FULL, FULL, CREATE),
+	"Books Account": (FULL, FULL, NONE, NONE),
+	"Books Item Tax Template": (FULL, FULL, READ, READ),
+	"Books Defaults": (FULL, FULL, READ, READ),
+	"Print Format": (FULL, FULL, READ, READ),
+	"Books Custom Form": (FULL, READ, READ, READ),
+	"Books GL Entry": (READ, READ, NONE, NONE),
+	"Books Stock Ledger Entry": (READ, READ, READ, READ),
+	"Books Loyalty Point Entry": (READ, READ, READ, READ),
+	"Books POS Opening Entry": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT, SELL),
+	"Books POS Closing Entry": (FULL_SUBMIT, FULL_SUBMIT, SUBMIT, SELL),
+	"Books Item Enquiry": (FULL, FULL, FULL, CREATE),
 }
 FINANCIAL_REPORTS = (
 	"Books General Ledger",
@@ -63,9 +72,11 @@ FINANCIAL_REPORTS = (
 	"Books GSTR-1",
 	"Books GSTR-2",
 )
+
 STOCK_REPORTS = ("Books Stock Ledger", "Books Stock Balance")
 BOOKS_USER = "books-user-permissions@example.com"
 MANAGER = "books-manager-permissions@example.com"
+CASHIER = "books-cashier-permissions@example.com"
 SYSTEM_MANAGER = "books-system-manager-permissions@example.com"
 
 
@@ -76,6 +87,7 @@ class IntegrationTestPermissions(IntegrationTestCase):
 		for email, role in (
 			(BOOKS_USER, "Books User"),
 			(MANAGER, "Books Manager"),
+			(CASHIER, "Books Cashier"),
 			(SYSTEM_MANAGER, "System Manager"),
 		):
 			if not frappe.db.exists("User", email):
@@ -111,11 +123,11 @@ class IntegrationTestPermissions(IntegrationTestCase):
 			BOOKS_USER,
 			discount=10,
 		)
-		self.assertEqual(self._make_invoice_as(MANAGER, discount=10).items[0].item_discount_percent, 10)
+		self.assertEqual(self._make_invoice_as(MANAGER, discount=10).items[0].discount_percentage, 10)
 
 	def test_with_pos_off_books_users_discount_any_invoice(self):
 		_set_pos_discount_limit(pos_enabled=0)
-		self.assertEqual(self._make_invoice_as(BOOKS_USER, discount=10).items[0].item_discount_percent, 10)
+		self.assertEqual(self._make_invoice_as(BOOKS_USER, discount=10).items[0].discount_percentage, 10)
 
 	def test_only_managers_open_financial_reports(self):
 		for report in FINANCIAL_REPORTS:
@@ -146,12 +158,12 @@ class IntegrationTestPermissions(IntegrationTestCase):
 		receivable = make_account("Rights Receivable", account_type="Receivable")
 		other_receivable = make_account("Rights Other Receivable", account_type="Receivable")
 		item = make_item(income.name, expense.name)
-		party = make_party(receivable.name)
-		row = {"item": item.name, "account": other_income.name, "rate": 100, "quantity": 1}
+		party = make_customer(receivable.name)
+		row = {"item_code": item.name, "income_account": other_income.name, "price_list_rate": 100, "qty": 1}
 
 		with self.set_user(BOOKS_USER):
 			edited = frappe.get_doc("Books Item", item.name)
-			edited.income_account = other_income.name
+			edited.item_defaults[0].income_account = other_income.name
 			edited.save()
 			invoice = make_invoice(
 				"Books Sales Invoice", party.name, other_receivable.name, item.name, income.name, items=[row]
@@ -159,10 +171,11 @@ class IntegrationTestPermissions(IntegrationTestCase):
 
 			read_back = read_doc("Books Sales Invoice", invoice.name)
 
-		self.assertEqual(item.db_get("income_account"), income.name)
-		self.assertEqual(invoice.account, receivable.name)
-		self.assertIsNone(read_back["account"])
-		self.assertIsNone(read_back["items"][0]["account"])
+		item.reload()
+		self.assertEqual(item.item_defaults[0].income_account, income.name)
+		self.assertEqual(invoice.debit_to, receivable.name)
+		self.assertIsNone(read_back["debit_to"])
+		self.assertIsNone(read_back["items"][0]["income_account"])
 
 	def test_books_user_cannot_write_config(self):
 		account = make_account("Permission Tax", account_type="Tax")
@@ -198,7 +211,7 @@ class IntegrationTestPermissions(IntegrationTestCase):
 			(BOOKS_USER, "Books Sales Invoice", False),
 			(MANAGER, "Books Sales Invoice", True),
 			(SYSTEM_MANAGER, "Books Sales Invoice", True),
-			(MANAGER, "Books Ledger Entry", False),
+			(MANAGER, "Books GL Entry", False),
 		):
 			with self.subTest(user=user, doctype=doctype), self.set_user(user):
 				self.assertEqual(frappe.has_permission(doctype, "import"), allowed)
@@ -217,67 +230,69 @@ class IntegrationTestPermissions(IntegrationTestCase):
 
 	def test_ledger_writes_follow_docperms(self):
 		with self.set_user(MANAGER):
-			for doctype in ("Books Ledger Entry", "Books Stock Ledger Entry", "Books Loyalty Point Entry"):
+			for doctype in ("Books GL Entry", "Books Stock Ledger Entry", "Books Loyalty Point Entry"):
 				with self.subTest(doctype=doctype):
 					self.assertRaises(frappe.PermissionError, client.insert, {"doctype": doctype})
 
 	def test_documents_hide_fields_above_the_users_permlevel(self):
-		party = make_party(make_account("Permlevel Receivable", account_type="Receivable").name)
-		party.db_set("email", "hidden@example.com")
-		email = frappe.get_meta("Books Party").get_field("email")
+		party = make_customer(make_account("Permlevel Receivable", account_type="Receivable").name)
+		party.db_set("email_id", "hidden@example.com")
+		email = frappe.get_meta("Books Customer").get_field("email_id")
 		with patch.object(email, "permlevel", 2), self.set_user(BOOKS_USER):
-			self.assertIsNone(read_doc("Books Party", party.name).get("email"))
+			# Frappe gives a removed Read Only field as "".
+			self.assertFalse(read_doc("Books Customer", party.name).get("email_id"))
 
 	def test_counts_skip_documents_the_user_cannot_read(self):
-		readable, hidden = _seed_shipment(), _seed_shipment()
-		add_user_permission("Books Shipment", readable, BOOKS_USER)
+		readable, hidden = _seed_delivery_note(), _seed_delivery_note()
+		add_user_permission("Books Delivery Note", readable, BOOKS_USER)
 		filters = [["name", "in", [readable, hidden]]]
 		with self.set_user(BOOKS_USER), patch.dict(frappe.form_dict, {"filters": filters}):
-			self.assertEqual(count("Books Shipment"), 1)
+			self.assertEqual(count("Books Delivery Note"), 1)
 
 	def test_search_skips_documents_the_user_cannot_read(self):
-		readable, hidden = _seed_shipment(), _seed_shipment()
-		add_user_permission("Books Shipment", readable, BOOKS_USER)
+		readable, hidden = _seed_delivery_note(), _seed_delivery_note()
+		add_user_permission("Books Delivery Note", readable, BOOKS_USER)
 		build_search_index()
-		BooksSearch().index_documents_by_name("Books Shipment", [readable, hidden])
+		BooksSearch().index_documents_by_name("Books Delivery Note", [readable, hidden])
 		with self.set_user(BOOKS_USER):
-			self.assertEqual(_search_shipments(hidden), [])
-			self.assertEqual(_search_shipments(readable), [readable])
+			self.assertEqual(_search_delivery_notes(hidden), [])
+			self.assertEqual(_search_delivery_notes(readable), [readable])
 
 	def test_link_search_skips_documents_the_user_cannot_read(self):
-		readable, hidden = _seed_shipment(), _seed_shipment()
-		add_user_permission("Books Shipment", readable, BOOKS_USER)
+		readable, hidden = _seed_delivery_note(), _seed_delivery_note()
+		add_user_permission("Books Delivery Note", readable, BOOKS_USER)
 		with self.set_user(BOOKS_USER):
-			found = [row["value"] for row in search_link("Books Shipment", "", page_length=50)]
+			found = [row["value"] for row in search_link("Books Delivery Note", "", page_length=50)]
 		self.assertIn(readable, found)
 		self.assertNotIn(hidden, found)
 
 	def test_linked_entries_need_the_document_and_hide_unreadable_links(self):
-		original = _seed_shipment()
-		readable_return = _seed_shipment(return_against=original)
-		_seed_shipment(return_against=original)
+		original = _seed_delivery_note()
+		readable_return = _seed_delivery_note(return_against=original)
+		_seed_delivery_note(return_against=original)
 		for name in (original, readable_return):
-			add_user_permission("Books Shipment", name, BOOKS_USER)
-		hidden = _seed_shipment()
+			add_user_permission("Books Delivery Note", name, BOOKS_USER)
+		hidden = _seed_delivery_note()
 		with self.set_user(BOOKS_USER):
 			self.assertEqual(
-				get_linked_entries("Books Shipment", original), {"Books Shipment": [readable_return]}
+				get_linked_entries("Books Delivery Note", original),
+				{"Books Delivery Note": [readable_return]},
 			)
-			self.assertRaises(frappe.PermissionError, get_linked_entries, "Books Shipment", hidden)
+			self.assertRaises(frappe.PermissionError, get_linked_entries, "Books Delivery Note", hidden)
 
 	def _make_invoice_as(self, user, discount=0):
 		receivable = make_account("Permission Receivable", account_type="Receivable")
 		income = make_account("Permission Income", root_type="Income", account_type="Income Account")
 		expense = make_account("Permission Expense", root_type="Expense", account_type="Expense Account")
-		party = make_party(receivable.name)
+		party = make_customer(receivable.name)
 		item = make_item(income.name, expense.name)
-		frappe.db.set_single_value("Books Accounting Settings", "discount_account", expense.name)
+		set_company_value("default_discount_account", expense.name)
 		row = {
-			"item": item.name,
-			"account": income.name,
-			"rate": 100,
-			"quantity": 2,
-			"item_discount_percent": discount,
+			"item_code": item.name,
+			"income_account": income.name,
+			"price_list_rate": 100,
+			"qty": 2,
+			"discount_percentage": discount,
 		}
 		with self.set_user(user):
 			return make_invoice(
@@ -286,9 +301,9 @@ class IntegrationTestPermissions(IntegrationTestCase):
 
 
 def _set_pos_discount_limit(pos_enabled):
-	frappe.db.set_single_value("Books Accounting Settings", "enable_discounting", 1)
+	frappe.db.set_single_value("Books Accounting Settings", "enable_discounts_and_margin", 1)
 	frappe.db.set_single_value("Books Inventory Settings", "enable_point_of_sale", pos_enabled)
-	frappe.db.set_single_value("Books Pos Settings", {"pos_profile": None, "can_edit_discount": 0})
+	frappe.db.set_single_value("Books POS Settings", {"pos_profile": None, "allow_discount_change": 0})
 
 
 def _role_rights(doctype, role):
@@ -298,22 +313,22 @@ def _role_rights(doctype, role):
 
 def _new_data_import():
 	return frappe.get_doc(
-		{"doctype": "Data Import", "reference_doctype": "Books Party", "import_type": "Insert New Records"}
+		{"doctype": "Data Import", "reference_doctype": "Books Customer", "import_type": "Insert New Records"}
 	)
 
 
-def _search_shipments(name):
-	return [row["name"] for row in search(name, ["Books Shipment"])]
+def _search_delivery_notes(name):
+	return [row["name"] for row in search(name, ["Books Delivery Note"])]
 
 
-def _seed_shipment(return_against=None):
+def _seed_delivery_note(return_against=None):
 	doc = frappe.get_doc(
 		{
-			"doctype": "Books Shipment",
+			"doctype": "Books Delivery Note",
 			"name": frappe.generate_hash(),
 			"docstatus": 1,
 			"return_against": return_against,
-			"items": [{"item": "Keyboard", "quantity": 1}],
+			"items": [{"item_code": "Keyboard", "qty": 1}],
 		}
 	)
 	doc.db_insert()

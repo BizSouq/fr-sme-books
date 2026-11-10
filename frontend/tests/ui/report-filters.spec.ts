@@ -54,6 +54,9 @@ test('a link filter opens from a pill, searches inside and clears', async ({
   await expect(account).toHaveText(/All/);
   await account.click();
   await page.getByPlaceholder('Search', { exact: true }).fill('Debtors');
+  await expect(
+    page.getByRole('option', { name: 'Cash', exact: true })
+  ).toBeHidden();
   await page.getByRole('option', { name: 'Debtors', exact: true }).click();
   await expect(account).toHaveText(/Debtors/);
 

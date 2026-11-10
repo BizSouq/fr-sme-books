@@ -7,7 +7,7 @@ from frappe.utils import add_days, getdate
 from frappe_books.accounting.money import as_decimal, sum_decimal
 from frappe_books.reports.periods import get_fiscal_year
 
-LEDGER = "Books Ledger Entry"
+LEDGER = "Books GL Entry"
 CREDIT_ROOT_TYPES = {"Liability", "Equity", "Income"}
 BALANCE_SHEET = ("Asset", "Liability", "Equity")
 TRIAL_BALANCE = ("Asset", "Liability", "Income", "Expense", "Equity")
@@ -172,7 +172,7 @@ def _balance(root_type, debit, credit):
 
 def _ledger_sums(from_date, to_date):
 	"""Return the debit and credit totals of each account, both dates included."""
-	filters = [["reverted", "=", 0]]
+	filters = [["is_cancelled", "=", 0]]
 	if from_date:
 		filters.append(["posting_date", ">=", from_date])
 	if to_date:
@@ -208,7 +208,7 @@ def _sections(root_types, values, width, accounts=None):
 def _accounts():
 	accounts = frappe.get_list(
 		"Books Account",
-		fields=["name", "root_type", "is_group", "parent_books_account"],
+		fields=["name", "root_type", "is_group", "parent_account"],
 		order_by="lft asc",
 	)
 	return {account.name: account for account in accounts}
@@ -221,7 +221,7 @@ def _rolled_up(accounts, values, width):
 		while name:
 			row = rolled_up.setdefault(name, [as_decimal(0)] * width)
 			rolled_up[name] = [total + value for total, value in zip(row, account_values, strict=True)]
-			name = accounts[name].parent_books_account
+			name = accounts[name].parent_account
 	return rolled_up
 
 
@@ -229,7 +229,7 @@ def _account_rows(accounts, values):
 	levels = {}
 	rows = []
 	for account in accounts.values():
-		levels[account.name] = levels.get(account.parent_books_account, -1) + 1
+		levels[account.name] = levels.get(account.parent_account, -1) + 1
 		if account.name in values:
 			rows.append(
 				{

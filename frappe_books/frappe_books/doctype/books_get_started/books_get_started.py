@@ -47,19 +47,19 @@ class BooksGetStarted(Document):
 
 	@property
 	def sales_item_created(self):
-		return has_record("Books Item", item_usage=["in", ["Sales", "Both"]])
+		return has_record("Books Item")
 
 	@property
 	def purchase_item_created(self):
-		return has_record("Books Item", item_usage=["in", ["Purchases", "Both"]])
+		return has_record("Books Item")
 
 	@property
 	def customer_created(self):
-		return has_record("Books Party", role=["in", ["Customer", "Both"]])
+		return has_record("Books Customer")
 
 	@property
 	def supplier_created(self):
-		return has_record("Books Party", role=["in", ["Supplier", "Both"]])
+		return has_record("Books Supplier")
 
 	@property
 	def invoice_created(self):

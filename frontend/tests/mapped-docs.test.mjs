@@ -35,40 +35,38 @@ async function getSaved(schemaName, name) {
 }
 
 test('a fully billed shipment does not offer an invoice', () => {
-  const [makeInvoice] = getStockTransferActions(fyo, 'Shipment');
-  const shipment = { isSubmitted: true, is_fully_billed: 0 };
+  const [makeInvoice] = getStockTransferActions(fyo, 'DeliveryNote');
+  const shipment = { isSubmitted: true, per_billed: 0 };
 
   assert.equal(makeInvoice.condition(shipment), true);
-  shipment.is_fully_billed = 1;
+  shipment.per_billed = 100;
   assert.equal(makeInvoice.condition(shipment), false);
 });
 
 // By source: each action that builds a document with a mapper of the source, the mapper, and what it builds.
 const mappedDocActions = {
   Lead: [
-    ['Customer', 'make_customer', 'Party'],
-    ['Sales Quote', 'make_sales_quote', 'SalesQuote'],
+    ['Customer', 'make_customer', 'Customer'],
+    ['Quotation', 'make_quotation', 'Quotation'],
   ],
-  Party: [
-    ['Create sale', 'make_sales_invoice', 'SalesInvoice'],
-    ['Create purchase', 'make_purchase_invoice', 'PurchaseInvoice'],
-  ],
+  Customer: [['Create sale', 'make_sales_invoice', 'SalesInvoice']],
+  Supplier: [['Create purchase', 'make_purchase_invoice', 'PurchaseInvoice']],
   Item: [
     ['Sales Invoice', 'make_sales_invoice', 'SalesInvoice'],
     ['Purchase Invoice', 'make_purchase_invoice', 'PurchaseInvoice'],
   ],
-  SalesQuote: [['Sales Invoice', 'make_sales_invoice', 'SalesInvoice']],
+  Quotation: [['Sales Invoice', 'make_sales_invoice', 'SalesInvoice']],
   SalesInvoice: [
-    ['Shipment', 'make_shipment', 'Shipment'],
+    ['Delivery Note', 'make_delivery_note', 'DeliveryNote'],
     ['Return', 'make_return', 'SalesInvoice'],
   ],
   PurchaseInvoice: [
     ['Purchase Receipt', 'make_purchase_receipt', 'PurchaseReceipt'],
     ['Return', 'make_return', 'PurchaseInvoice'],
   ],
-  Shipment: [
+  DeliveryNote: [
     ['Sales Invoice', 'make_sales_invoice', 'SalesInvoice'],
-    ['Return', 'make_return', 'Shipment'],
+    ['Return', 'make_return', 'DeliveryNote'],
   ],
   PurchaseReceipt: [
     ['Purchase Invoice', 'make_purchase_invoice', 'PurchaseInvoice'],
@@ -116,13 +114,16 @@ test("each mapped document action opens the form of what its source's whiteliste
 });
 
 test('a payment action opens the payment in a quick edit without the fields its invoice sets', async () => {
-  const requests = stubMapper({ party: 'Acme' });
   const pushed = [];
   router.currentRoute = {
     value: { fullPath: '/list/SalesInvoice', query: {} },
   };
   router.push = async (to) => pushed.push(to);
-  for (const schemaName of ['SalesInvoice', 'PurchaseInvoice']) {
+  for (const [schemaName, paymentType, partyAccount] of [
+    ['SalesInvoice', 'Receive', 'paid_from'],
+    ['PurchaseInvoice', 'Pay', 'paid_to'],
+  ]) {
+    const requests = stubMapper({ party: 'Acme', payment_type: paymentType });
     const invoice = await getSaved(schemaName, 'INV-1');
 
     await getAction(schemaName, 'Payment').action(invoice, router);
@@ -130,11 +131,12 @@ test('a payment action opens the payment in a quick edit without the fields its 
     const method = requests.at(-1).body.method;
     assert.ok(method.endsWith('.make_payment') && isWhitelisted(method));
     const { schemaName: opened, edit, hideFields } = pushed.at(-1).query;
-    assert.deepEqual([opened, edit], ['Payment', 1]);
+    assert.deepEqual([opened, edit], ['PaymentEntry', 1]);
     assert.deepEqual(hideFields, [
+      'party_type',
       'party',
-      'payment_references',
-      'account',
+      'references',
+      partyAccount,
       'payment_type',
     ]);
   }

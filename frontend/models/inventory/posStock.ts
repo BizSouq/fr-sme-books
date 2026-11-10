@@ -15,14 +15,14 @@ export async function getPOSInventory(): Promise<string | undefined> {
 }
 
 /** Stock of each item, and of each of its batches, at the POS location. */
-export async function getItemQtyMap(items?: string[]): Promise<ItemQtyMap> {
-  const rows = await getStockQuantities(await getPOSInventory(), items);
+export async function getItemQtyMap(): Promise<ItemQtyMap> {
+  const rows = await getStockQuantities(await getPOSInventory());
   const itemQtyMap: ItemQtyMap = {};
-  for (const { item, batch, quantity } of rows) {
-    itemQtyMap[item] ??= { availableQty: 0 };
-    itemQtyMap[item].availableQty += quantity;
-    if (batch) {
-      itemQtyMap[item][batch] = quantity;
+  for (const { item_code, batch_no, actual_qty } of rows) {
+    itemQtyMap[item_code] ??= { availableQty: 0 };
+    itemQtyMap[item_code].availableQty += actual_qty;
+    if (batch_no) {
+      itemQtyMap[item_code][batch_no] = actual_qty;
     }
   }
 
@@ -48,10 +48,10 @@ export async function getPOSBatchQuantity(
  */
 export async function validatePOSStock(rows: ItemQuantity[]) {
   const shortfalls = (await getSaleShortfalls(rows, true)).map(
-    ({ item, batch, quantity }) => {
-      const required = getRequiredQuantity(rows, item!, batch);
-      const available = safeParseFloat(required - (quantity ?? 0));
-      return { item: item!, batch, required, available };
+    ({ item_code, batch_no, stock_qty }) => {
+      const required = getRequiredQuantity(rows, item_code!, batch_no);
+      const available = safeParseFloat(required - (stock_qty ?? 0));
+      return { item: item_code!, batch: batch_no, required, available };
     }
   );
   const shortfall =
@@ -85,6 +85,8 @@ function getRequiredQuantity(
   batch?: string | null
 ): number {
   return rows
-    .filter((row) => row.item === item && (row.batch || '') === (batch || ''))
-    .reduce((total, row) => safeParseFloat(total + (row.quantity ?? 0)), 0);
+    .filter(
+      (row) => row.item_code === item && (row.batch_no || '') === (batch || '')
+    )
+    .reduce((total, row) => safeParseFloat(total + (row.stock_qty ?? 0)), 0);
 }

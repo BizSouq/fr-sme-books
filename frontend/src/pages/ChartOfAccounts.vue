@@ -1,16 +1,34 @@
 <template>
   <div class="flex flex-col h-full">
     <PageHeader :title="t`Chart of Accounts`">
-      <FrappeButton v-if="fyo.can('Account', 'create')" @click="addRootGroup">{{
+      <template #mobile-prefix>
+        <FrappePageHeaderBackButton
+          class="rtl-rotate-180"
+          :label="t`Back`"
+          fallback-route="/"
+        />
+      </template>
+      <FrappeButton v-if="canEditTree" @click="addRootGroup">{{
         t`Add root group`
       }}</FrappeButton>
-      <FrappeButton v-if="!isAllExpanded" @click="expand">{{ t`Expand` }}</FrappeButton>
+      <FrappeButton v-if="!isAllExpanded" @click="expand">{{
+        t`Expand`
+      }}</FrappeButton>
       <FrappeButton v-if="!isAllCollapsed" @click="collapse">{{
         t`Collapse`
       }}</FrappeButton>
     </PageHeader>
+    <div v-if="error" class="px-4 pt-4 sm:px-5">
+      <FrappeAlert theme="red" :title="error" />
+    </div>
+    <EmptyState
+      v-else-if="root && !accounts.length"
+      class="flex-1"
+      :title="t`No accounts`"
+      icon="lucide-folder-tree"
+    />
     <FrappeScrollArea
-      v-if="root"
+      v-else-if="root"
       class="min-h-0 flex-1"
       viewport-class="px-3 pt-4 pb-10 sm:px-5"
     >
@@ -26,7 +44,7 @@
         <template #item-prefix="{ node }">
           <span
             class="size-4 shrink-0"
-            :class="getAccountIconName(!!node.is_group, String(node.name))"
+            :class="getAccountIconName(node as AccountItem)"
             aria-hidden="true"
           />
         </template>
@@ -70,7 +88,7 @@
               </FrappeDropdown>
             </div>
             <span
-              v-if="canReadLedger && !node.is_group"
+              v-if="showsBalance(node as AccountItem)"
               class="min-w-24 text-end text-base tabular-nums text-ink-gray-7"
               >{{ getBalanceString(node as AccountItem) }}</span
             >
@@ -78,14 +96,14 @@
         </template>
       </FrappeTree>
     </FrappeScrollArea>
-    <div v-else class="px-3 pt-4 sm:px-5" aria-busy="true">
+    <div v-else-if="!error" class="px-3 pt-4 sm:px-5" aria-busy="true">
       <div
         v-for="width in ['w-56', 'w-40', 'w-48', 'w-36', 'w-44']"
         :key="width"
         class="flex h-8 items-center gap-2 px-1.5"
       >
-        <FrappeSkeleton class="size-4 rounded-full" />
-        <FrappeSkeleton class="h-4 rounded-4" :class="width" />
+        <Skeleton class="size-4 rounded-full" />
+        <Skeleton class="h-4 rounded-4" :class="width" />
       </div>
     </div>
     <!-- Not dialog.prompt: it neither focuses the field nor submits on Enter (frappe/frappe-ui#1264). -->
@@ -116,19 +134,23 @@
 <script lang="ts">
 import { t } from 'fyo';
 import {
+  Alert as FrappeAlert,
   Dialog as FrappeDialog,
   Dropdown as FrappeDropdown,
   ScrollArea as FrappeScrollArea,
-  Skeleton as FrappeSkeleton,
   TextInput as FrappeTextInput,
   Tree as FrappeTree,
   type DialogAction,
   type DropdownOptions,
   type TreeExposed,
   Button as FrappeButton,
+  PageHeaderBackButton as FrappePageHeaderBackButton,
 } from 'frappe-ui';
+import Skeleton from 'src/components/Skeleton.vue';
 import { ModelNameEnum } from 'models/types';
+import EmptyState from 'src/components/EmptyState.vue';
 import PageHeader from 'src/components/PageHeader.vue';
+import { getDocType } from 'src/frappe/doctypes';
 import { getLinkLabel } from 'src/frappe/link';
 import { getModel } from 'src/frappe/registry';
 import { getFrappeDoc, newFrappeDoc } from 'src/frappe/documents';
@@ -143,12 +165,13 @@ import { AccountRootType, AccountType } from 'models/baseModels/Account/types';
 import { TreeViewSettings } from 'fyo/model/types';
 import type { FrappeDoc } from 'src/frappe/document';
 import { showDialog } from 'src/utils/interactive';
+import { serverHtmlToText } from 'src/utils/serverHtml';
 
 type AccountItem = {
   [key: string]: unknown;
   label: string;
   name: string;
-  parent_books_account: string;
+  parent_account: string;
   root_type: AccountRootType;
   account_type: AccountType;
   is_group?: number;
@@ -161,25 +184,29 @@ type AccKey = 'addingAccount' | 'addingGroupAccount';
 
 const ACCOUNT_FIELDS = [
   'name',
-  'parent_books_account',
+  'parent_account',
   'is_group',
   'root_type',
   'account_type',
 ];
 
+// A root account's icon, by its root type.
 const rootAccountIcons: Record<string, string> = {
-  'Application of Funds (Assets)': 'lucide-landmark',
-  Expenses: 'lucide-receipt-indian-rupee',
+  Asset: 'lucide-landmark',
+  Expense: 'lucide-receipt-indian-rupee',
   Income: 'lucide-coins',
-  'Source of Funds (Liabilities)': 'lucide-hand-coins',
+  Liability: 'lucide-hand-coins',
 };
 
 export default defineComponent({
   components: {
+    EmptyState,
+    FrappeAlert,
     FrappeButton,
+    FrappePageHeaderBackButton,
     PageHeader,
     FrappeScrollArea,
-    FrappeSkeleton,
+    Skeleton,
     FrappeTextInput,
     FrappeTree,
     FrappeDialog,
@@ -197,12 +224,16 @@ export default defineComponent({
       balances: {} as Record<string, number>,
       creditRootTypes: [] as string[],
       settings: null as null | TreeViewSettings,
+      error: '',
     };
   },
   computed: {
     /** Balances total the ledger. */
     canReadLedger(): boolean {
-      return fyo.can(ModelNameEnum.AccountingLedgerEntry, 'read');
+      return fyo.can(ModelNameEnum.GLEntry, 'read');
+    },
+    canEditTree(): boolean {
+      return fyo.can(ModelNameEnum.Account, 'create');
     },
     isAllExpanded(): boolean {
       return this.getGroups(this.accounts).every((account) =>
@@ -235,12 +266,17 @@ export default defineComponent({
     },
   },
   async activated() {
-    await this.fetchAccounts();
-    if (this.canReadLedger) {
-      await this.setBalances();
-    }
-
     docsPathRef.value = docsPathMap.ChartOfAccounts!;
+    try {
+      await Promise.all([
+        this.fetchAccounts(),
+        this.canReadLedger ? this.setBalances() : undefined,
+      ]);
+    } catch (error) {
+      this.error = serverHtmlToText(
+        error instanceof Error ? error.message : String(error)
+      );
+    }
   },
   deactivated() {
     docsPathRef.value = '';
@@ -264,11 +300,12 @@ export default defineComponent({
         );
       }
 
-      if (account.parent_books_account && fyo.can(ModelNameEnum.Account, 'delete')) actions.push({
-        label: account.is_group ? t`Delete group` : t`Delete account`,
-        theme: 'red',
-        onClick: () => this.deleteAccount(account),
-      });
+      if (account.parent_account && fyo.can(ModelNameEnum.Account, 'delete'))
+        actions.push({
+          label: account.is_group ? t`Delete group` : t`Delete account`,
+          theme: 'red',
+          onClick: () => this.deleteAccount(account),
+        });
       return actions;
     },
     expand() {
@@ -286,10 +323,19 @@ export default defineComponent({
       );
       this.expandedAccounts = expanded ? [...others, account.name] : others;
     },
+    showsBalance(account: AccountItem): boolean {
+      return this.canReadLedger && !account.is_group;
+    },
+    getBalance(account: AccountItem): number {
+      return this.balances[account.name] ?? 0;
+    },
+    /** A balance on the other side than its root type keeps shows as a positive amount of that side. */
     getBalanceString(account: AccountItem) {
-      const isCredit = this.creditRootTypes.includes(account.root_type);
-      const balance = this.balances[account.name] ?? 0;
-      return `${fyo.format(balance, 'Currency')} ${isCredit ? t`Cr.` : t`Dr.`}`;
+      const balance = this.getBalance(account);
+      const keepsCredit = this.creditRootTypes.includes(account.root_type);
+      const isCredit = balance < 0 ? !keepsCredit : keepsCredit;
+      const amount = fyo.format(Math.abs(balance), 'Currency');
+      return `${amount} ${isCredit ? t`Cr.` : t`Dr.`}`;
     },
     /** Balances are signed on the server by the side each root type keeps. */
     async setBalances() {
@@ -310,11 +356,13 @@ export default defineComponent({
         children: [],
       }));
       const byName = new Map(nodes.map((node) => [node.name, node]));
-      this.accounts = [];
+      const roots: AccountItem[] = [];
       for (const node of nodes) {
-        const parent = byName.get(node.parent_books_account);
-        (parent?.children ?? this.accounts).push(node);
+        const parent = byName.get(node.parent_account);
+        (parent?.children ?? roots).push(node);
       }
+
+      this.accounts = roots;
 
       // Set last: the tree shows once its accounts are in.
       this.root = {
@@ -367,7 +415,7 @@ export default defineComponent({
       await openQuickEdit({ doc });
     },
     async canDeleteAccount(account: AccountItem) {
-      if (!account.parent_books_account) {
+      if (!account.parent_account) {
         await showDialog({
           type: 'error',
           title: t`Cannot delete account`,
@@ -442,7 +490,9 @@ export default defineComponent({
           (child) => {
             const existing = previous.get(child.name);
             return existing
-              ? Object.assign(existing, { label: this.accountLabel(child.name) })
+              ? Object.assign(existing, {
+                  label: this.accountLabel(child.name),
+                })
               : child;
           }
         );
@@ -452,7 +502,7 @@ export default defineComponent({
     },
     async getChildren(parent: string): Promise<AccountItem[]> {
       const children = await this.getAccounts([
-        ['parent_books_account', '=', parent],
+        ['parent_account', '=', parent],
       ]);
       return children.map((child) => ({
         ...child,
@@ -463,7 +513,7 @@ export default defineComponent({
     /** Every account the filters match, by name, labelled in the user's language. */
     async getAccounts(filters: string[][] = []): Promise<AccountItem[]> {
       const accounts = await call<AccountItem[]>('frappe.client.get_list', {
-        doctype: 'Books Account',
+        doctype: getDocType(ModelNameEnum.Account).doctype,
         fields: ACCOUNT_FIELDS,
         filters,
         order_by: 'name asc',
@@ -507,7 +557,7 @@ export default defineComponent({
         const { name, root_type, account_type } = parentAccount;
         await doc.set({
           account_name: accountName,
-          parent_books_account: name,
+          parent_account: name,
           root_type,
           account_type,
           is_group: isGroup,
@@ -529,10 +579,11 @@ export default defineComponent({
         fyo.reportDocumentActionWarning(doc, 'save', [error]);
       }
     },
-    getAccountIconName(isGroup: boolean, name?: string): string {
-      return (
-        (name && rootAccountIcons[name]) || (isGroup ? 'lucide-folder' : 'lucide-circle')
-      );
+    getAccountIconName(account: AccountItem): string {
+      const rootIcon = account.parent_account
+        ? undefined
+        : rootAccountIcons[account.root_type];
+      return rootIcon ?? (account.is_group ? 'lucide-folder' : 'lucide-circle');
     },
     getGroups(accounts: AccountItem[]): AccountItem[] {
       return accounts.flatMap((account) => [
@@ -543,4 +594,3 @@ export default defineComponent({
   },
 });
 </script>
-

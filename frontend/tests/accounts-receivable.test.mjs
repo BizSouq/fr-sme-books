@@ -17,8 +17,8 @@ function invoice(party, name, range, outstanding) {
   return {
     type: 'invoice',
     party,
-    reference_name: name,
-    reference_type: 'Books Sales Invoice',
+    voucher_no: name,
+    voucher_type: 'Books Sales Invoice',
     outstanding,
     range_0_30: range === '0-30' ? outstanding : 0,
     range_91_above: range === '91+' ? outstanding : 0,
@@ -39,8 +39,8 @@ function getReport() {
   report.fyo = Object.assign(Object.create(fyo), { can: () => true });
   report.columns = [
     { fieldname: 'party', label: 'Party', fieldtype: 'Data' },
-    { fieldname: 'reference_name', label: 'Invoice', fieldtype: 'Data' },
-    { fieldname: 'reference_type', label: 'Ref Type', fieldtype: 'Data' },
+    { fieldname: 'voucher_no', label: 'Invoice', fieldtype: 'Data' },
+    { fieldname: 'voucher_type', label: 'Ref Type', fieldtype: 'Data' },
     ...amounts.map((fieldname) => ({
       fieldname,
       label: fieldname,

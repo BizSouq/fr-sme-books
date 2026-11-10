@@ -5,12 +5,11 @@ import frappe
 from frappe.desk.page.setup_wizard.setup_wizard import get_setup_wizard_url
 from frappe.tests import IntegrationTestCase
 
+from frappe_books.accounting.accounts import mode_of_payment_account
 from frappe_books.coa import STANDARD_CHART, chart_options, find_ledger_account, load_chart
-from frappe_books.frappe_books.doctype.books_accounting_settings.books_accounting_settings import (
-	ACCOUNT_TYPES as ACCOUNTING_RULES,
-)
-from frappe_books.frappe_books.doctype.books_inventory_settings.books_inventory_settings import (
-	ACCOUNT_TYPES as INVENTORY_RULES,
+from frappe_books.company import company_value, default_company
+from frappe_books.frappe_books.doctype.books_company.books_company import (
+	ACCOUNT_TYPES as COMPANY_RULES,
 )
 from frappe_books.frappe_books.doctype.books_pos_settings.books_pos_settings import (
 	ACCOUNT_TYPES as POS_RULES,
@@ -36,10 +35,13 @@ FRAPPE_SETUP_FIELDS = (
 )
 SETUP_ACCOUNT_RULES = {
 	"write_off": POS_RULES["write_off_account"],
-	"round_off": ACCOUNTING_RULES["round_off_account"],
+	"round_off": COMPANY_RULES["round_off_account"],
 	"cash": POS_RULES["cash_account"],
 	"receivable": POS_RULES["default_account"],
-	**INVENTORY_RULES,
+	"stock_in_hand": COMPANY_RULES["default_inventory_account"],
+	"stock_received_but_not_billed": COMPANY_RULES["stock_received_but_not_billed"],
+	"cost_of_goods_sold": COMPANY_RULES["default_expense_account"],
+	"stock_adjustment": COMPANY_RULES["stock_adjustment_account"],
 }
 
 
@@ -58,32 +60,38 @@ class IntegrationTestBooksSetupWizard(IntegrationTestCase):
 
 		self.assertTrue(frappe.db.exists("Books Account", "Debtors"))
 		self.assertEqual(
-			frappe.db.get_value("Books Account", wizard.bank_name, "parent_books_account"),
+			frappe.db.get_value("Books Account", wizard.bank_name, "parent_account"),
 			"Bank Accounts",
-		)
-		self.assertEqual(
-			frappe.db.get_single_value("Books Accounting Settings", "company_name"),
-			"Test Books Company",
 		)
 		self.assertEqual(
 			frappe.db.get_single_value("Books Defaults", "sales_invoice_number_series"),
 			"SINV-",
 		)
 		self.assertTrue(frappe.db.get_value("Currency", "INR", "enabled"))
-		cash = frappe.db.get_single_value("Books Pos Settings", "cash_account")
+		cash = frappe.db.get_single_value("Books POS Settings", "cash_account")
 		for method, account in (("Cash", cash), ("Bank", wizard.bank_name)):
-			self.assertEqual(frappe.db.get_value("Books Payment Method", method, "account"), account)
+			self.assertEqual(mode_of_payment_account(method), account)
 		# Invoices stay unpaid on submit until the user picks an automatic payment account.
 		for fieldname in payment_accounts:
 			self.assertFalse(frappe.db.get_single_value("Books Defaults", fieldname), fieldname)
 		self.assert_gst_heads()
-		self.assertTrue(frappe.db.exists("Books Tax", "GST-18"))
-		gst = frappe.get_doc("Books Tax", "GST-18")
-		self.assertEqual([(row.account, row.rate) for row in gst.details], [("CGST", 9), ("SGST", 9)])
+		self.assertTrue(frappe.db.exists("Books Item Tax Template", "GST-18"))
+		gst = frappe.get_doc("Books Item Tax Template", "GST-18")
+		self.assertEqual([(row.tax_type, row.tax_rate) for row in gst.taxes], [("CGST", 9), ("SGST", 9)])
+
+	def test_setup_makes_the_one_company(self):
+		# A fresh site: no company, so no company rows on the seeded modes of payment.
+		frappe.db.delete("Books Company")
+		frappe.db.delete("Books Mode of Payment Account")
+		wizard = self._wizard(company_name="Lin's Things")
+		wizard.save(ignore_permissions=True)
+		run_setup(wizard)
+
+		self.assertEqual(company_value(["name", "abbr"]), ("Lin's Things", "LT"))
 
 	def test_setup_leaves_auto_stock_transfer_to_the_user(self):
 		frappe.db.set_single_value(
-			"Books Defaults", {"shipment_location": None, "purchase_receipt_location": None}
+			"Books Defaults", {"delivery_note_location": None, "purchase_receipt_location": None}
 		)
 		wizard = self._wizard(chart_of_accounts=STANDARD_CHART)
 		wizard.save(ignore_permissions=True)
@@ -91,7 +99,7 @@ class IntegrationTestBooksSetupWizard(IntegrationTestCase):
 
 		# A transfer location makes every invoice move stock on submit once inventory is on.
 		defaults = frappe.get_single("Books Defaults")
-		self.assertFalse(defaults.shipment_location)
+		self.assertFalse(defaults.delivery_note_location)
 		self.assertFalse(defaults.purchase_receipt_location)
 
 	def test_setup_creates_the_selected_country_chart(self):
@@ -101,17 +109,12 @@ class IntegrationTestBooksSetupWizard(IntegrationTestCase):
 
 		self.assertTrue(frappe.db.exists("Books Account", "Print and Stationary"))
 		self.assertEqual(
-			frappe.db.get_value("Books Account", wizard.bank_name, "parent_books_account"),
+			frappe.db.get_value("Books Account", wizard.bank_name, "parent_account"),
 			"Bank Accounts",
 		)
 		self.assertEqual(
-			frappe.db.get_single_value("Books Accounting Settings", "round_off_account"), "Rounded Off"
-		)
-		self.assertEqual(
-			frappe.db.get_single_value("Books Inventory Settings", "stock_in_hand"), "Stock In Hand"
-		)
-		self.assertEqual(
-			frappe.db.get_single_value("Books Inventory Settings", "stock_adjustment"), "Stock Adjustment"
+			company_value(["round_off_account", "default_inventory_account", "stock_adjustment_account"]),
+			("Rounded Off", "Stock In Hand", "Stock Adjustment"),
 		)
 		self.assert_gst_heads()
 
@@ -123,16 +126,16 @@ class IntegrationTestBooksSetupWizard(IntegrationTestCase):
 
 		self.assertTrue(frappe.db.exists("Books Account", "Caja - 1.9.1"))
 		self.assertEqual(
-			frappe.db.get_value("Books Account", wizard.bank_name, "parent_books_account"),
+			frappe.db.get_value("Books Account", wizard.bank_name, "parent_account"),
 			"Caja y Equivalentes - 1.9",
 		)
 		# The chart's first cash and receivable accounts are empty groups.
 		self.assert_pos_accounts_are_ledgers()
 		self.assertEqual(frappe.db.get_value("Books Account", "Discounts", "root_type"), "Income")
-		self.assertFalse(frappe.db.get_single_value("Books Accounting Settings", "write_off_account"))
+		self.assertFalse(company_value("write_off_account"))
 		# The chart has no postable round-off or stock account, only groups or other types.
-		self.assertFalse(frappe.db.get_single_value("Books Accounting Settings", "round_off_account"))
-		self.assertFalse(frappe.db.get_single_value("Books Inventory Settings", "stock_in_hand"))
+		self.assertFalse(company_value("round_off_account"))
+		self.assertFalse(company_value("default_inventory_account"))
 
 	def test_setup_makes_a_cash_ledger_for_a_chart_without_one(self):
 		wizard = self._wizard(
@@ -322,7 +325,7 @@ class IntegrationTestBooksSetupWizard(IntegrationTestCase):
 
 	def assert_pos_accounts_are_ledgers(self):
 		for fieldname, account_type in (("cash_account", "Cash"), ("default_account", "Receivable")):
-			account = frappe.db.get_single_value("Books Pos Settings", fieldname)
+			account = frappe.db.get_single_value("Books POS Settings", fieldname)
 			self.assertEqual(
 				frappe.db.get_value("Books Account", account, ["is_group", "account_type"]), (0, account_type)
 			)
@@ -331,7 +334,8 @@ class IntegrationTestBooksSetupWizard(IntegrationTestCase):
 		wizard = frappe.get_single("Books Setup Wizard")
 		wizard.update(
 			{
-				"company_name": "Test Books Company",
+				# The site's one company, which a rerun of the setup keeps
+				"company_name": default_company(),
 				"fullname": "Test Owner",
 				"email": "owner@example.com",
 				"country": "India",

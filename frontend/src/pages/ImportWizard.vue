@@ -73,16 +73,7 @@
               : 'text-base text-ink-gray-7'
           "
         >
-          <span v-if="fileName">{{ t`Selected` }} </span>
-          {{ fileName }}{{ fileName ? ',' : '' }}
-          <span v-if="fileName"> {{ t`check values and click on` }} </span
-          >{{ ' ' }}<span v-if="fileName">{{ t`Import Data.` }}</span>
-          <span v-if="hasImporter && importer.valueMatrix.length > 0">{{
-            ' ' +
-            (importer.valueMatrix.length === 1
-              ? t`${importer.valueMatrix.length} row added.`
-              : t`${importer.valueMatrix.length} rows added.`)
-          }}</span>
+          {{ fileStatus }}
         </p>
       </div>
 
@@ -350,9 +341,11 @@ import { handleErrorWithDialog } from 'src/errorHandling';
 import { fyo } from 'src/initFyo';
 import { downloadFile } from 'src/utils/browser';
 import { showDialog } from 'src/utils/interactive';
+import { serverHtmlToText } from 'src/utils/serverHtml';
 import { docsPathMap } from 'src/utils/misc';
 import { docsPathRef } from 'src/utils/refs';
 import { selectTextFile } from 'src/utils/ui';
+import { getServerMessages } from 'src/web/api';
 import { defineComponent } from 'vue';
 
 type ImportWizardData = {
@@ -425,6 +418,21 @@ export default defineComponent({
       }
 
       return '';
+    },
+    /** The rows to check and import, and the file they came from, if any; or that the file has none. */
+    fileStatus(): string {
+      const rows = this.hasImporter ? this.importer.valueMatrix.length : 0;
+      const added =
+        rows === 1 ? this.t`1 row added.` : this.t`${rows} rows added.`;
+      if (!this.fileName) {
+        return rows ? added : '';
+      }
+
+      if (!rows) {
+        return this.t`${this.fileName} has no rows to import. Add rows, or select a file that has some.`;
+      }
+
+      return `${this.t`Selected ${this.fileName}, check values and click on Import data.`} ${added}`;
     },
     canImportData(): boolean {
       if (!this.hasImporter) {
@@ -681,6 +689,12 @@ export default defineComponent({
       this.isMakingEntries = true;
       try {
         await this.importFile(this.importer.getImportFile());
+      } catch (error) {
+        // Frappe's Data Import refused the file, as it says.
+        const messages = getServerMessages(error).map(({ message }) =>
+          serverHtmlToText(message)
+        );
+        await this.showCannotImport(messages.join('\n'));
       } finally {
         this.isMakingEntries = false;
       }

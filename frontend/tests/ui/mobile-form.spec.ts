@@ -30,8 +30,8 @@ test('saving marks missing fields in place', async ({ page }) => {
 
 test('one header menu holds the document actions', async ({ page }) => {
   const name = `Phone Menu Customer ${Date.now()}`;
-  await insertDocument(page, 'Books Party', { name, role: 'Customer' });
-  await page.goto(`/books/edit/Party/${encodeURIComponent(name)}`);
+  await insertDocument(page, 'Books Customer', { customer_name: name });
+  await page.goto(`/books/edit/Customer/${encodeURIComponent(name)}`);
   await waitForBooks(page);
 
   await page.getByRole('button', { name: 'More actions' }).click();
@@ -64,7 +64,7 @@ test('a link field searches full screen and creates a record in a sheet', async 
   await picker.getByPlaceholder('Search').fill(name);
   await picker.getByRole('option', { name: /Create/ }).click();
 
-  const sheet = page.getByRole('dialog', { name: 'New Party' });
+  const sheet = page.getByRole('dialog', { name: 'New Customer' });
   await expect(sheet).toBeVisible();
   await sheet.getByRole('button', { name: 'Save', exact: true }).click();
 
@@ -78,7 +78,7 @@ test('a link field searches full screen and creates a record in a sheet', async 
 
 test('rows open in a sheet', async ({ page }) => {
   // Items is the first table on the form.
-  await page.getByRole('button', { name: 'Add row' }).first().click();
+  await page.getByText('Add row', { exact: true }).first().click();
 
   const sheet = page.getByRole('dialog', { name: 'Row 1' });
   await expect(sheet).toBeVisible();
@@ -93,7 +93,7 @@ test('rows without quick edit fields edit their table columns', async ({
 }) => {
   await page.goto(`/books/edit/JournalEntry/new-phone-${Date.now()}`);
   await waitForBooks(page);
-  await page.getByRole('button', { name: 'Add row' }).first().click();
+  await page.getByText('Add row', { exact: true }).first().click();
 
   const sheet = page.getByRole('dialog', { name: 'Row 1' });
   for (const label of ['Account', 'Debit', 'Credit']) {
@@ -102,11 +102,11 @@ test('rows without quick edit fields edit their table columns', async ({
 });
 
 test('fields before a table stay above its header', async ({ page }) => {
-  await page.goto(`/books/edit/Tax/new-phone-${Date.now()}`);
+  await page.goto(`/books/edit/ItemTaxTemplate/new-phone-${Date.now()}`);
   await waitForBooks(page);
 
-  const name = page.getByRole('textbox', { name: 'Name' });
-  const details = page.getByRole('heading', { name: 'Details' });
+  const name = page.getByRole('textbox', { name: 'Title' });
+  const details = page.getByRole('heading', { name: 'Tax Rates' });
   await expect(details).toBeVisible();
   const [nameBox, detailsBox] = await Promise.all([
     name.boundingBox(),
@@ -125,10 +125,9 @@ test('a foreign-currency customer shows the exchange rate', async ({
     symbol: code,
     enabled: 1,
   });
-  await insertDocument(page, 'Books Party', {
-    name: customer,
-    role: 'Customer',
-    currency: code,
+  await insertDocument(page, 'Books Customer', {
+    customer_name: customer,
+    default_currency: code,
   });
 
   await page.getByRole('button', { name: 'Customer', exact: true }).click();

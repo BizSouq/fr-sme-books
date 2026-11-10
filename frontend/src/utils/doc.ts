@@ -82,3 +82,13 @@ export function hasFieldValue(doc: FrappeDoc, field: Field): boolean {
     value !== null && value !== undefined && value !== '' && value !== false
   );
 }
+
+/** Whether a form shows the field: not hidden, and not empty where it can't be filled in, as Desk hides an empty read-only field. */
+export function isFieldShown(doc: FrappeDoc, field: Field): boolean {
+  const { hidden, readOnly } = doc.getFieldState(field);
+  if (hidden) {
+    return false;
+  }
+
+  return !readOnly || hasFieldValue(doc, field);
+}

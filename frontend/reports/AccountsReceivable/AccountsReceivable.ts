@@ -13,7 +13,7 @@ export class AccountsReceivable extends Report {
   static serverReportName = 'Books Accounts Receivable';
   static phoneLayout: PhoneLayout = {
     type: 'tree',
-    label: 'reference_name',
+    label: 'voucher_no',
     groupBy: 'party',
     describeGroup: (count) =>
       count === 1 ? t`1 invoice` : t`${count} invoices`,
@@ -29,6 +29,11 @@ export class AccountsReceivable extends Report {
   party?: string;
   groupBy: 'none' | 'party' = 'none';
 
+  /** The schema of the report's parties. */
+  get partySchema(): string {
+    return 'Customer';
+  }
+
   async setDefaultFilters() {
     if (!this.toDate) {
       const { toDate } = await this.getDefaultFilters();
@@ -40,6 +45,8 @@ export class AccountsReceivable extends Report {
     const reportRow = super.getReportRow(row);
     const isTotal = row.type === 'total';
     reportRow.isSummary = isTotal;
+    // The phone adds up its own totals in place of these.
+    reportRow.isTotal = isTotal;
     for (const cell of reportRow.cells) {
       cell.bold = isTotal;
     }
@@ -55,7 +62,7 @@ export class AccountsReceivable extends Report {
     return [
       {
         fieldtype: 'Link',
-        target: 'Party',
+        target: this.partySchema,
         label: t`Party`,
         placeholder: t`Party`,
         fieldname: 'party',

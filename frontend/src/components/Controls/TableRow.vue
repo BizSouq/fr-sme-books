@@ -26,12 +26,26 @@
     </FrappeListCell>
 
     <!-- Data Input Form Control -->
+    <!-- With no Edit row column after it, the last field keeps its hover inside the table's border. -->
     <FrappeListCell
-      v-for="df in tableFields"
+      v-for="(df, index) in tableFields"
       :key="df.fieldname"
       class="min-w-0 self-center"
+      :class="{ 'pe-2': !canEditRow && index === tableFields.length - 1 }"
     >
+      <!-- A field its depends_on hides on this row leaves its cell empty. -->
+      <template v-if="isHidden(df)" />
+      <FrappeSpinner
+        v-else-if="getCalculatedState(row, df.fieldname) === 'calculating'"
+        class="ms-auto me-2 text-ink-gray-5"
+      />
+      <span
+        v-else-if="getCalculatedState(row, df.fieldname) === 'failed'"
+        class="ms-auto px-2 text-ink-gray-5"
+        >—</span
+      >
       <FormControl
+        v-else
         class="min-w-0 flex-1"
         :size="size"
         :df="df"
@@ -61,7 +75,10 @@ import { FrappeDoc } from 'src/frappe/document';
 import {
   Button as FrappeButton,
   ErrorMessage as FrappeErrorMessage,
+  Spinner as FrappeSpinner,
 } from 'frappe-ui';
+import { getCalculatedState } from 'src/frappe/calculated';
+import { isHiddenByCondition } from 'src/frappe/fieldState';
 import {
   ListCell as FrappeListCell,
   ListRow as FrappeListRow,
@@ -78,6 +95,7 @@ export default {
     FrappeListCell,
     FormControl,
     FrappeButton,
+    FrappeSpinner,
   },
   provide() {
     return {
@@ -113,6 +131,10 @@ export default {
     this.$options.components.FormControl = FormControl;
   },
   methods: {
+    getCalculatedState,
+    isHidden(df) {
+      return isHiddenByCondition(this.row, df);
+    },
     async onChange(df, value) {
       const fieldname = df.fieldname;
       this.errors[fieldname] = null;

@@ -9,9 +9,10 @@ from frappe_books.search import BooksSearch, build_search_index, search
 from frappe_books.tests.accounting import (
 	ensure_user,
 	make_account,
+	make_customer,
 	make_invoice,
 	make_item,
-	make_party,
+	set_company_value,
 )
 
 USER = "books-search-user@example.com"
@@ -36,8 +37,9 @@ class IntegrationTestSearchPalette(IntegrationTestCase):
 		party = invoice.party.split()[-1]
 
 		self.assertEqual(self._found(item.split()[-1], [INVOICE]), [invoice.name])
-		self.assertEqual(self._found(f"{party} invoice", [INVOICE, "Books Party"]), [invoice.name])
+		self.assertEqual(self._found(f"{party} invoice", [INVOICE, "Books Customer"]), [invoice.name])
 
+	# With ERPNext, whose item search is off, Books queues the save itself; see search.update_doc_index.
 	def test_a_saved_document_is_indexed_from_the_queue(self):
 		BooksSearch().sql("DELETE FROM search_index_queue", commit=True)
 		item, invoice = self._make_invoice()
@@ -55,7 +57,7 @@ class IntegrationTestSearchPalette(IntegrationTestCase):
 		with self.set_user(ensure_user(USER, "Books User")):
 			rows = search(word, [INVOICE])
 		self.assertEqual(
-			[(row["name"], row["party"], row["docstatus"]) for row in rows],
+			[(row["name"], row["customer"], row["docstatus"]) for row in rows],
 			[(submitted.name, submitted.party, 1), (cancelled.name, cancelled.party, 2)],
 		)
 		with self.set_user(ensure_user("books-search-guest@example.com")):
@@ -85,9 +87,9 @@ class IntegrationTestSearchPalette(IntegrationTestCase):
 	def _make_invoice(self, item=None, party=None):
 		income = make_account("Search Income", root_type="Income", account_type="Income Account")
 		expense = make_account("Search Expense", root_type="Expense", account_type="Expense Account")
-		frappe.db.set_single_value("Books Accounting Settings", "discount_account", expense.name)
+		set_company_value("default_discount_account", expense.name)
 		item = item or make_item(income.name, expense.name).name
-		party = party or make_party(self.receivable).name
+		party = party or make_customer(self.receivable).name
 		invoice = make_invoice(INVOICE, party, self.receivable, item, income.name)
 		invoice.submit()
 		return item, invoice

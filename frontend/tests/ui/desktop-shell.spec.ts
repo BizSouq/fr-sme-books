@@ -8,30 +8,33 @@ const sidebar = (page: Page) =>
 const headers = (page: Page) => page.locator('header:visible');
 
 test('sidebar items are links that open their page', async ({ page }) => {
-  const sales = sidebar(page).getByRole('link', { name: 'Sales', exact: true });
+  const sales = sidebar(page).getByRole('link', {
+    name: 'Sales Invoice',
+    exact: true,
+  });
   await expect(sales).toHaveAttribute('href', '/books/list/SalesInvoice');
 
   await sales.click();
   await expect(page).toHaveURL(/\/books\/list\/SalesInvoice$/);
-  const quotes = sidebar(page).getByRole('link', { name: 'Sales Quotes' });
+  const quotes = sidebar(page).getByRole('link', { name: 'Quotation' });
   await expect(quotes).toBeVisible();
 
   await quotes.click();
-  await expect(page).toHaveURL(/\/books\/list\/SalesQuote$/);
+  await expect(page).toHaveURL(/\/books\/list\/Quotation$/);
   await expect(quotes).toHaveAttribute('aria-current', 'page');
 });
 
 test('a page without a sidebar entry highlights none', async ({ page }) => {
   const current = sidebar(page).locator('[aria-current="page"]');
   await expect(current).toHaveText('Dashboard');
-  await page.goto('/books/list/SerialNumber');
-  await expect(headers(page)).toContainText('Serial Number');
+  await page.goto('/books/list/GLEntry');
+  await expect(headers(page)).toContainText('GL Entry');
   await expect(current).toHaveCount(0);
 
   await sidebar(page).getByRole('link', { name: 'Dashboard' }).click();
   await expect(current).toHaveText('Dashboard');
   await page.goBack();
-  await expect(headers(page)).toContainText('Serial Number');
+  await expect(headers(page)).toContainText('GL Entry');
   await expect(current).toHaveCount(0);
 });
 
@@ -41,7 +44,9 @@ test('only the current page header shows after moving between cached pages', asy
   await expect(headers(page)).toHaveCount(1);
   await expect(headers(page)).toContainText('Dashboard');
 
-  await sidebar(page).getByRole('link', { name: 'Sales', exact: true }).click();
+  await sidebar(page)
+    .getByRole('link', { name: 'Sales Invoice', exact: true })
+    .click();
   await expect(headers(page)).toHaveCount(1);
   await expect(headers(page)).toContainText('Sales Invoice');
 
@@ -54,7 +59,9 @@ test('only the current page header shows after moving between cached pages', asy
 test('Ctrl+K opens Quick Search after moving to another page', async ({
   page,
 }) => {
-  await sidebar(page).getByRole('link', { name: 'Sales', exact: true }).click();
+  await sidebar(page)
+    .getByRole('link', { name: 'Sales Invoice', exact: true })
+    .click();
   await expect(headers(page)).toContainText('Sales Invoice');
 
   await page.keyboard.press('ControlOrMeta+KeyK');
@@ -136,7 +143,9 @@ test('a logout elsewhere sends the next action to the login page', async ({
 }) => {
   await page.context().clearCookies();
 
-  await sidebar(page).getByRole('link', { name: 'Sales', exact: true }).click();
+  await sidebar(page)
+    .getByRole('link', { name: 'Sales Invoice', exact: true })
+    .click();
 
   await expect(page).toHaveURL(/\/login\?redirect-to=%2Fbooks$/);
 });

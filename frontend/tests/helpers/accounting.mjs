@@ -45,8 +45,8 @@ await build({
       } from './src/utils/dashboard';
       export { GSTR1 } from './reports/GoodsAndServiceTax/GSTR1';
       export { getGstrJsonData } from './reports/GoodsAndServiceTax/gstExporter';
-      export { call } from './src/web/api';
-      export { getDocuments } from './src/frappe/api';
+      export { call, onServerMessages, getServerMessages } from './src/web/api';
+      export { getDocuments, insertDocument } from './src/frappe/api';
       export * as errors from './fyo/utils/errors';
       export { getInsufficientItems } from './models/inventory/insufficientStock';
       export { generateCSV, parseCSV } from './utils/csvParser';
@@ -119,7 +119,10 @@ export const {
   GSTR1,
   getGstrJsonData,
   call,
+  onServerMessages,
+  getServerMessages,
   getDocuments,
+  insertDocument,
   errors,
   getInsufficientItems,
   generateCSV,
@@ -133,7 +136,7 @@ export const {
 /** A Fyo with the settings tests read: discounting on, amounts in USD to two decimals. */
 export async function makeFyo() {
   const fyo = new Fyo();
-  fyo.singles.AccountingSettings = { enable_discounting: true };
-  fyo.singles.SystemSettings = { currency: 'USD', display_precision: 2 };
+  fyo.singles.AccountingSettings = { enable_discounts_and_margin: true };
+  fyo.singles.SystemSettings = { currency: 'USD', currency_precision: 2 };
   return fyo;
 }

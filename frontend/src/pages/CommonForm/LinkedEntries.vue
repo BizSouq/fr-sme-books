@@ -10,7 +10,10 @@
       class="m-4"
       theme="red"
       :title="t`Could not load linked entries. Please try again.`"
-      :primary-action="{ label: t`Try again`, onClick: () => setLinkedEntries() }"
+      :primary-action="{
+        label: t`Try again`,
+        onClick: () => setLinkedEntries(),
+      }"
     />
 
     <!-- Linked Entry List -->
@@ -68,45 +71,48 @@
 
                   <!-- Party or EntryType or Account -->
                   <FrappeBadge
-                    v-if="e.party || e.entry_type || e.account"
+                    v-if="getBadge(item.value, e)"
                     theme="gray"
                     variant="subtle"
                   >
-                    {{ e.party || e.entry_type || e.account }}
+                    {{ getBadge(item.value, e) }}
                   </FrappeBadge>
 
-                  <FrappeBadge v-if="e.item" theme="gray" variant="subtle">
-                    {{ e.item }}
+                  <FrappeBadge v-if="e.item_code" theme="gray" variant="subtle">
+                    {{ e.item_code }}
                   </FrappeBadge>
-                  <FrappeBadge v-if="e.location" theme="gray" variant="subtle">
-                    {{ e.location }}
+                  <FrappeBadge v-if="e.warehouse" theme="gray" variant="subtle">
+                    {{ e.warehouse }}
                   </FrappeBadge>
 
                   <!-- Amounts -->
                   <FrappeBadge
                     v-if="
-                      isPesa(e.outstanding_amount) && !e.outstanding_amount.isZero()
+                      isPesa(e.outstanding_amount) &&
+                      e.outstanding_amount.isPositive()
                     "
                     theme="amber"
                     variant="subtle"
                   >
                     {{
-                      t`Unpaid ${fyo.format(e.outstanding_amount.abs(), 'Currency')}`
+                      t`Unpaid ${fyo.format(e.outstanding_amount, 'Currency')}`
                     }}
                   </FrappeBadge>
                   <FrappeBadge
-                    v-else-if="isPesa(e.grand_total) && e.grand_total.isPositive()"
+                    v-else-if="
+                      isPesa(e.grand_total) && e.grand_total.isPositive()
+                    "
                     theme="green"
                     variant="subtle"
                   >
                     {{ fyo.format(e.grand_total, 'Currency') }}
                   </FrappeBadge>
                   <FrappeBadge
-                    v-else-if="isPesa(e.amount) && e.amount.isPositive()"
+                    v-else-if="getAmount(e)?.isPositive()"
                     theme="green"
                     variant="subtle"
                   >
-                    {{ fyo.format(e.amount, 'Currency') }}
+                    {{ fyo.format(getAmount(e), 'Currency') }}
                   </FrappeBadge>
 
                   <!-- Quantities -->
@@ -120,11 +126,11 @@
                     }}
                   </FrappeBadge>
                   <FrappeBadge
-                    v-else-if="typeof e.quantity === 'number' && e.quantity"
+                    v-else-if="typeof e.actual_qty === 'number' && e.actual_qty"
                     theme="gray"
                     variant="subtle"
                   >
-                    {{ t`Qty. ${fyo.format(e.quantity, 'Float')}` }}
+                    {{ t`Qty. ${fyo.format(e.actual_qty, 'Float')}` }}
                   </FrappeBadge>
                 </div>
               </div>
@@ -175,6 +181,7 @@
 import { createReusableTemplate } from '@vueuse/core';
 import type { FrappeDoc } from 'src/frappe/document';
 import { isPesa } from 'fyo/utils';
+import type { Money } from 'pesa';
 import {
   Alert as FrappeAlert,
   Badge as FrappeBadge,
@@ -188,10 +195,13 @@ import {
   ListCell as FrappeListCell,
   ListRow as FrappeListRow,
 } from 'frappe-ui/list';
-import { Accordion as FrappeAccordion, type AccordionItem } from 'frappe-ui-accordion';
+import {
+  Accordion as FrappeAccordion,
+  type AccordionItem,
+} from 'frappe-ui-accordion';
 import { ModelNameEnum } from 'models/types';
 import { getFrappeRows } from 'src/frappe/list';
-import { getSchema } from 'src/frappe/registry';
+import { getModel, getSchema } from 'src/frappe/registry';
 import { getLinkedEntries } from 'src/utils/doc';
 import { shortcutsKey } from 'src/utils/injectionKeys';
 import { getFormRoute, routeTo } from 'src/utils/ui';
@@ -226,7 +236,12 @@ export default defineComponent({
     };
   },
   data() {
-    return { entries: {}, openGroups: [], loading: true, loadFailed: false } as {
+    return {
+      entries: {},
+      openGroups: [],
+      loading: true,
+      loadFailed: false,
+    } as {
       entries: Record<string, { details: Record<string, unknown>[] }>;
       openGroups: string[];
       loading: boolean;
@@ -235,7 +250,9 @@ export default defineComponent({
   },
   computed: {
     sequence(): string[] {
-      const seq: string[] = linkSequence.filter((s) => !!this.entries[s]?.details?.length);
+      const seq: string[] = linkSequence.filter(
+        (s) => !!this.entries[s]?.details?.length
+      );
 
       for (const s in this.entries) {
         if (seq.includes(s) || !this.entries[s].details.length) {
@@ -262,9 +279,18 @@ export default defineComponent({
   },
   methods: {
     isPesa,
+    getBadge(schemaName: string, entry: Record<string, unknown>) {
+      const partyField = getModel(schemaName)?.partyField ?? '';
+      return entry[partyField] || entry.voucher_type || entry.account;
+    },
     /** Ledger entries are dated by their posting date. */
     getDate(entry: Record<string, unknown>) {
       return entry.date ?? entry.posting_date;
+    },
+    /** A payment's amount, or a stock entry's total. */
+    getAmount(entry: Record<string, unknown>): Money | undefined {
+      const amount = entry.amount ?? entry.paid_amount ?? entry.total_amount;
+      return isPesa(amount) ? amount : undefined;
     },
     async routeTo(schemaName: string, name: string) {
       const route = getFormRoute(schemaName, name);
@@ -309,19 +335,20 @@ const linkSequence = [
   ModelNameEnum.SalesInvoice,
   ModelNameEnum.PurchaseInvoice,
   // Stock Transfers
-  ModelNameEnum.Shipment,
+  ModelNameEnum.DeliveryNote,
   ModelNameEnum.PurchaseReceipt,
   // Other Transactional
-  ModelNameEnum.Payment,
+  ModelNameEnum.PaymentEntry,
   ModelNameEnum.JournalEntry,
-  ModelNameEnum.StockMovement,
+  ModelNameEnum.StockEntry,
   // Non Transfers
-  ModelNameEnum.Party,
+  ModelNameEnum.Customer,
+  ModelNameEnum.Supplier,
   ModelNameEnum.Item,
   ModelNameEnum.Account,
-  ModelNameEnum.Location,
+  ModelNameEnum.Warehouse,
   // Ledgers
-  ModelNameEnum.AccountingLedgerEntry,
+  ModelNameEnum.GLEntry,
   ModelNameEnum.StockLedgerEntry,
 ];
 
@@ -329,29 +356,55 @@ const linkEntryDisplayFields: Record<string, string[]> = {
   // Invoices
   [ModelNameEnum.SalesInvoice]: [
     'name',
-    'date',
-    'party',
+    'posting_date',
+    'customer',
     'grand_total',
     'outstanding_amount',
     'stock_not_transferred',
   ],
   [ModelNameEnum.PurchaseInvoice]: [
     'name',
-    'date',
-    'party',
+    'posting_date',
+    'supplier',
     'grand_total',
     'outstanding_amount',
-    'stock_not_transferred',
   ],
   // Stock Transfers
-  [ModelNameEnum.Shipment]: ['name', 'date', 'party', 'grand_total'],
-  [ModelNameEnum.PurchaseReceipt]: ['name', 'date', 'party', 'grand_total'],
+  [ModelNameEnum.DeliveryNote]: [
+    'name',
+    'posting_date',
+    'customer',
+    'grand_total',
+  ],
+  [ModelNameEnum.PurchaseReceipt]: [
+    'name',
+    'posting_date',
+    'supplier',
+    'grand_total',
+  ],
   // Other Transactional
-  [ModelNameEnum.Payment]: ['name', 'date', 'party', 'amount'],
-  [ModelNameEnum.JournalEntry]: ['name', 'date', 'entry_type'],
-  [ModelNameEnum.StockMovement]: ['name', 'date', 'amount'],
+  [ModelNameEnum.PaymentEntry]: [
+    'name',
+    'posting_date',
+    'party',
+    'paid_amount',
+  ],
+  [ModelNameEnum.JournalEntry]: ['name', 'posting_date', 'voucher_type'],
+  [ModelNameEnum.StockEntry]: ['name', 'posting_date', 'total_amount'],
   // Ledgers
-  [ModelNameEnum.AccountingLedgerEntry]: ['name', 'posting_date', 'account', 'credit', 'debit'],
-  [ModelNameEnum.StockLedgerEntry]: ['name', 'date', 'item', 'location', 'quantity'],
+  [ModelNameEnum.GLEntry]: [
+    'name',
+    'posting_date',
+    'account',
+    'credit',
+    'debit',
+  ],
+  [ModelNameEnum.StockLedgerEntry]: [
+    'name',
+    'posting_date',
+    'item_code',
+    'warehouse',
+    'actual_qty',
+  ],
 };
 </script>

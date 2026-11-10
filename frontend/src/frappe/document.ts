@@ -15,6 +15,7 @@ import type {
   EmptyMessageMap,
   FiltersMap,
   HiddenMap,
+  LinkedRecords,
   ListViewSettings,
   ListsMap,
   ReadOnlyMap,
@@ -40,7 +41,7 @@ import {
 } from 'schemas/types';
 import { getIsNullOrUndef, getMapFromList, getRandomString } from 'utils';
 import type { LinkedDoc } from 'utils/db/types';
-import { markRaw, reactive } from 'vue';
+import { markRaw, reactive, toRaw } from 'vue';
 import * as api from './api';
 import type { DocValues } from './api';
 import type { EvalDoc } from './dependsOn';
@@ -58,6 +59,18 @@ import { toDocValue, toDocValues, toFrappeValue } from './values';
 /** Runs a document's preview later; the returned function cancels it. */
 export type PreviewScheduler = (preview: () => void) => () => void;
 
+/** What a card of a linked record shows: its title and lines, each with an icon. */
+export interface LinkCardContent {
+  title: string;
+  lines: { icon?: string; text: string }[];
+}
+
+/** The fields a card of a linked record reads, and what it shows of them. */
+export interface LinkCard {
+  fields: string[];
+  getContent: (record: DocValues) => LinkCardContent;
+}
+
 /** A warning the submit prompt shows first; a Yes runs `accept` and goes on. */
 export type SubmitWarning = {
   title: string;
@@ -72,6 +85,18 @@ export const afterPause: PreviewScheduler = (preview) => {
 };
 
 let previewScheduler = afterPause;
+
+/** Documents whose open form shows a failed preview itself. */
+const formDocs = new WeakSet<FrappeDoc>();
+
+/** Marks a document's form as showing its failed previews, or no longer. */
+export function setFormShowsPreviewErrors(doc: FrappeDoc, shows: boolean) {
+  if (shows) {
+    formDocs.add(toRaw(doc));
+  } else {
+    formDocs.delete(toRaw(doc));
+  }
+}
 
 /** Sets when a scheduled preview runs; node tests run one only when they ask. */
 export function setPreviewScheduler(scheduler: PreviewScheduler) {
@@ -90,6 +115,8 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
   static presentation: Presentation = { label: '' };
   /** A whitelisted method that fills what a save would; previewed while the user edits. */
   static previewMethod?: string;
+  /** Read-only fields the server works out on a preview, which show as being calculated until it answers. */
+  static calculatedFields: string[] = [];
   /** The models of a table's rows by table fieldname; other rows are plain `FrappeDoc`s. */
   static rowModels: Record<string, typeof FrappeDoc> = {};
   /**
@@ -99,12 +126,24 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
   static refills: Record<string, string[]> = {};
   /** Fields whose default the server decides, like one that follows a setting; see `leaveToServer`. */
   static serverDefaults: string[] = [];
+  /** The field that names the document's customer or supplier, if it has one. */
+  static partyField?: string;
+  /** A row model's own title for row `number`, like "Tax row 2"; row editors say "Row 2" without one. */
+  static getRowTitle?: (number: number) => string;
+  /** Whether a new document's action is Submit, which saves and submits it, as opening a POS shift does. */
+  static submitsOnInsert = false;
 
   static lists: ListsMap = {};
   static filters: FiltersMap = {};
   /** Filters whose values a record created from the link's Create option takes. */
   static createFilters: FiltersMap = {};
   static emptyMessages: EmptyMessageMap = {};
+  /** How a link to the doctype shows as a card, where its field asks; see `LinkCard`. */
+  static linkCard?: LinkCard;
+  /** Records that link a saved document, which its form lists, e.g. an item's prices. */
+  static getLinkedRecords(_fyo: Fyo): LinkedRecords | undefined {
+    return undefined;
+  }
 
   static getListViewSettings(_fyo: Fyo): ListViewSettings {
     return {};
@@ -146,6 +185,10 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
   /** An edit's fills are not back from the server yet. */
   _isPreviewDue = false;
   _edits = 0;
+  /** The message of the last preview, when it failed; the next edit clears it. */
+  previewError?: string;
+  /** Rows edited since the server last answered a preview. */
+  _rowsSincePreview = new Set<FrappeDoc>();
 
   validations: ValidationMap = {};
   required: RequiredMap = {};
@@ -216,11 +259,14 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
   }
 
   /** What a form of the document is headed by. */
+  /** The name, or the title of a DocType whose links show titles, like ERPNext's hash-named batches. */
   get formTitle(): string {
-    return this.name ?? '';
+    const { meta } = getDocType(this.schemaName);
+    const title = meta.show_title_field_in_link && meta.title_field;
+    return (title && (this[title] as string | undefined)) || (this.name ?? '');
   }
 
-  /** The kind of record the user sees, such as Customer for a customer party. */
+  /** The kind of record the user sees, such as Sales Invoice. */
   get typeLabel(): string {
     return this.schema.label || this.schemaName;
   }
@@ -252,6 +298,16 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
   /** The fields a form shows, in order. Models override it to label fields by value. */
   getFormFields(fields: Field[]): Field[] {
     return fields;
+  }
+
+  /** What a form section says under its title, if anything. */
+  getSectionDescription(_section: string): string | undefined {
+    return undefined;
+  }
+
+  /** Whether a phone form's collapsible section starts open; undefined: when it holds a value. */
+  isSectionOpen(_section: string): boolean | undefined {
+    return undefined;
   }
 
   get isSubmitted() {
@@ -292,16 +348,26 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
       return false;
     }
 
-    if (!this.dirty || this.schema.isChild) {
+    if (!this.dirty || this.schema.isChild || this.insertsBySubmit) {
       return false;
     }
 
     return this.canWrite;
   }
 
+  /** A new document whose model submits it on insert, so its one action is Submit. */
+  get insertsBySubmit(): boolean {
+    const model = this.constructor as typeof FrappeDoc;
+    return model.submitsOnInsert && this.notInserted;
+  }
+
   get canSubmit() {
     if (!this.schema.isSubmittable || !this.can('submit')) {
       return false;
+    }
+
+    if (this.insertsBySubmit) {
+      return this.canWrite;
     }
 
     if (this.dirty || this.notInserted) {
@@ -389,6 +455,8 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
     for (const field of this.schema.fields) {
       if (
         field.meta ||
+        field.clientOnly ||
+        (field.insertOnly && this.inserted) ||
         (options.clearServerFilled && this._serverFilled.has(field.fieldname))
       ) {
         continue;
@@ -498,6 +566,7 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
 
     // always run applyChange from the parentdoc
     if (this.schema.isChild && this.parentdoc) {
+      this.parentdoc._rowsSincePreview.add(toRaw(this));
       await this._applyChange(fieldname);
       await this.parentdoc._applyChange(this.parentFieldname as string);
     } else {
@@ -871,8 +940,14 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
       return;
     }
 
+    // Saved first, so Frappe checks the rights to create and to submit.
+    if (this.insertsBySubmit) {
+      await this.sync();
+    }
+
     const document = this.getMethodDocument();
-    await this._setSaved(await api.runDocMethod('submit', document), 'submit');
+    const submitted = await api.runDocMethod('submit', document);
+    await this._setSaved(submitted, 'submit');
     await this._notifyAfterAction('submit');
   }
 
@@ -1033,7 +1108,18 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
     }
 
     this._isPreviewDue = true;
+    this.previewError = undefined;
     this._cancelScheduledPreview = previewScheduler(() => this.startPreview());
+  }
+
+  /** The server has not yet worked out the values of the last edit, and no preview failed since. */
+  get isCalculating(): boolean {
+    return this._isPreviewDue && !this.previewError;
+  }
+
+  /** Whether the last preview failed after an edit of `row`, so its calculated values are unknown. */
+  isRowFailed(row: FrappeDoc): boolean {
+    return !!this.previewError && this._rowsSincePreview.has(toRaw(row));
   }
 
   _unschedulePreview() {
@@ -1041,9 +1127,13 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
     this._cancelScheduledPreview = undefined;
   }
 
-  /** Previews now, for no caller to wait on, e.g. as a form opens; shows a failure as a toast. */
+  /** Previews now, for no caller to wait on, e.g. as a form opens; shows a failure as a toast, unless its form shows it. */
   startPreview() {
-    this.preview().catch(showPreviewError);
+    this.preview().catch((error) => {
+      if (!formDocs.has(toRaw(this))) {
+        void showPreviewError(error);
+      }
+    });
   }
 
   /** Resolves once the server filled the last edit: waits for a running preview and runs a scheduled one now. */
@@ -1080,9 +1170,20 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
       return;
     }
 
+    const edits = this._edits;
     const previewing = this._previewAndApply(kwargs);
     this._previewing = previewing.catch(() => undefined);
-    await previewing;
+    try {
+      await previewing;
+    } catch (error) {
+      // An edit since the preview started previews again, so only the last failure shows.
+      if (edits === this._edits) {
+        this.previewError =
+          error instanceof Error ? error.message : String(error);
+      }
+
+      throw error;
+    }
   }
 
   async _previewAndApply(kwargs?: Record<string, unknown>) {
@@ -1097,6 +1198,8 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
     }
 
     this._isPreviewDue = false;
+    this._rowsSincePreview.clear();
+
     if (previewed) {
       this.applyPreview(this.toDocValues(previewed));
     }
@@ -1126,7 +1229,7 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
   applyPreview(previewed: DocValueMap) {
     for (const field of this.schema.fields) {
       const { fieldname } = field;
-      if (field.meta || fieldname === 'name') {
+      if (field.meta || field.clientOnly || fieldname === 'name') {
         continue;
       }
 
@@ -1162,7 +1265,7 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
     const nextRows = previewedRows.map((values) => {
       const row = rows.find(({ name }) => name === values.name);
       if (!row) {
-        return this._getChildDoc({ ...values, name: undefined }, fieldname);
+        return this._getPreviewRow(fieldname, values);
       }
 
       row.applyPreview(values);
@@ -1170,6 +1273,23 @@ export class FrappeDoc extends Observable<DocValue | FrappeDoc[]> {
     });
     setChildDocIdx(nextRows);
     this[fieldname] = nextRows;
+  }
+
+  /**
+   * A row the server added. A company row's values stay the server's to
+   * refill, as a document field's do, until the user edits them.
+   */
+  _getPreviewRow(fieldname: string, values: DocValueMap): FrappeDoc {
+    const isCompanyRow = this.schema.fields.some(
+      ({ companyTable }) => companyTable === fieldname
+    );
+    if (!isCompanyRow) {
+      return this._getChildDoc({ ...values, name: undefined }, fieldname);
+    }
+
+    const row = this._getChildDoc({}, fieldname);
+    row.applyPreview(values);
+    return row;
   }
 }
 

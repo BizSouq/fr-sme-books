@@ -373,6 +373,16 @@
     "@floating-ui/utils" "^0.2.11"
     vue-demi ">=0.13.0"
 
+"@fontsource-variable/plus-jakarta-sans@5.3.0":
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/@fontsource-variable/plus-jakarta-sans/-/plus-jakarta-sans-5.3.0.tgz#2a34ff48a1d15cee9f48d088c3bf406cbaa2e3d6"
+  integrity sha512-/l/4r0yyWK9JzAlmA0LiYgGgmJe/Gswt4jTJEzr5QhJfwMbvJZDmYWyW0M4X7yCK69BajMVlV/Lx8g7WDc1+sw==
+
+"@fontsource/hind-siliguri@5.3.0":
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/@fontsource/hind-siliguri/-/hind-siliguri-5.3.0.tgz#128b3daec7095b62c7461dd868d5822bdd31170b"
+  integrity sha512-jTxXVXLTUYpiCqQ8zGzX9gK4pHkJ6nOn05nKqFjPEpqf3VY6gGREKAIvHfHprE/6N4ittSudnHsMPT10QQfgtw==
+
 "@humanfs/core@^0.19.2":
   version "0.19.2"
   resolved "https://registry.yarnpkg.com/@humanfs/core/-/core-0.19.2.tgz#a8272ca03b2acf492670222b2320b6c421bfde60"
@@ -1832,10 +1842,10 @@ fraction.js@^5.3.4:
   resolved "https://registry.yarnpkg.com/fraction.js/-/fraction.js-5.3.4.tgz#8c0fcc6a9908262df4ed197427bdeef563e0699a"
   integrity sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ==
 
-frappe-ui@1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/frappe-ui/-/frappe-ui-1.0.0.tgz#6af1f17800ed2b3eb382feb9895baad7293eb673"
-  integrity sha512-xtT57o06Cfy03TrJMl/HKwO6LfiphnlQrokIII/7PI51P0v3ZH77Gg6tsrtQczlE53D3+BE0Nm8f1MS6jiceHA==
+frappe-ui@1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/frappe-ui/-/frappe-ui-1.0.2.tgz#58acd15eb9abfb5cc0f9eb829a95bd12cb40c893"
+  integrity sha512-ntMLpDpeeigtvb1G/W3osJnYVh6HXHJpqrJLz3lC7WKqBfcAnc4R274j606n7m+3gFvnOWCVnK5t9rsSbQHyKA==
   dependencies:
     "@codemirror/autocomplete" "^6.0.0"
     "@codemirror/commands" "^6.0.0"

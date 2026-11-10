@@ -48,7 +48,8 @@
         variant="solid"
         :disabled="!selectedInvoiceName"
         @click="returnSelectedInvoice"
-        >{{ t`Create return` }}</FrappeButton>
+        >{{ t`Create return` }}</FrappeButton
+      >
     </template>
   </Modal>
 </template>
@@ -57,24 +58,22 @@
 import Modal from 'src/components/POS/POSDialog.vue';
 import InvoiceSelectionTable from 'src/components/POS/InvoiceSelectionTable.vue';
 import type { DocValueMap } from 'fyo/core/types';
-import { defineComponent } from 'vue';
+import { defineComponent, inject } from 'vue';
 import { Field } from 'schemas/types';
-import type { Filter } from 'src/frappe/api';
+import type { SalesInvoice } from 'models/invoices/SalesInvoice';
 import {
   getPOSInvoiceCount,
   getPOSInvoiceFields,
   getPOSInvoices,
+  getReturnableFilters,
 } from 'src/utils/pos';
 import Paginator from 'src/components/Paginator.vue';
-import { TextInput as FrappeTextInput, Button as FrappeButton, Icon as FrappeIcon } from 'frappe-ui';
+import {
+  TextInput as FrappeTextInput,
+  Button as FrappeButton,
+  Icon as FrappeIcon,
+} from 'frappe-ui';
 import { isMobile } from 'src/utils/viewport';
-
-/** Submitted sales that are not returns and have something left to return. */
-const RETURNABLE_FILTERS: Filter[] = [
-  ['docstatus', '=', 1],
-  ['return_against', 'is', 'not set'],
-  ['is_fully_returned', '=', 0],
-];
 
 export default defineComponent({
   name: 'ReturnSalesInvoice',
@@ -91,7 +90,7 @@ export default defineComponent({
   },
   emits: ['toggleModal', 'selectedReturnInvoice'],
   setup() {
-    return { isMobile };
+    return { isMobile, sinvDoc: inject('sinvDoc') as SalesInvoice };
   },
   data() {
     return {
@@ -160,9 +159,10 @@ export default defineComponent({
     async setInvoices() {
       const search = this.invoiceSearchTerm;
       const length = this.pageEnd - this.pageStart;
+      const filters = getReturnableFilters();
       const loading = Promise.all([
-        getPOSInvoices(RETURNABLE_FILTERS, search, this.pageStart, length),
-        getPOSInvoiceCount(RETURNABLE_FILTERS, search),
+        getPOSInvoices(filters, search, this.pageStart, length),
+        getPOSInvoiceCount(filters, search),
       ]).then(([invoices, invoiceCount]) => {
         if (this.loading === loading) {
           this.invoices = invoices;

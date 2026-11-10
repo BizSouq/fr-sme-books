@@ -8,7 +8,7 @@ import { ModelNameEnum } from 'models/types';
 import { PurchaseReceiptItem } from './PurchaseReceiptItem';
 import {
   StockTransfer,
-  transferFileFields,
+  getTransferFileFields,
   transferFields,
 } from './StockTransfer';
 
@@ -18,19 +18,18 @@ export class PurchaseReceipt extends StockTransfer {
     label: 'Purchase Receipt',
     nameField: { label: 'Transfer No', hidden: true },
     fields: transferFields,
-    fileFields: transferFileFields,
+    fileFields: getTransferFileFields('supplier'),
   };
+  static override partyField = 'supplier';
   static override rowModels = { items: PurchaseReceiptItem };
-  static override invoiceSchemaName = ModelNameEnum.PurchaseInvoice;
-  static override invoiceMapper = 'make_purchase_receipt';
 
   static getListViewSettings(): ListViewSettings {
     return {
       columns: [
         'name',
         getDocStatusListColumn(),
-        'party',
-        'date',
+        'supplier',
+        'posting_date',
         'grand_total',
       ],
     };

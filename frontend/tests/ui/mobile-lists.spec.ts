@@ -11,26 +11,24 @@ useBooksSession();
 
 const run = Date.now().toString(36);
 const customer = `Phone Customer ${run}`;
-const supplier = `Phone Supplier ${run}`;
-let hasParties = false;
+const otherCustomer = `Phone Other ${run}`;
+let hasCustomers = false;
 
 test.beforeEach(async ({ page }) => {
-  if (hasParties) return;
-  await insertDocument(page, 'Books Party', {
-    name: customer,
-    role: 'Customer',
-    phone: '98765 43210',
-    email: `${run}@example.com`,
+  if (hasCustomers) return;
+  await insertDocument(page, 'Books Customer', {
+    customer_name: customer,
+    mobile_no: '98765 43210',
+    email_id: `${run}@example.com`,
   });
-  await insertDocument(page, 'Books Party', {
-    name: supplier,
-    role: 'Supplier',
+  await insertDocument(page, 'Books Customer', {
+    customer_name: otherCustomer,
   });
-  hasParties = true;
+  hasCustomers = true;
 });
 
 test('rows show two lines and open their document', async ({ page }) => {
-  await page.goto('/books/list/Party');
+  await page.goto('/books/list/Customer');
   await expect(
     page.getByRole('button', { name: 'New', exact: true })
   ).toBeVisible();
@@ -39,15 +37,15 @@ test('rows show two lines and open their document', async ({ page }) => {
   await expect(rows(page)).toHaveCount(2);
   await expect(page.getByText('2 of 2', { exact: true })).toBeVisible();
   const row = rows(page).filter({ hasText: customer });
-  await expect(row).toContainText('Customer · 98765 43210');
+  await expect(row).toContainText('98765 43210');
   expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(68);
 
   await row.tap();
-  await expect(page).toHaveURL(/\/books\/edit\/Party\//);
+  await expect(page).toHaveURL(/\/books\/edit\/Customer\//);
 });
 
 test('search also matches keyword fields', async ({ page }) => {
-  await page.goto('/books/list/Party');
+  await page.goto('/books/list/Customer');
   await search(page, `${run}@example`);
 
   await expect(rows(page)).toHaveCount(1);
@@ -58,10 +56,11 @@ test('selected items start a new sales invoice', async ({ page }) => {
   const items = [`Phone Item A ${run}`, `Phone Item B ${run}`];
   for (const name of items) {
     await insertDocument(page, 'Books Item', {
-      name,
-      rate: 100,
-      income_account: 'Sales',
-      expense_account: 'Cost of Goods Sold',
+      item_code: name,
+      standard_rate: 100,
+      item_defaults: [
+        { income_account: 'Sales', expense_account: 'Cost of Goods Sold' },
+      ],
     });
   }
   await page.goto('/books/list/Item');
@@ -95,38 +94,38 @@ test('selected items start a new sales invoice', async ({ page }) => {
 });
 
 test('a filter chip narrows the list until it is removed', async ({ page }) => {
-  await page.goto('/books/list/Party');
+  await page.goto('/books/list/Customer');
   await search(page, run);
   await expect(rows(page)).toHaveCount(2);
 
   await page.getByRole('button', { name: 'Filters', exact: true }).tap();
   await page
     .getByRole('dialog', { name: 'Filter by' })
-    .getByRole('button', { name: /^Role/ })
+    .getByRole('button', { name: /^Mobile No/ })
     .tap();
   const sheet = page.getByRole('dialog', { name: 'Filters' });
-  await sheet.getByRole('combobox', { name: 'Value' }).tap();
-  await page.getByRole('option', { name: 'Supplier', exact: true }).tap();
+  await sheet.getByPlaceholder('Value').fill('98765');
   await sheet.getByRole('button', { name: 'Apply', exact: true }).tap();
 
   await expect(sheet).toBeHidden();
   await expect(rows(page)).toHaveCount(1);
-  await expect(rows(page)).toContainText(supplier);
+  await expect(rows(page)).toContainText(customer);
   await expect(page.getByRole('button', { name: 'Filters (1)' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Remove filter Role' }).tap();
+  await page.getByRole('button', { name: 'Remove filter Mobile No' }).tap();
   await expect(rows(page)).toHaveCount(2);
   await expect(
     page.getByRole('button', { name: 'Filters', exact: true })
   ).toBeVisible();
 });
 
+// POS shifts open on a date and time; invoices and payments post on a date.
 test('date filters use the native picker', async ({ page }) => {
-  await page.goto('/books/list/SalesInvoice');
+  await page.goto('/books/list/POSOpeningEntry');
   await page.getByRole('button', { name: 'Filters', exact: true }).tap();
   await page
     .getByRole('dialog', { name: 'Filter by' })
-    .getByRole('button', { name: /^Date/ })
+    .getByRole('button', { name: /^Period Start Date/ })
     .tap();
   const sheet = page.getByRole('dialog', { name: 'Filters' });
   const value = sheet.getByLabel('Value');
@@ -139,7 +138,7 @@ test('date filters use the native picker', async ({ page }) => {
 });
 
 test('a filtered empty list clears its search', async ({ page }) => {
-  await page.goto('/books/list/Party');
+  await page.goto('/books/list/Customer');
   await search(page, `none ${run}`);
   await expect(page.getByText('No entries found')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Make entry' })).toHaveCount(0);

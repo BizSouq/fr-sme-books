@@ -4,13 +4,42 @@ import type {
   RenderData,
 } from 'fyo/model/types';
 import type { Field } from 'schemas/types';
+import { getDocType } from 'src/frappe/doctypes';
 import { getFields, getSchema } from 'src/frappe/registry';
 import { isNumeric } from 'src/utils';
 import { fyo } from 'src/initFyo';
 
 export type ListColumn = ColumnConfig | Field;
 
-/** The list view's columns, or the name and quick edit fields without them. */
+/** What an empty list shows: the model's words, else `fallback`. */
+export function getEmptyState(
+  listConfig: ListViewSettings | undefined,
+  isFiltered: boolean,
+  fallback: { title: string; description?: string; createLabel: string }
+): { title: string; description?: string; createLabel: string } {
+  const own = listConfig?.emptyState;
+  if (!own) {
+    return fallback;
+  }
+
+  // A model's filtered title says it all, as the design's lists do.
+  if (isFiltered) {
+    return own.filteredTitle
+      ? { ...fallback, title: own.filteredTitle, description: undefined }
+      : fallback;
+  }
+
+  return {
+    title: own.title,
+    description: own.description,
+    createLabel: own.createLabel ?? fallback.createLabel,
+  };
+}
+
+/**
+ * The list view's columns, or the name and quick edit fields without them.
+ * Columns the DocType lacks are left out.
+ */
 export function getListColumns(
   schemaName: string,
   listConfig?: ListViewSettings
@@ -21,9 +50,18 @@ export function getListColumns(
     columns = [...new Set(['name', ...columns])];
   }
 
-  return columns.flatMap((column): ListColumn[] =>
-    typeof column === 'object' ? [column] : getFields(schemaName, [column])
-  );
+  // A DocType whose links show titles lists them too.
+  const { meta } = getDocType(schemaName);
+  const title = meta.show_title_field_in_link ? meta.title_field : undefined;
+  const shown = columns.flatMap((column): ListColumn[] => {
+    if (typeof column === 'object') {
+      return [column];
+    }
+
+    const fieldname = column === 'name' && title ? title : column;
+    return getFields(schemaName, [fieldname]);
+  });
+  return shown;
 }
 
 /** Fixed tracks for dates, numbers and badges; text shares what is left. */

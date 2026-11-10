@@ -11,12 +11,14 @@ import {
   type FrappeDocType,
   type FrappeModel,
 } from './doctypes';
+import { isTableDocField } from './fieldProperties';
 import { getOpenFrappeDocs } from './documents';
 import { getBooksMeta, type BooksMeta, type DocTypeMeta } from './meta';
 import {
   getNamingField,
   getTableSchemaName,
   toSchema,
+  withoutBooksPrefix,
   type Placements,
   type Presentation,
 } from './schema';
@@ -26,8 +28,8 @@ const QUICK_VIEW_SKIPPED_FIELDTYPES = ['Table', 'AttachImage', 'Attachment'];
 /** Loads the meta of every model's schema in one request. Screens read it synchronously after this. */
 export async function loadFrappeDocTypes() {
   const models = getFrappeModels();
-  const doctypes = models.map(([, Model]) => Model.doctype);
-  setDocTypes(models, await getBooksMeta(doctypes));
+  const booksMeta = await getModelsMeta(models);
+  setDocTypes(models, booksMeta);
 
   fyo.observer.on('sync:CustomForm', reloadCustomized);
   fyo.observer.on('delete:CustomForm', reloadCustomized);
@@ -56,10 +58,15 @@ export function getFields(schemaName: string, fieldnames: string[]): Field[] {
 
 /**
  * The fields of export and import files: the schema's `fileFields` in their
- * order, then its custom and meta fields; else all its fields.
+ * order, then its custom and meta fields; else all its stored fields.
  */
 export function getFileFields(schemaName: string): Field[] {
-  const { fields, fileFields } = getSchema(schemaName)!;
+  const schema = getSchema(schemaName)!;
+  // Insert-only and client values are not the DocType's, so files cannot hold them.
+  const fields = schema.fields.filter(
+    (field) => !field.insertOnly && !field.clientOnly
+  );
+  const { fileFields } = schema;
   if (!fileFields) {
     return fields;
   }
@@ -134,30 +141,46 @@ export function getModel(schemaName: string): typeof FrappeDoc | undefined {
   return isFrappeBacked(schemaName) ? getDocType(schemaName).Model : undefined;
 }
 
+/** The meta of the models' doctypes. */
+async function getModelsMeta(models: [string, FrappeModel][]) {
+  return await getBooksMeta(models.map(([, Model]) => Model.doctype));
+}
+
 /** Stores each model's doctype and tables, as their meta and the custom field placements make them. */
-function setDocTypes(
-  models: [string, FrappeModel][],
-  { metas, placements }: BooksMeta
-) {
-  const byName = new Map(metas.map((meta) => [meta.name, meta]));
+function setDocTypes(models: [string, FrappeModel][], booksMeta: BooksMeta) {
   for (const [schemaName, Model] of models) {
-    const meta = byName.get(Model.doctype)!;
-    const docType = toDocType(meta, schemaName, Model, placements[meta.name]);
-    docType.tables = getTables(meta, byName, Model, placements);
-    setDocType(schemaName, docType);
+    setDocType(schemaName, buildDocType(schemaName, Model, booksMeta));
   }
+}
+
+function buildDocType(
+  schemaName: string,
+  Model: FrappeModel,
+  booksMeta: BooksMeta
+): FrappeDocType {
+  const byName = new Map(booksMeta.metas.map((meta) => [meta.name, meta]));
+  const meta = byName.get(Model.doctype)!;
+  const docType = toDocType(
+    meta,
+    schemaName,
+    Model,
+    booksMeta.placements[meta.name]
+  );
+  docType.tables = getTables(meta, byName, Model, booksMeta);
+  return docType;
 }
 
 function getTables(
   meta: DocTypeMeta,
   byName: Map<string, DocTypeMeta>,
   Model: FrappeModel,
-  placements: BooksMeta['placements']
+  booksMeta: BooksMeta
 ) {
   const tables: FrappeDocType['tables'] = {};
   for (const field of meta.fields) {
-    const child =
-      field.fieldtype === 'Table' ? byName.get(field.options!) : undefined;
+    const child = isTableDocField(field)
+      ? byName.get(field.options!)
+      : undefined;
     if (child) {
       const name = getTableSchemaName(child.name);
       const RowModel = Model.rowModels[field.fieldname] ?? FrappeDoc;
@@ -166,7 +189,7 @@ function getTables(
         { ...child, permissions: meta.permissions },
         name,
         RowModel,
-        placements[child.name]
+        booksMeta.placements[child.name]
       );
     }
   }
@@ -183,7 +206,7 @@ function toDocType(
   // Rows without a model of their own are labelled by their doctype.
   const presentation: Presentation = {
     ...Model.presentation,
-    label: Model.presentation.label || meta.name,
+    label: Model.presentation.label || withoutBooksPrefix(meta.name),
   };
   const schema = toSchema(meta, schemaName, presentation, {
     schemaNames: getSchemaNames(),
@@ -215,19 +238,35 @@ function getSchemaNames(): Record<string, string | undefined> {
 /** Shows a customized form's new fields: reloads the doctypes that show or hold the customized doctype. */
 async function reloadCustomized(customized: unknown) {
   for (const [schemaName, Model] of getFrappeModels()) {
-    const docType = getDocType(schemaName);
-    const doctypes = [docType, ...Object.values(docType.tables)].map(
-      (shown) => shown!.doctype
-    );
-    if (!doctypes.includes(customized as string)) {
-      continue;
-    }
-
-    setDocTypes([[schemaName, Model]], await getBooksMeta([Model.doctype]));
-    // A customized table refreshes the rows of the open documents that hold it.
-    const customizedSchema = toSchemaName(customized as string)!;
-    for (const doc of getOpenFrappeDocs(schemaName)) {
-      doc.refreshSchema(customizedSchema);
+    const shown = getShownDocTypes(schemaName);
+    if (shown.some(({ doctype }) => doctype === customized)) {
+      // A customized table refreshes the rows of the open documents that hold it.
+      await reloadModel(schemaName, Model, [
+        toSchemaName(customized as string)!,
+      ]);
     }
   }
+}
+
+/** Reloads a model's doctype and refreshes the open documents' schemas of `refreshed` names. */
+async function reloadModel(
+  schemaName: string,
+  Model: FrappeModel,
+  refreshed: string[]
+) {
+  setDocTypes(
+    [[schemaName, Model]],
+    await getModelsMeta([[schemaName, Model]])
+  );
+  for (const doc of getOpenFrappeDocs(schemaName)) {
+    for (const name of refreshed) {
+      doc.refreshSchema(name);
+    }
+  }
+}
+
+/** A model's doctype and its tables'. */
+function getShownDocTypes(schemaName: string): FrappeDocType[] {
+  const docType = getDocType(schemaName);
+  return [docType, ...Object.values(docType.tables).map((table) => table!)];
 }

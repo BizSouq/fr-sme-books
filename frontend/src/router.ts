@@ -1,3 +1,4 @@
+import AIAssistant from 'src/pages/AIAssistant.vue';
 import ChartOfAccounts from 'src/pages/ChartOfAccounts.vue';
 import CommonForm from 'src/pages/CommonForm/CommonForm.vue';
 import Dashboard from 'src/pages/Dashboard/Dashboard.vue';
@@ -11,7 +12,6 @@ import QuickEditForm from 'src/pages/QuickEditForm.vue';
 import Report from 'src/pages/Report.vue';
 import Settings from 'src/pages/Settings/Settings.vue';
 import TemplateBuilder from 'src/pages/TemplateBuilder/TemplateBuilder.vue';
-import { t } from 'fyo';
 import POS from 'src/pages/POS/POS.vue';
 import type { HistoryState, RouteLocationNormalized } from 'vue-router';
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
@@ -35,6 +35,11 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: Dashboard,
+  },
+  {
+    path: '/ai',
+    name: 'AI Assistant',
+    component: AIAssistant,
   },
   {
     path: '/get-started',
@@ -128,14 +133,6 @@ const routes: RouteRecordRaw[] = [
     meta: { sidebarPath: '/list/PrintFormat', desktopOnly: true },
     component: TemplateBuilder,
     props: true,
-  },
-  {
-    path: '/customize-form',
-    name: 'Customize Form',
-    redirect: () => ({
-      name: 'ListView',
-      params: { schemaName: 'CustomForm', pageTitle: t`Customize Form` },
-    }),
   },
   {
     path: '/settings',

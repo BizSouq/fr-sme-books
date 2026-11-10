@@ -71,9 +71,15 @@ test(
       message: {
         columns: [
           { fieldname: 'account', fieldtype: 'Link', options: 'Books Account' },
-          { fieldname: 'party', fieldtype: 'Link', options: 'Books Party' },
+          {
+            fieldname: 'party',
+            fieldtype: 'Dynamic Link',
+            options: 'party_type',
+          },
         ],
-        result: [{ account: 'Cash', party: 'Asha' }],
+        result: [
+          { account: 'Cash', party_type: 'Books Customer', party: 'Asha' },
+        ],
       },
     });
     const report = new GeneralLedger(fyo);

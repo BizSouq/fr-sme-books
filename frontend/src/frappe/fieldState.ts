@@ -25,10 +25,13 @@ const ruleConditions: Record<
 };
 
 const docFieldMaps = new WeakMap<DocTypeMeta, Record<string, DocField>>();
+const breakConditionMaps = new WeakMap<DocTypeMeta, Record<string, string[]>>();
+const BREAK_FIELDTYPES = ['Tab Break', 'Section Break', 'Column Break'];
 const evalDocs = new WeakMap<FrappeDoc, ComputedRef<EvalDoc>>();
 
 /**
- * A field's state on `doc`, decided in this order:
+ * A field's state on `doc`, decided in this order; a saved document hides
+ * its insert-only fields first:
  * 1. Read only, before all else: a set-once field of a saved document, a
  *    name the server gives or that is saved, a submitted or cancelled
  *    document, or no right to write it.
@@ -42,7 +45,8 @@ const evalDocs = new WeakMap<FrappeDoc, ComputedRef<EvalDoc>>();
  */
 export function getFieldState(doc: FrappeDoc, field: Field): FieldState {
   return {
-    hidden: isRuleOn(doc, field, 'hidden'),
+    hidden:
+      (!!field.insertOnly && doc.inserted) || isRuleOn(doc, field, 'hidden'),
     readOnly: isLocked(doc, field) || isRuleOn(doc, field, 'readOnly'),
     required: isRuleOn(doc, field, 'required'),
   };
@@ -73,6 +77,11 @@ export function getMissingMessage(doc: FrappeDoc): string {
   return `${table.label} Row ${(doc.idx ?? 0) + 1}: ${message}`;
 }
 
+/** Whether the field's DocField depends_on hides it on `doc`, e.g. in one row of a table. */
+export function isHiddenByCondition(doc: FrappeDoc, field: Field): boolean {
+  return isConditionOn(doc, field.fieldname, 'hidden');
+}
+
 /** Edits may not change the field, whatever its own rules say. */
 function isLocked(doc: FrappeDoc, field: Field): boolean {
   if (doc.inserted && field.setOnlyOnce) {
@@ -97,8 +106,58 @@ function isRuleOn(doc: FrappeDoc, field: Field, rule: FieldRule): boolean {
 
   return (
     isConditionOn(doc, field.fieldname, rule) ||
+    (rule === 'hidden' && isHiddenByBreak(doc, field.fieldname)) ||
     !!doc[rule][field.fieldname]?.()
   );
+}
+
+/** Whether the depends_on of the field's tab, section or column hides it, as Desk hides a break's fields with it. */
+function isHiddenByBreak(doc: FrappeDoc, fieldname: string): boolean {
+  const conditions = getBreakConditions(getDocType(doc.schemaName).meta);
+  const evalDoc = getEvalDoc(doc);
+  const parent = doc.parentdoc && getEvalDoc(doc.parentdoc);
+  return (conditions[fieldname] ?? []).some(
+    (condition) => !evaluateCondition(condition, evalDoc, parent, true)
+  );
+}
+
+/** The depends_on of the breaks each field of the DocType sits under, worked out once per meta. */
+function getBreakConditions(meta: DocTypeMeta): Record<string, string[]> {
+  let conditions = breakConditionMaps.get(meta);
+  if (conditions) {
+    return conditions;
+  }
+
+  conditions = {};
+  const breaks: Record<string, string | undefined> = {};
+  for (const { fieldname, fieldtype, depends_on } of meta.fields) {
+    if (BREAK_FIELDTYPES.includes(fieldtype)) {
+      setBreakCondition(breaks, fieldtype, depends_on);
+      continue;
+    }
+
+    const shownWith = Object.values(breaks).filter((c): c is string => !!c);
+    if (shownWith.length) {
+      conditions[fieldname] = shownWith;
+    }
+  }
+
+  breakConditionMaps.set(meta, conditions);
+  return conditions;
+}
+
+/** A tab starts new sections and a section new columns. */
+function setBreakCondition(
+  breaks: Record<string, string | undefined>,
+  fieldtype: string,
+  condition?: string
+) {
+  const nested = BREAK_FIELDTYPES.slice(BREAK_FIELDTYPES.indexOf(fieldtype));
+  for (const type of nested) {
+    breaks[type] = undefined;
+  }
+
+  breaks[fieldtype] = condition;
 }
 
 /** Whether depends_on hides the field, or its read only or mandatory condition holds. */
@@ -114,13 +173,19 @@ function isConditionOn(
   }
 
   let evalDoc = getEvalDoc(doc);
-  if (rule === 'readOnly') {
-    // A field locks on its saved value, so an unsaved edit never locks it.
+  // A field locks on its saved value, so an unsaved edit never locks it; a table's rows are not a value.
+  if (rule === 'readOnly' && doc.fieldMap[fieldname]?.fieldtype !== 'Table') {
     evalDoc = { ...evalDoc, [fieldname]: doc._getSavedFrappeValue(fieldname) };
   }
 
   const parent = doc.parentdoc && getEvalDoc(doc.parentdoc);
-  const isMet = evaluateCondition(condition, evalDoc, parent);
+  // A condition only Desk can evaluate shows the field, and neither locks nor requires it.
+  const isMet = evaluateCondition(
+    condition,
+    evalDoc,
+    parent,
+    rule === 'hidden'
+  );
   return rule === 'hidden' ? !isMet : isMet;
 }
 
@@ -140,7 +205,7 @@ function getDocFields(doc: FrappeDoc): Record<string, DocField> {
  * `doc.getEvalDoc()`, worked out again only after a value of the document
  * or its rows changes, however it changed: Vue tracks what it read.
  */
-function getEvalDoc(doc: FrappeDoc): EvalDoc {
+export function getEvalDoc(doc: FrappeDoc): EvalDoc {
   const raw = toRaw(doc);
   let evalDoc = evalDocs.get(raw);
   if (!evalDoc) {

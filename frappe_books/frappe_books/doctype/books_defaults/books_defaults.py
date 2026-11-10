@@ -14,14 +14,14 @@ ACCOUNT_TYPES = {
 }
 # Virtual fields that show the default print format each DocType keeps; set_print_formats sets it.
 PRINT_FORMAT_FIELDS = {
-	"sales_quote_print_template": "Books Sales Quote",
+	"quotation_print_template": "Books Quotation",
 	"sales_invoice_print_template": "Books Sales Invoice",
 	"purchase_invoice_print_template": "Books Purchase Invoice",
 	"journal_entry_print_template": "Books Journal Entry",
-	"payment_print_template": "Books Payment",
-	"shipment_print_template": "Books Shipment",
+	"payment_print_template": "Books Payment Entry",
+	"delivery_note_print_template": "Books Delivery Note",
 	"purchase_receipt_print_template": "Books Purchase Receipt",
-	"stock_movement_print_template": "Books Stock Movement",
+	"stock_entry_print_template": "Books Stock Entry",
 }
 
 
@@ -65,27 +65,27 @@ class BooksDefaults(Document):
 		sales_invoice_print_template: DF.Link | None
 		sales_invoice_terms: DF.Text | None
 		sales_payment_account: DF.Link | None
-		sales_quote_number_series: DF.Link | None
-		sales_quote_print_template: DF.Link | None
+		quotation_number_series: DF.Link | None
+		quotation_print_template: DF.Link | None
 		save_button_colour: DF.Color | None
-		shipment_location: DF.Link | None
-		shipment_number_series: DF.Link | None
-		shipment_print_template: DF.Link | None
-		shipment_terms: DF.Text | None
-		stock_movement_number_series: DF.Link | None
-		stock_movement_print_template: DF.Link | None
+		delivery_note_location: DF.Link | None
+		delivery_note_number_series: DF.Link | None
+		delivery_note_print_template: DF.Link | None
+		delivery_note_terms: DF.Text | None
+		stock_entry_number_series: DF.Link | None
+		stock_entry_print_template: DF.Link | None
 	# end: auto-generated types
 
 	_DOCTYPE_NAME = "Books Defaults"
 
-	sales_quote_print_template = print_format_field("sales_quote_print_template")
+	quotation_print_template = print_format_field("quotation_print_template")
 	sales_invoice_print_template = print_format_field("sales_invoice_print_template")
 	purchase_invoice_print_template = print_format_field("purchase_invoice_print_template")
 	journal_entry_print_template = print_format_field("journal_entry_print_template")
 	payment_print_template = print_format_field("payment_print_template")
-	shipment_print_template = print_format_field("shipment_print_template")
+	delivery_note_print_template = print_format_field("delivery_note_print_template")
 	purchase_receipt_print_template = print_format_field("purchase_receipt_print_template")
-	stock_movement_print_template = print_format_field("stock_movement_print_template")
+	stock_entry_print_template = print_format_field("stock_entry_print_template")
 
 	def validate(self):
 		validate_changed_accounts(self, ACCOUNT_TYPES)

@@ -31,6 +31,8 @@ export interface ColumnField extends Omit<BaseField, 'fieldtype'> {
   width?: number;
   /** The schema whose records a Link column names. */
   target?: string;
+  /** Frappe's column options: a Link's doctype, or the row field holding a Currency's currency. */
+  options?: string;
 }
 
 export type Periodicity = 'Monthly' | 'Quarterly' | 'Half Yearly' | 'Yearly';
@@ -70,8 +72,8 @@ export interface PhoneEntriesLayout {
   type: 'entries';
   date: string;
   title: string;
-  /** Shown signed, or with Dr and Cr when `credit` is set. */
-  amount: string;
+  /** Shown signed, or with Dr and Cr when `credit` is set; of several, the first that is not zero. */
+  amount: string | string[];
   credit?: string;
   meta: string[];
   balance: string;

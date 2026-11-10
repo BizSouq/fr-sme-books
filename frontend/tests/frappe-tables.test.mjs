@@ -32,7 +32,7 @@ const billMeta = {
       fieldtype: 'Link',
       label: 'Type',
       options: 'DocType',
-      default: 'Books Party',
+      default: 'Books Customer',
     },
     {
       fieldname: 'party',
@@ -88,7 +88,7 @@ class Bill extends FrappeDoc {
     fields: {
       lines: { edit: true },
       party: { create: false },
-      party_type: { options: [{ value: 'Books Party', label: 'Party' }] },
+      party_type: { options: [{ value: 'Books Customer', label: 'Customer' }] },
     },
   };
   static rowModels = { lines: BillLine };
@@ -108,9 +108,9 @@ const field = (schemaName, fieldname) =>
 test('a model lists the choices of a DocType reference, which a Dynamic Link follows', () => {
   assert.equal(field('Bill', 'party_type').fieldtype, 'Select');
   assert.deepEqual(field('Bill', 'party_type').options, [
-    { value: 'Books Party', label: 'Party' },
+    { value: 'Books Customer', label: 'Customer' },
   ]);
-  assert.equal(field('Bill', 'party_type').default, 'Books Party');
+  assert.equal(field('Bill', 'party_type').default, 'Books Customer');
   assert.equal(field('Bill', 'party').create, false);
 });
 
@@ -124,7 +124,7 @@ test('rows of a table take the model its parent names, with its presentation', (
   assert.equal(getSchema('BillLine').label, 'Bill Line');
   assert.deepEqual(getSchema('BillLine').quickEditFields, ['amount', 'item']);
   assert.deepEqual(getSchema('BillLine').tableFields, ['amount', 'item']);
-  assert.equal(getSchema('BillNote').label, 'Books Bill Note');
+  assert.equal(getSchema('BillNote').label, 'Bill Note');
 });
 
 test('a model opens the rows of the tables it names in the row editor', () => {
@@ -168,7 +168,7 @@ test('a mapper builds an unsaved Frappe-backed document; unset values keep defau
   assert.equal(bill.notInserted, true);
   assert.ok(bill.name);
   assert.equal(bill.party, 'Acme');
-  assert.equal(bill.party_type, 'Books Party');
+  assert.equal(bill.party_type, 'Books Customer');
   assert.ok(bill.lines[0] instanceof BillLine);
   assert.equal(bill.lines[0].amount, 3);
   assert.ok(bill.lines[0].name);
@@ -190,7 +190,7 @@ test('a doctype named from its number series names new documents as Books does',
   const meta = {
     name: 'Books Bill Run',
     permissions: [],
-    fields: [{ fieldname: 'number_series', fieldtype: 'Link', label: 'Series' }],
+    fields: [{ fieldname: 'naming_series', fieldtype: 'Link', label: 'Series' }],
   };
   const context = { schemaNames: {}, roles: [], placements: {} };
 
