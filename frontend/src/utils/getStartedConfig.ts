@@ -70,6 +70,14 @@ export function getGetStartedConfig(): GetStartedConfigItem[] {
       label: t`Sales`,
       items: [
         {
+          key: 'Business Setup',
+          label: t`Start with your business items`,
+          icon: 'lucide-store',
+          description: t`Pick your line of business and add its usual items, with pictures and prices to start from`,
+          action: () => routeTo('/business-setup'),
+          fieldname: 'sales_item_created',
+        },
+        {
           key: 'Add Sales Items',
           label: t`Add items`,
           icon: 'lucide-box',

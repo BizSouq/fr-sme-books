@@ -1,4 +1,5 @@
 import AIAssistant from 'src/pages/AIAssistant.vue';
+import BusinessSetup from 'src/pages/BusinessSetup/BusinessSetup.vue';
 import ChartOfAccounts from 'src/pages/ChartOfAccounts.vue';
 import CommonForm from 'src/pages/CommonForm/CommonForm.vue';
 import Dashboard from 'src/pages/Dashboard/Dashboard.vue';
@@ -45,6 +46,16 @@ const routes: RouteRecordRaw[] = [
     path: '/get-started',
     meta: { desktopOnly: true },
     component: GetStarted,
+  },
+  {
+    path: '/business-setup',
+    name: 'Business Setup',
+    meta: { pushed: true },
+    component: BusinessSetup,
+    props: {
+      // New items show in the list the page leaves for.
+      onDone: () => router.replace('/list/Item'),
+    },
   },
   {
     path: `/edit/:schemaName/:name`,

@@ -19,6 +19,7 @@
         />
         <FrappeSpinner v-else size="lg" />
       </div>
+      <BusinessSetup v-else-if="showBusinessSetup" embedded @done="reload" />
       <SetupWizard
         v-else-if="needsSetup"
         @setup-complete="completeSetup"
@@ -40,6 +41,7 @@ import { ModelNameEnum } from 'models/types';
 import DialogSheet from 'src/mobile/DialogSheet.vue';
 import MobileDesk from 'src/mobile/MobileDesk.vue';
 import Desk from 'src/pages/Desk.vue';
+import BusinessSetup from 'src/pages/BusinessSetup/BusinessSetup.vue';
 import SetupWizard from 'src/pages/SetupWizard/SetupWizard.vue';
 import {
   getSchemaDoctypes,
@@ -77,6 +79,7 @@ export default defineComponent({
   name: 'WebApp',
   components: {
     FrappeAlert,
+    BusinessSetup,
     Desk,
     DialogSheet,
     MobileDesk,
@@ -106,6 +109,7 @@ export default defineComponent({
     return {
       loading: true,
       needsSetup: false,
+      showBusinessSetup: false,
       startupError: '',
     };
   },
@@ -173,6 +177,10 @@ export default defineComponent({
       await call(
         'frappe_books.frappe_books.doctype.books_setup_wizard.books_setup_wizard.complete_setup'
       );
+      // The company exists now; its items and local defaults come next, then the app loads afresh.
+      this.showBusinessSetup = true;
+    },
+    reload() {
       window.location.reload();
     },
     leaveBooks() {

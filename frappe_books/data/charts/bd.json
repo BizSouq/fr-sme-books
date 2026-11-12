@@ -1,0 +1,209 @@
+{
+  "countryCode": "bd",
+  "name": "Bangladesh - Chart of Accounts",
+  "tree": {
+    "Assets": {
+      "rootType": "Asset",
+      "Current Assets": {
+        "Accounts Receivable": {
+          "Debtors": {
+            "isGroup": false,
+            "accountType": "Receivable"
+          }
+        },
+        "Bank Accounts": {
+          "accountType": "Bank",
+          "isGroup": true
+        },
+        "Cash In Hand": {
+          "accountType": "Cash",
+          "Cash": {
+            "accountType": "Cash"
+          },
+          "Petty Cash": {
+            "accountType": "Cash"
+          }
+        },
+        "Mobile Banking (MFS)": {
+          "accountType": "Bank",
+          "bKash": {
+            "accountType": "Bank"
+          },
+          "Nagad": {
+            "accountType": "Bank"
+          },
+          "Rocket": {
+            "accountType": "Bank"
+          }
+        },
+        "Advances, Deposits and Prepayments": {
+          "Advance to Suppliers": {},
+          "Advance to Employees": {},
+          "Security Deposits": {},
+          "Prepaid Rent": {}
+        },
+        "Stock Assets": {
+          "accountType": "Stock",
+          "Stock In Hand": {
+            "accountType": "Stock"
+          }
+        },
+        "Tax Assets": {
+          "Advance Income Tax (AIT)": {},
+          "Tax Deducted at Source (TDS) Receivable": {},
+          "VAT Deducted at Source (VDS) Receivable": {}
+        }
+      },
+      "Fixed Assets": {
+        "Land and Buildings": {
+          "accountType": "Fixed Asset"
+        },
+        "Furniture and Fixtures": {
+          "accountType": "Fixed Asset"
+        },
+        "Office Equipment": {
+          "accountType": "Fixed Asset"
+        },
+        "Computers and Software": {
+          "accountType": "Fixed Asset"
+        },
+        "Plant and Machinery": {
+          "accountType": "Fixed Asset"
+        },
+        "Motor Vehicles": {
+          "accountType": "Fixed Asset"
+        },
+        "Shop Decoration": {
+          "accountType": "Fixed Asset"
+        },
+        "Accumulated Depreciation": {
+          "accountType": "Accumulated Depreciation"
+        }
+      },
+      "Investments": {
+        "isGroup": true
+      },
+      "Temporary Accounts": {
+        "Temporary Opening": {
+          "accountType": "Temporary"
+        }
+      }
+    },
+    "Liabilities": {
+      "rootType": "Liability",
+      "Current Liabilities": {
+        "Accounts Payable": {
+          "Creditors": {
+            "accountType": "Payable"
+          },
+          "Salary Payable": {}
+        },
+        "Stock Liabilities": {
+          "Stock Received But Not Billed": {
+            "accountType": "Stock Received But Not Billed"
+          }
+        },
+        "Duties and Taxes": {
+          "accountType": "Tax",
+          "isGroup": true
+        },
+        "Accrued Expenses": {
+          "Rent Payable": {},
+          "Utility Bills Payable": {}
+        },
+        "Advance from Customers": {},
+        "Loans (Liabilities)": {
+          "Bank Loan": {},
+          "Bank Overdraft Account": {},
+          "Loan from Directors and Owners": {}
+        }
+      },
+      "Long Term Liabilities": {
+        "isGroup": true
+      }
+    },
+    "Equity": {
+      "rootType": "Equity",
+      "Owner's Capital": {
+        "accountType": "Equity"
+      },
+      "Owner's Drawings": {
+        "accountType": "Equity"
+      },
+      "Opening Balance Equity": {
+        "accountType": "Equity"
+      },
+      "Retained Earnings": {
+        "accountType": "Equity"
+      }
+    },
+    "Income": {
+      "rootType": "Income",
+      "Direct Income": {
+        "Sales": {},
+        "Service": {}
+      },
+      "Indirect Income": {
+        "Interest Income": {},
+        "Commission Received": {},
+        "Miscellaneous Income": {}
+      }
+    },
+    "Expenses": {
+      "rootType": "Expense",
+      "Direct Expenses": {
+        "Stock Expenses": {
+          "Cost of Goods Sold": {
+            "accountType": "Cost of Goods Sold"
+          },
+          "Expenses Included In Valuation": {
+            "accountType": "Expenses Included In Valuation"
+          },
+          "Stock Adjustment": {
+            "accountType": "Stock Adjustment"
+          }
+        },
+        "Carriage Inward": {},
+        "Customs Duty and Import Charges": {}
+      },
+      "Indirect Expenses": {
+        "Salary and Allowances": {},
+        "Festival Bonus": {},
+        "Shop and Office Rent": {},
+        "Electricity Bill": {},
+        "Gas Bill": {},
+        "Water Bill": {},
+        "Mobile and Internet Bill": {},
+        "Conveyance": {},
+        "Entertainment": {},
+        "Printing and Stationery": {},
+        "Repair and Maintenance": {},
+        "Carriage Outward and Delivery": {
+          "accountType": "Chargeable"
+        },
+        "Advertisement and Promotion": {
+          "accountType": "Chargeable"
+        },
+        "Bank Charges": {},
+        "Mobile Banking Charges": {},
+        "Interest Expense": {},
+        "Trade Licence and Renewal Fees": {},
+        "Legal and Professional Fees": {},
+        "Audit Fees": {},
+        "Income Tax Expense": {},
+        "Depreciation": {
+          "accountType": "Depreciation"
+        },
+        "Miscellaneous Expenses": {
+          "accountType": "Chargeable"
+        },
+        "Round Off": {
+          "accountType": "Round Off"
+        },
+        "Write Off": {},
+        "Exchange Gain/Loss": {},
+        "Gain/Loss on Asset Disposal": {}
+      }
+    }
+  }
+}
