@@ -42,7 +42,11 @@
       @close="closeRow"
     />
   </div>
-  <FormContainer v-else :use-full-width="useFullWidth">
+  <FormContainer
+    v-else
+    :use-full-width="useFullWidth"
+    :with-aside="summaryFields.length > 0"
+  >
     <template #header>
       <PageHeader>
         <template #left>
@@ -112,7 +116,7 @@
         />
         <div class="divide-y divide-outline-gray-1">
           <CommonFormSection
-            v-for="([n, fields], idx) in activeGroup.entries()"
+            v-for="([n, fields], idx) in formSections"
             :key="n + idx"
             class="py-5"
             :show-title="activeGroup.size > 1 && n !== t`Default`"
@@ -138,6 +142,9 @@
         </div>
       </template>
     </template>
+    <template v-if="summaryFields.length" #aside>
+      <FormSummary :doc="doc" :fields="summaryFields" />
+    </template>
     <template #quickedit>
       <Transition name="quickedit">
         <LinkedEntries
@@ -162,6 +169,7 @@
   </FormContainer>
 </template>
 <script lang="ts">
+import { useMediaQuery } from '@vueuse/core';
 import { DocValue } from 'fyo/core/types';
 import { Action, LinkedRecords } from 'fyo/model/types';
 import { FrappeDoc, setFormShowsPreviewErrors } from 'src/frappe/document';
@@ -187,7 +195,7 @@ import type { EvalDoc } from 'src/frappe/dependsOn';
 import { getEvalDoc } from 'src/frappe/fieldState';
 import { getSchema } from 'src/frappe/registry';
 import { useBooksDoc } from 'src/frappe/useBooksDoc';
-import { getErrorMessage } from 'src/utils';
+import { getErrorMessage, isNumeric } from 'src/utils';
 import { loadDocPermissions } from 'src/utils/doc';
 import { shortcutsKey } from 'src/utils/injectionKeys';
 import { docsPathMap } from 'src/utils/misc';
@@ -209,6 +217,7 @@ import { useDocShortcuts } from 'src/utils/vueUtils';
 import { computed, defineComponent, inject, nextTick } from 'vue';
 import CommonFormSection from './CommonFormSection.vue';
 import FormSkeleton from './FormSkeleton.vue';
+import FormSummary from './FormSummary.vue';
 import LinkedEntries from './LinkedEntries.vue';
 import LinkedRecordsSection from './LinkedRecordsSection.vue';
 import MobileForm from './MobileForm.vue';
@@ -220,6 +229,7 @@ export default defineComponent({
     FormContainer,
     CommonFormSection,
     FormSkeleton,
+    FormSummary,
     FrappeBreadcrumbs,
     FrappeButton,
     PageHeader,
@@ -256,6 +266,8 @@ export default defineComponent({
       shortcuts,
       context,
       isMobile,
+      // Room for the form and the summary column beside it.
+      isWide: useMediaQuery('(min-width: 1200px)'),
     };
   },
   data() {
@@ -418,6 +430,44 @@ export default defineComponent({
       }
 
       return group;
+    },
+    /**
+     * On wide screens an invoice's totals and outstanding sections move to a
+     * summary column beside the form: sections of read-only figures only.
+     */
+    summarySections(): Set<string> {
+      const sections = new Set<string>();
+      const hasTotal = this.schema.fields.some(
+        (field) => field.fieldname === 'grand_total'
+      );
+      if (!this.hasDoc || !this.isWide || !hasTotal) {
+        return sections;
+      }
+
+      if (this.activeTab !== this.tabOptions[0]?.value) {
+        return sections;
+      }
+
+      for (const [name, fields] of this.activeGroup) {
+        const figures = fields.every(
+          (field) => isNumeric(field) && this.doc.getFieldState(field).readOnly
+        );
+        if (figures) {
+          sections.add(name);
+        }
+      }
+
+      return sections;
+    },
+    summaryFields(): Field[] {
+      return [...this.activeGroup]
+        .filter(([name]) => this.summarySections.has(name))
+        .flatMap(([, fields]) => fields);
+    },
+    formSections(): [string, Field[]][] {
+      return [...this.activeGroup].filter(
+        ([name]) => !this.summarySections.has(name)
+      );
     },
     tabOptions(): { value: string; label: string }[] {
       return getTabOptions(this.groupedFields);
