@@ -3,13 +3,13 @@
 
 Each business type lives in `sources/<id>/`: `type.json` holds its label, questions, groups and units,
 and `items.csv` its items, one row each, so the list can be kept in a spreadsheet. This joins them
-into `dist/catalog.json`, the `{"business_types": [...]}` document a site reads from the address in
+into `catalog.json`, the `{"business_types": [...]}` document a site reads from the address in
 its `books_master_data_url` site config.
 
 The catalog is checked with the app's own cleaning rules, so what is built is what a site will use:
 
-    python3 master_data/build.py             # build dist/catalog.json
-    python3 master_data/build.py --check     # fail if dist/catalog.json is out of date or invalid
+    python3 master_data/build.py             # build master_data/catalog.json
+    python3 master_data/build.py --check     # fail if master_data/catalog.json is out of date or invalid
     python3 master_data/build.py --images    # also look up a picture for each item on Wikipedia
 
 Run it from anywhere; it needs only Python 3.10+, not a bench.
@@ -25,7 +25,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 SOURCES = HERE / "sources"
-DIST = HERE / "dist" / "catalog.json"
+DIST = HERE / "catalog.json"
 IMAGE_CACHE = HERE / "images.json"
 SHIPPED = REPO / "frappe_books" / "data" / "business_types"
 CSV_COLUMNS = ("group", "name", "type", "uom", "rate", "tags", "image_query", "description", "image")
@@ -190,7 +190,9 @@ def build(resolve_images: bool) -> dict:
 
 def main() -> None:
 	parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-	parser.add_argument("--check", action="store_true", help="fail if dist/catalog.json is out of date")
+	parser.add_argument(
+		"--check", action="store_true", help="fail if master_data/catalog.json is out of date"
+	)
 	parser.add_argument("--images", action="store_true", help="look up pictures on Wikipedia first")
 	args = parser.parse_args()
 
@@ -198,9 +200,8 @@ def main() -> None:
 	text = json.dumps(catalog, indent=1, ensure_ascii=False) + "\n"
 	if args.check:
 		if not DIST.exists() or DIST.read_text() != text:
-			raise SystemExit("dist/catalog.json is out of date: run python3 master_data/build.py")
+			raise SystemExit("master_data/catalog.json is out of date: run python3 master_data/build.py")
 	else:
-		DIST.parent.mkdir(exist_ok=True)
 		DIST.write_text(text)
 	for business in catalog["business_types"]:
 		lookups = {item["image_query"] for item in business["items"] if not item.get("image")}

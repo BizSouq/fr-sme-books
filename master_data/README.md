@@ -26,9 +26,9 @@ every price on the setup page before anything is made.
 master_data/
   sources/<type>/type.json   label, icon, questions, groups and units of one business type
   sources/<type>/items.csv   its items, one row each
-  dist/catalog.json          what sites read: built from sources, do not edit by hand
+  catalog.json               what sites read: built from sources, do not edit by hand
   images.json                pictures found by --images, kept so builds need no network (optional)
-  build.py                   checks the sources and builds dist/catalog.json
+  build.py                   checks the sources and builds catalog.json
 ```
 
 ### items.csv columns
@@ -50,7 +50,7 @@ Edit the CSV in Excel or Google Sheets (save as CSV, UTF-8), or any text editor.
 ## Building
 
 ```
-python3 master_data/build.py           # check the sources and write dist/catalog.json
+python3 master_data/build.py           # check the sources and write catalog.json
 python3 master_data/build.py --check   # what CI runs: fails if the catalog is invalid or not rebuilt
 python3 master_data/build.py --images  # also find pictures on Wikipedia and keep them in images.json
 ```
@@ -73,13 +73,13 @@ The repository is public, so the simplest host is GitHub itself, once this folde
 
 ```
 bench --site <site> set-config books_master_data_url \
-  https://raw.githubusercontent.com/BizSouq/fr-sme-books/develop/master_data/dist/catalog.json
+  https://raw.githubusercontent.com/BizSouq/fr-sme-books/develop/master_data/catalog.json
 ```
 
 Every site then picks up a merged change to the catalog within six hours, with no deploy. To change
 what sites see, edit the sources, run the build, and merge.
 
-Other hosts work the same way: a CDN or object storage bucket (upload `dist/catalog.json`), or the
+Other hosts work the same way: a CDN or object storage bucket (upload `catalog.json`), or the
 company's own web server. The catalog's host is also trusted for item pictures, so product photos
 can be served from the same place and named in the `image` column. Pictures from any other host
 must be listed in the site's `books_image_hosts` config, or they are not downloaded.
