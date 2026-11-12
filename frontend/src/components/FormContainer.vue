@@ -3,7 +3,16 @@
     <div class="flex min-w-0 flex-1 flex-col">
       <slot name="header" />
       <FrappeScrollArea class="min-h-0 flex-1" viewport-class="pb-10">
-        <div :class="columnClasses">
+        <div
+          v-if="withAside"
+          :class="columnClasses"
+          class="grid grid-cols-[minmax(0,1fr)_20rem] items-start gap-6"
+        >
+          <div class="min-w-0"><slot name="body" /></div>
+          <!-- The summary column on the other side from the app sidebar. -->
+          <div class="sticky top-4 pt-5"><slot name="aside" /></div>
+        </div>
+        <div v-else :class="columnClasses">
           <slot name="body" />
         </div>
       </FrappeScrollArea>
@@ -27,14 +36,16 @@ import { defineComponent } from 'vue';
 
 export default defineComponent({
   components: { FrappeScrollArea },
-  props: { useFullWidth: Boolean },
+  props: {
+    useFullWidth: Boolean,
+    /** Shows the `aside` slot as a column beside the body. */
+    withAside: Boolean,
+  },
   computed: {
-    /** Full width lifts the reading-width cap. */
+    /** Full width lifts the reading-width cap; a summary column widens it. */
     columnClasses(): string[] {
-      return [
-        'mx-auto w-full px-3 sm:px-5',
-        this.useFullWidth ? '' : 'max-w-[940px]',
-      ];
+      const cap = this.withAside ? 'max-w-[1280px]' : 'max-w-[940px]';
+      return ['mx-auto w-full px-3 sm:px-5', this.useFullWidth ? '' : cap];
     },
   },
 });
