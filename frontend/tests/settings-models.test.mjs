@@ -43,7 +43,7 @@ test('each Get Started task is checked by a Books Get Started field', async () =
   const tasks = [...config.matchAll(/fieldname: '(\w+)'/g)].map(
     ([, fieldname]) => fieldname
   );
-  assert.equal(tasks.length, 12);
+  assert.equal(tasks.length, 13);
   assert.deepEqual(
     tasks.filter((fieldname) => !fieldnames('GetStarted').includes(fieldname)),
     []
