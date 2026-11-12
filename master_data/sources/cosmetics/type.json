@@ -1,0 +1,42 @@
+{
+ "id": "cosmetics",
+ "label": "Cosmetics & Beauty Parlour",
+ "description": "Cosmetics shop, beauty parlour or salon",
+ "icon": "scissors",
+ "order": 8,
+ "currency": "BDT",
+ "uoms": [
+  {"name": "Piece", "whole": 1},
+  {"name": "Bottle", "whole": 1},
+  {"name": "Tube", "whole": 1},
+  {"name": "Pack", "whole": 1},
+  {"name": "Set", "whole": 1}
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What does your business offer?",
+   "multiple": true,
+   "options": [
+    {"id": "skin", "label": "Skin care"},
+    {"id": "hair", "label": "Hair care"},
+    {"id": "makeup", "label": "Makeup"},
+    {"id": "fragrance", "label": "Fragrance and body care"},
+    {"id": "men", "label": "Men's grooming"},
+    {"id": "parlour", "label": "Beauty parlour services"},
+    {"id": "salon", "label": "Men's salon services"},
+    {"id": "bridal", "label": "Bridal and party makeup"}
+   ]
+  }
+ ],
+ "groups": [
+  {"name": "Skin Care", "image_query": "Moisturizer"},
+  {"name": "Hair Care", "image_query": "Shampoo"},
+  {"name": "Makeup", "image_query": "Cosmetics"},
+  {"name": "Fragrance & Body Care", "image_query": "Perfume"},
+  {"name": "Men's Grooming", "image_query": "Shaving"},
+  {"name": "Parlour Services", "image_query": "Beauty salon"},
+  {"name": "Salon Services", "image_query": "Barber"},
+  {"name": "Bridal Packages", "image_query": "Bride"}
+ ]
+}

@@ -1,0 +1,161 @@
+{
+ "id": "restaurant",
+ "label": "Restaurant",
+ "description": "Restaurant, cafe, fast food or sweet shop",
+ "icon": "utensils",
+ "order": 2,
+ "currency": "BDT",
+ "uoms": [
+  {
+   "name": "Plate",
+   "whole": 1
+  },
+  {
+   "name": "Piece",
+   "whole": 1
+  },
+  {
+   "name": "Cup",
+   "whole": 1
+  },
+  {
+   "name": "Glass",
+   "whole": 1
+  },
+  {
+   "name": "Bowl",
+   "whole": 1
+  },
+  {
+   "name": "Bottle",
+   "whole": 1
+  }
+ ],
+ "questions": [
+  {
+   "id": "cuisine",
+   "label": "What kind of food do you serve?",
+   "multiple": true,
+   "options": [
+    {
+     "id": "bangla",
+     "label": "Bangla rice and curry"
+    },
+    {
+     "id": "biryani",
+     "label": "Biryani and kacchi"
+    },
+    {
+     "id": "kebab",
+     "label": "Kebab and grill"
+    },
+    {
+     "id": "chinese",
+     "label": "Chinese and Thai"
+    },
+    {
+     "id": "fastfood",
+     "label": "Burger, pizza and fast food"
+    },
+    {
+     "id": "snacks",
+     "label": "Snacks and street food"
+    },
+    {
+     "id": "sweets",
+     "label": "Sweets and desserts"
+    },
+    {
+     "id": "cafe",
+     "label": "Tea, coffee and juice"
+    },
+    {
+     "id": "seafood",
+     "label": "Fish and seafood"
+    },
+    {
+     "id": "indian",
+     "label": "Indian and tandoori"
+    },
+    {
+     "id": "breakfast",
+     "label": "Breakfast and nashta"
+    },
+    {
+     "id": "setmenu",
+     "label": "Set menus, catering and parties"
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "name": "Breakfast",
+   "image_query": "Paratha"
+  },
+  {
+   "name": "Rice & Bhorta",
+   "image_query": "Bengali cuisine rice"
+  },
+  {
+   "name": "Biryani & Kacchi",
+   "image_query": "Biryani"
+  },
+  {
+   "name": "Curry & Bhuna",
+   "image_query": "Bangladeshi curry"
+  },
+  {
+   "name": "Fish & Seafood",
+   "image_query": "Ilish"
+  },
+  {
+   "name": "Kebab & Grill",
+   "image_query": "Kebab"
+  },
+  {
+   "name": "Tandoori & Naan",
+   "image_query": "Tandoori chicken"
+  },
+  {
+   "name": "Chinese & Thai",
+   "image_query": "Fried rice"
+  },
+  {
+   "name": "Soup & Salad",
+   "image_query": "Salad"
+  },
+  {
+   "name": "Burger & Fast Food",
+   "image_query": "Hamburger"
+  },
+  {
+   "name": "Pizza & Pasta",
+   "image_query": "Pizza"
+  },
+  {
+   "name": "Snacks",
+   "image_query": "Samosa"
+  },
+  {
+   "name": "Sweets & Desserts",
+   "image_query": "Rasgulla"
+  },
+  {
+   "name": "Tea & Coffee",
+   "image_query": "Milk tea"
+  },
+  {
+   "name": "Juice & Cold Drinks",
+   "image_query": "Fruit juice"
+  },
+  {
+   "name": "Set Menu",
+   "image_query": "Bengali cuisine"
+  },
+  {
+   "name": "Extras & Services",
+   "image_query": "Take-out"
+  }
+ ]
+}

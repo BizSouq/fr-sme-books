@@ -4,7 +4,9 @@ import {
   applySetup,
   buildApplyOptions,
   describeAnswers,
+  findImagesInBatches,
   getCatalogItems,
+  IMAGE_BATCH,
   groupRows,
   mergeItems,
   toggleAnswer,
@@ -209,4 +211,45 @@ test('the page talks to the onboarding endpoints', async () => {
     },
     { method: `${API}.apply`, args: { options: { guest_parties: true } } },
   ]);
+});
+
+test('pictures for a big catalog are looked up in batches the server takes', async () => {
+  const queries = Array.from(
+    { length: IMAGE_BATCH * 2 + 5 },
+    (_, index) => `Item ${index}`
+  );
+  const calls = stubServer((_method, { queries: asked }) =>
+    Object.fromEntries(
+      asked.map((query) => [query, `https://upload.wikimedia.org/${query}.jpg`])
+    )
+  );
+  const found = {};
+  await findImagesInBatches(queries, (batch) => Object.assign(found, batch));
+  assert.deepEqual(
+    calls.map(({ method, args }) => [method, args.queries.length]),
+    [
+      [`${API}.find_images`, IMAGE_BATCH],
+      [`${API}.find_images`, IMAGE_BATCH],
+      [`${API}.find_images`, 5],
+    ]
+  );
+  assert.equal(Object.keys(found).length, queries.length);
+});
+
+test('a failed picture lookup stops the batches and keeps what was found', async () => {
+  const queries = Array.from(
+    { length: IMAGE_BATCH * 3 },
+    (_, index) => `Item ${index}`
+  );
+  let answered = 0;
+  const calls = stubServer((_method, { queries: asked }) => {
+    if (answered++) {
+      throw new Error('offline');
+    }
+    return { [asked[0]]: 'https://upload.wikimedia.org/a.jpg' };
+  });
+  const found = {};
+  await findImagesInBatches(queries, (batch) => Object.assign(found, batch));
+  assert.equal(calls.length, 2);
+  assert.deepEqual(found, { 'Item 0': 'https://upload.wikimedia.org/a.jpg' });
 });

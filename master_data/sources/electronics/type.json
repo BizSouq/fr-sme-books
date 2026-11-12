@@ -1,0 +1,85 @@
+{
+ "id": "electronics",
+ "label": "Electronics & Mobile",
+ "description": "Mobile phone, computer or electronics shop",
+ "icon": "smartphone",
+ "order": 5,
+ "currency": "BDT",
+ "uoms": [
+  {
+   "name": "Piece",
+   "whole": 1
+  },
+  {
+   "name": "Pair",
+   "whole": 1
+  },
+  {
+   "name": "Box",
+   "whole": 1
+  },
+  {
+   "name": "Pack",
+   "whole": 1
+  }
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What does your shop sell?",
+   "multiple": true,
+   "options": [
+    {
+     "id": "mobiles",
+     "label": "Mobile phones"
+    },
+    {
+     "id": "accessories",
+     "label": "Mobile accessories"
+    },
+    {
+     "id": "computers",
+     "label": "Computers and networking"
+    },
+    {
+     "id": "appliances",
+     "label": "Home appliances"
+    },
+    {
+     "id": "electrical",
+     "label": "Lights, fans and electrical goods"
+    },
+    {
+     "id": "services",
+     "label": "Repair and services"
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "name": "Mobile Phones",
+   "image_query": "Smartphone"
+  },
+  {
+   "name": "Mobile Accessories",
+   "image_query": "Mobile phone accessories"
+  },
+  {
+   "name": "Computers & Networking",
+   "image_query": "Laptop"
+  },
+  {
+   "name": "Home Appliances",
+   "image_query": "Home appliance"
+  },
+  {
+   "name": "Lighting & Electrical",
+   "image_query": "LED lamp"
+  },
+  {
+   "name": "Repair & Services",
+   "image_query": "Electronics repair"
+  }
+ ]
+}
