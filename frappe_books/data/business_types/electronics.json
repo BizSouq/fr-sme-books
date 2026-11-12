@@ -1,0 +1,567 @@
+{
+ "id": "electronics",
+ "label": "Electronics & Mobile",
+ "description": "Mobile phone, computer or electronics shop",
+ "icon": "smartphone",
+ "order": 5,
+ "currency": "BDT",
+ "uoms": [
+  {
+   "name": "Piece",
+   "whole": 1
+  },
+  {
+   "name": "Pair",
+   "whole": 1
+  },
+  {
+   "name": "Box",
+   "whole": 1
+  }
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What does your shop sell?",
+   "multiple": true,
+   "options": [
+    {
+     "id": "mobiles",
+     "label": "Mobile phones"
+    },
+    {
+     "id": "accessories",
+     "label": "Mobile accessories"
+    },
+    {
+     "id": "computers",
+     "label": "Computers and networking"
+    },
+    {
+     "id": "appliances",
+     "label": "Home appliances"
+    },
+    {
+     "id": "electrical",
+     "label": "Lights, fans and electrical goods"
+    },
+    {
+     "id": "services",
+     "label": "Repair and services"
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "name": "Mobile Phones",
+   "image_query": "Smartphone"
+  },
+  {
+   "name": "Mobile Accessories",
+   "image_query": "Mobile phone accessories"
+  },
+  {
+   "name": "Computers & Networking",
+   "image_query": "Laptop"
+  },
+  {
+   "name": "Home Appliances",
+   "image_query": "Home appliance"
+  },
+  {
+   "name": "Lighting & Electrical",
+   "image_query": "LED lamp"
+  },
+  {
+   "name": "Repair & Services",
+   "image_query": "Electronics repair"
+  }
+ ],
+ "items": [
+  {
+   "name": "Feature Phone",
+   "group": "Mobile Phones",
+   "description": "Basic button phone with dual SIM.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1500,
+   "tags": [
+    "mobiles"
+   ],
+   "image_query": "Feature phone"
+  },
+  {
+   "name": "Smartphone 4GB/64GB",
+   "group": "Mobile Phones",
+   "description": "Entry-level Android smartphone.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 12000,
+   "tags": [
+    "mobiles"
+   ],
+   "image_query": "Smartphone"
+  },
+  {
+   "name": "Smartphone 8GB/128GB",
+   "group": "Mobile Phones",
+   "description": "Mid-range Android smartphone.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 24000,
+   "tags": [
+    "mobiles"
+   ],
+   "image_query": "Smartphone"
+  },
+  {
+   "name": "Smartphone 12GB/256GB",
+   "group": "Mobile Phones",
+   "description": "High-end Android smartphone.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 45000,
+   "tags": [
+    "mobiles"
+   ],
+   "image_query": "Smartphone"
+  },
+  {
+   "name": "Tablet 10 inch",
+   "group": "Mobile Phones",
+   "description": "Android tablet.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 18000,
+   "tags": [
+    "mobiles",
+    "computers"
+   ],
+   "image_query": "Tablet computer"
+  },
+  {
+   "name": "Fast Charger 20W",
+   "group": "Mobile Accessories",
+   "description": "USB-C wall charger.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 450,
+   "tags": [
+    "accessories"
+   ],
+   "image_query": "Battery charger"
+  },
+  {
+   "name": "USB-C Cable",
+   "group": "Mobile Accessories",
+   "description": "USB-C charging and data cable, 1 m.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 150,
+   "tags": [
+    "accessories"
+   ],
+   "image_query": "USB-C"
+  },
+  {
+   "name": "Wired Earphone",
+   "group": "Mobile Accessories",
+   "description": "In-ear earphone with microphone.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 250,
+   "tags": [
+    "accessories"
+   ],
+   "image_query": "Earphones"
+  },
+  {
+   "name": "Bluetooth Earbuds",
+   "group": "Mobile Accessories",
+   "description": "True wireless earbuds with charging case.",
+   "type": "Product",
+   "uom": "Pair",
+   "rate": 1500,
+   "tags": [
+    "accessories"
+   ],
+   "image_query": "Wireless earbuds"
+  },
+  {
+   "name": "Power Bank 10000 mAh",
+   "group": "Mobile Accessories",
+   "description": "Portable charger.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1400,
+   "tags": [
+    "accessories"
+   ],
+   "image_query": "Power bank"
+  },
+  {
+   "name": "Phone Back Cover",
+   "group": "Mobile Accessories",
+   "description": "Silicone back cover.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 150,
+   "tags": [
+    "accessories"
+   ],
+   "image_query": "Mobile phone case"
+  },
+  {
+   "name": "Tempered Glass",
+   "group": "Mobile Accessories",
+   "description": "Screen protector glass.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 100,
+   "tags": [
+    "accessories"
+   ],
+   "image_query": "Screen protector"
+  },
+  {
+   "name": "Memory Card 64 GB",
+   "group": "Mobile Accessories",
+   "description": "microSD card.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 550,
+   "tags": [
+    "accessories"
+   ],
+   "image_query": "MicroSD"
+  },
+  {
+   "name": "Smart Watch",
+   "group": "Mobile Accessories",
+   "description": "Bluetooth smart watch.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 2500,
+   "tags": [
+    "accessories"
+   ],
+   "image_query": "Smartwatch"
+  },
+  {
+   "name": "Bluetooth Speaker",
+   "group": "Mobile Accessories",
+   "description": "Portable wireless speaker.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1800,
+   "tags": [
+    "accessories"
+   ],
+   "image_query": "Bluetooth speaker"
+  },
+  {
+   "name": "Laptop Core i5",
+   "group": "Computers & Networking",
+   "description": "Laptop, 8 GB RAM, 512 GB SSD.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 65000,
+   "tags": [
+    "computers"
+   ],
+   "image_query": "Laptop"
+  },
+  {
+   "name": "Monitor 22 inch",
+   "group": "Computers & Networking",
+   "description": "Full HD LED monitor.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 11000,
+   "tags": [
+    "computers"
+   ],
+   "image_query": "Computer monitor"
+  },
+  {
+   "name": "Keyboard",
+   "group": "Computers & Networking",
+   "description": "USB keyboard.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 550,
+   "tags": [
+    "computers"
+   ],
+   "image_query": "Computer keyboard"
+  },
+  {
+   "name": "Mouse",
+   "group": "Computers & Networking",
+   "description": "USB optical mouse.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 350,
+   "tags": [
+    "computers"
+   ],
+   "image_query": "Computer mouse"
+  },
+  {
+   "name": "Pen Drive 32 GB",
+   "group": "Computers & Networking",
+   "description": "USB flash drive.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 450,
+   "tags": [
+    "computers",
+    "accessories"
+   ],
+   "image_query": "USB flash drive"
+  },
+  {
+   "name": "WiFi Router",
+   "group": "Computers & Networking",
+   "description": "Dual-antenna wireless router.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1600,
+   "tags": [
+    "computers"
+   ],
+   "image_query": "Wireless router"
+  },
+  {
+   "name": "Printer",
+   "group": "Computers & Networking",
+   "description": "Ink tank colour printer.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 16000,
+   "tags": [
+    "computers"
+   ],
+   "image_query": "Inkjet printer"
+  },
+  {
+   "name": "UPS 650 VA",
+   "group": "Computers & Networking",
+   "description": "Offline UPS for desktop.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 3800,
+   "tags": [
+    "computers"
+   ],
+   "image_query": "Uninterruptible power supply"
+  },
+  {
+   "name": "LED TV 32 inch",
+   "group": "Home Appliances",
+   "description": "HD LED television.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 20000,
+   "tags": [
+    "appliances"
+   ],
+   "image_query": "LED-backlit LCD television"
+  },
+  {
+   "name": "Refrigerator 250 L",
+   "group": "Home Appliances",
+   "description": "Frost direct-cool refrigerator.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 38000,
+   "tags": [
+    "appliances"
+   ],
+   "image_query": "Refrigerator"
+  },
+  {
+   "name": "Rice Cooker 1.8 L",
+   "group": "Home Appliances",
+   "description": "Electric rice cooker.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 2800,
+   "tags": [
+    "appliances"
+   ],
+   "image_query": "Rice cooker"
+  },
+  {
+   "name": "Blender",
+   "group": "Home Appliances",
+   "description": "Blender with grinder jar.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 3200,
+   "tags": [
+    "appliances"
+   ],
+   "image_query": "Blender"
+  },
+  {
+   "name": "Electric Iron",
+   "group": "Home Appliances",
+   "description": "Dry iron.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1300,
+   "tags": [
+    "appliances"
+   ],
+   "image_query": "Clothes iron"
+  },
+  {
+   "name": "Electric Kettle 1.8 L",
+   "group": "Home Appliances",
+   "description": "Electric kettle.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1200,
+   "tags": [
+    "appliances"
+   ],
+   "image_query": "Electric kettle"
+  },
+  {
+   "name": "Ceiling Fan 56 inch",
+   "group": "Lighting & Electrical",
+   "description": "Ceiling fan.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 3200,
+   "tags": [
+    "electrical",
+    "appliances"
+   ],
+   "image_query": "Ceiling fan"
+  },
+  {
+   "name": "Rechargeable Fan",
+   "group": "Lighting & Electrical",
+   "description": "Charger fan with battery backup.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 4500,
+   "tags": [
+    "electrical",
+    "appliances"
+   ],
+   "image_query": "Electric fan"
+  },
+  {
+   "name": "LED Bulb 12W",
+   "group": "Lighting & Electrical",
+   "description": "Energy-saving LED bulb.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 180,
+   "tags": [
+    "electrical"
+   ],
+   "image_query": "LED lamp"
+  },
+  {
+   "name": "LED Tube Light 20W",
+   "group": "Lighting & Electrical",
+   "description": "LED tube light with fitting.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 350,
+   "tags": [
+    "electrical"
+   ],
+   "image_query": "LED tube"
+  },
+  {
+   "name": "Multiplug 4 Port",
+   "group": "Lighting & Electrical",
+   "description": "Extension socket with switch.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 450,
+   "tags": [
+    "electrical"
+   ],
+   "image_query": "Power strip"
+  },
+  {
+   "name": "Electric Wire (Coil)",
+   "group": "Lighting & Electrical",
+   "description": "Copper cable coil, 1.5 rm.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 2800,
+   "tags": [
+    "electrical"
+   ],
+   "image_query": "Electrical wiring"
+  },
+  {
+   "name": "Switch and Socket",
+   "group": "Lighting & Electrical",
+   "description": "Wall switch with socket.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 120,
+   "tags": [
+    "electrical"
+   ],
+   "image_query": "Light switch"
+  },
+  {
+   "name": "Mobile Display Replacement",
+   "group": "Repair & Services",
+   "description": "Service charge for changing a phone display.",
+   "type": "Service",
+   "uom": "Piece",
+   "rate": 500,
+   "tags": [
+    "services"
+   ],
+   "image_query": "Mobile phone repair"
+  },
+  {
+   "name": "Mobile Servicing",
+   "group": "Repair & Services",
+   "description": "General phone servicing charge.",
+   "type": "Service",
+   "uom": "Piece",
+   "rate": 300,
+   "tags": [
+    "services"
+   ],
+   "image_query": "Mobile phone repair"
+  },
+  {
+   "name": "Software Installation",
+   "group": "Repair & Services",
+   "description": "Operating system and software setup.",
+   "type": "Service",
+   "uom": "Piece",
+   "rate": 500,
+   "tags": [
+    "services"
+   ],
+   "image_query": "Software"
+  },
+  {
+   "name": "Laptop Servicing",
+   "group": "Repair & Services",
+   "description": "Laptop cleaning and servicing.",
+   "type": "Service",
+   "uom": "Piece",
+   "rate": 800,
+   "tags": [
+    "services"
+   ],
+   "image_query": "Computer repair technician"
+  }
+ ]
+}

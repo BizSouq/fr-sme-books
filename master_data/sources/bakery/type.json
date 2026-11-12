@@ -1,0 +1,44 @@
+{
+ "id": "bakery",
+ "label": "Bakery & Sweet Shop",
+ "description": "Bakery, cake shop or mishti shop",
+ "icon": "store",
+ "order": 9,
+ "currency": "BDT",
+ "uoms": [
+  {"name": "Piece", "whole": 1},
+  {"name": "Pack", "whole": 1},
+  {"name": "Pound", "whole": 0},
+  {"name": "Cup", "whole": 1},
+  {"name": "Box", "whole": 1},
+  {"name": "Glass", "whole": 1}
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What do you make and sell?",
+   "multiple": true,
+   "options": [
+    {"id": "bread", "label": "Bread and buns"},
+    {"id": "cake", "label": "Cakes and pastries"},
+    {"id": "biscuit", "label": "Biscuits, toast and cookies"},
+    {"id": "savoury", "label": "Savoury snacks"},
+    {"id": "mishti", "label": "Bangla sweets (mishti)"},
+    {"id": "dairy", "label": "Doi and dairy"},
+    {"id": "drinks", "label": "Tea, coffee and drinks"},
+    {"id": "orders", "label": "Party orders and delivery"}
+   ]
+  }
+ ],
+ "groups": [
+  {"name": "Bread & Buns", "image_query": "Bread"},
+  {"name": "Cakes", "image_query": "Birthday cake"},
+  {"name": "Pastries & Desserts", "image_query": "Pastry"},
+  {"name": "Biscuits & Toast", "image_query": "Rusk"},
+  {"name": "Savoury Snacks", "image_query": "Puff pastry"},
+  {"name": "Mishti (Bangla Sweets)", "image_query": "Rasgulla"},
+  {"name": "Doi & Dairy", "image_query": "Mishti doi"},
+  {"name": "Drinks", "image_query": "Milk tea"},
+  {"name": "Orders & Delivery", "image_query": "Delivery (commerce)"}
+ ]
+}

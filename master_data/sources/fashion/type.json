@@ -1,0 +1,113 @@
+{
+ "id": "fashion",
+ "label": "Clothing & Fashion",
+ "description": "Clothing store, boutique or tailor",
+ "icon": "shirt",
+ "order": 4,
+ "currency": "BDT",
+ "uoms": [
+  {
+   "name": "Piece",
+   "whole": 1
+  },
+  {
+   "name": "Pair",
+   "whole": 1
+  },
+  {
+   "name": "Set",
+   "whole": 1
+  },
+  {
+   "name": "Yard",
+   "whole": 0
+  },
+  {
+   "name": "Pack",
+   "whole": 1
+  }
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What does your shop sell?",
+   "multiple": true,
+   "options": [
+    {
+     "id": "mens",
+     "label": "Men's wear"
+    },
+    {
+     "id": "womens",
+     "label": "Women's wear"
+    },
+    {
+     "id": "kids",
+     "label": "Kids' wear"
+    },
+    {
+     "id": "footwear",
+     "label": "Shoes and sandals"
+    },
+    {
+     "id": "accessories",
+     "label": "Bags and accessories"
+    },
+    {
+     "id": "fabric",
+     "label": "Fabric and tailoring"
+    },
+    {
+     "id": "winter",
+     "label": "Winter wear"
+    },
+    {
+     "id": "inner",
+     "label": "Innerwear and nightwear"
+    },
+    {
+     "id": "jewellery",
+     "label": "Jewellery"
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "name": "Men's Wear",
+   "image_query": "Panjabi"
+  },
+  {
+   "name": "Women's Wear",
+   "image_query": "Sari"
+  },
+  {
+   "name": "Kids' Wear",
+   "image_query": "Children's clothing"
+  },
+  {
+   "name": "Winter Wear",
+   "image_query": "Sweater"
+  },
+  {
+   "name": "Innerwear & Nightwear",
+   "image_query": "Pajamas"
+  },
+  {
+   "name": "Footwear",
+   "image_query": "Sandal"
+  },
+  {
+   "name": "Accessories",
+   "image_query": "Fashion accessory"
+  },
+  {
+   "name": "Jewellery",
+   "image_query": "Bangle"
+  },
+  {
+   "name": "Fabric & Tailoring",
+   "image_query": "Textile"
+  }
+ ]
+}

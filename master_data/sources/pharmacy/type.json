@@ -1,0 +1,129 @@
+{
+ "id": "pharmacy",
+ "label": "Pharmacy",
+ "description": "Medicine shop or drug store",
+ "icon": "pill",
+ "order": 1,
+ "currency": "BDT",
+ "uoms": [
+  {
+   "name": "Strip",
+   "whole": 1
+  },
+  {
+   "name": "Box",
+   "whole": 1
+  },
+  {
+   "name": "Bottle",
+   "whole": 1
+  },
+  {
+   "name": "Tube",
+   "whole": 1
+  },
+  {
+   "name": "Piece",
+   "whole": 1
+  },
+  {
+   "name": "Pack",
+   "whole": 1
+  },
+  {
+   "name": "Pair",
+   "whole": 1
+  }
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What does your pharmacy sell?",
+   "multiple": true,
+   "options": [
+    {
+     "id": "medicine",
+     "label": "Common medicine"
+    },
+    {
+     "id": "chronic",
+     "label": "Diabetes, pressure and heart medicine"
+    },
+    {
+     "id": "nutrition",
+     "label": "Vitamins and supplements"
+    },
+    {
+     "id": "baby",
+     "label": "Baby care"
+    },
+    {
+     "id": "personal",
+     "label": "Personal care and hygiene"
+    },
+    {
+     "id": "devices",
+     "label": "Medical devices"
+    },
+    {
+     "id": "firstaid",
+     "label": "Surgical and first aid"
+    },
+    {
+     "id": "family",
+     "label": "Family planning and women's health"
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "name": "Tablets & Capsules",
+   "image_query": "Tablet (pharmacy)"
+  },
+  {
+   "name": "Syrups & Suspensions",
+   "image_query": "Syrup medicine"
+  },
+  {
+   "name": "Injections & Saline",
+   "image_query": "Saline (medicine)"
+  },
+  {
+   "name": "Ointments & Creams",
+   "image_query": "Topical medication"
+  },
+  {
+   "name": "Drops & Inhalers",
+   "image_query": "Eye drop"
+  },
+  {
+   "name": "Insulin & Diabetes Care",
+   "image_query": "Insulin pen"
+  },
+  {
+   "name": "Vitamins & Supplements",
+   "image_query": "Dietary supplement"
+  },
+  {
+   "name": "Baby Care",
+   "image_query": "Infant formula"
+  },
+  {
+   "name": "Personal Care",
+   "image_query": "Personal hygiene products"
+  },
+  {
+   "name": "Medical Devices",
+   "image_query": "Sphygmomanometer"
+  },
+  {
+   "name": "Family Planning",
+   "image_query": "Contraception"
+  },
+  {
+   "name": "Surgical & First Aid",
+   "image_query": "First aid kit"
+  }
+ ]
+}

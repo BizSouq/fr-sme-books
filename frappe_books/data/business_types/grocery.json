@@ -1,0 +1,836 @@
+{
+ "id": "grocery",
+ "label": "Grocery Store",
+ "description": "Grocery, departmental store or mudi dokan",
+ "icon": "shopping-basket",
+ "order": 3,
+ "currency": "BDT",
+ "uoms": [
+  {
+   "name": "Piece",
+   "whole": 1
+  },
+  {
+   "name": "Pack",
+   "whole": 1
+  },
+  {
+   "name": "Litre",
+   "whole": 0
+  },
+  {
+   "name": "Dozen",
+   "whole": 1
+  },
+  {
+   "name": "Bottle",
+   "whole": 1
+  }
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What does your shop stock?",
+   "multiple": true,
+   "options": [
+    {
+     "id": "staples",
+     "label": "Rice, pulses, oil and sugar"
+    },
+    {
+     "id": "spices",
+     "label": "Spices"
+    },
+    {
+     "id": "snacks",
+     "label": "Snacks and biscuits"
+    },
+    {
+     "id": "beverages",
+     "label": "Tea, coffee and drinks"
+    },
+    {
+     "id": "dairy",
+     "label": "Dairy and eggs"
+    },
+    {
+     "id": "household",
+     "label": "Household and cleaning"
+    },
+    {
+     "id": "personal",
+     "label": "Personal care"
+    },
+    {
+     "id": "fresh",
+     "label": "Fresh vegetables and fish"
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "name": "Rice, Flour & Pulses",
+   "image_query": "Rice"
+  },
+  {
+   "name": "Oil, Sugar & Salt",
+   "image_query": "Cooking oil"
+  },
+  {
+   "name": "Spices",
+   "image_query": "Spice"
+  },
+  {
+   "name": "Snacks & Biscuits",
+   "image_query": "Biscuit"
+  },
+  {
+   "name": "Beverages",
+   "image_query": "Tea"
+  },
+  {
+   "name": "Dairy & Eggs",
+   "image_query": "Dairy product"
+  },
+  {
+   "name": "Household & Cleaning",
+   "image_query": "Cleaning agent"
+  },
+  {
+   "name": "Personal Care",
+   "image_query": "Soap"
+  },
+  {
+   "name": "Fresh Produce",
+   "image_query": "Vegetable"
+  }
+ ],
+ "items": [
+  {
+   "name": "Miniket Rice",
+   "group": "Rice, Flour & Pulses",
+   "description": "Fine white rice, loose.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 75,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "White rice"
+  },
+  {
+   "name": "Nazirshail Rice",
+   "group": "Rice, Flour & Pulses",
+   "description": "Premium fine rice, loose.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 85,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "White rice"
+  },
+  {
+   "name": "Chinigura Rice 1 kg",
+   "group": "Rice, Flour & Pulses",
+   "description": "Aromatic small-grain rice for polao.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 150,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Aromatic rice"
+  },
+  {
+   "name": "Atta 2 kg",
+   "group": "Rice, Flour & Pulses",
+   "description": "Whole wheat flour.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 130,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Atta flour"
+  },
+  {
+   "name": "Maida 2 kg",
+   "group": "Rice, Flour & Pulses",
+   "description": "Refined wheat flour.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 150,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Wheat flour"
+  },
+  {
+   "name": "Masoor Dal",
+   "group": "Rice, Flour & Pulses",
+   "description": "Red lentils, loose.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 140,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Red lentil"
+  },
+  {
+   "name": "Moong Dal",
+   "group": "Rice, Flour & Pulses",
+   "description": "Split mung beans, loose.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 170,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Mung bean"
+  },
+  {
+   "name": "Chola (Chickpeas)",
+   "group": "Rice, Flour & Pulses",
+   "description": "Whole chickpeas, loose.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 120,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Chickpea"
+  },
+  {
+   "name": "Suji 500 g",
+   "group": "Rice, Flour & Pulses",
+   "description": "Semolina.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 45,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Semolina"
+  },
+  {
+   "name": "Soybean Oil 1 Litre",
+   "group": "Oil, Sugar & Salt",
+   "description": "Fortified soybean oil.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 190,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Soybean oil"
+  },
+  {
+   "name": "Soybean Oil 5 Litre",
+   "group": "Oil, Sugar & Salt",
+   "description": "Fortified soybean oil.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 920,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Soybean oil"
+  },
+  {
+   "name": "Mustard Oil 500 ml",
+   "group": "Oil, Sugar & Salt",
+   "description": "Pure mustard oil.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 190,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Mustard oil"
+  },
+  {
+   "name": "Sugar",
+   "group": "Oil, Sugar & Salt",
+   "description": "White sugar, loose.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 130,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Sugar"
+  },
+  {
+   "name": "Iodised Salt 1 kg",
+   "group": "Oil, Sugar & Salt",
+   "description": "Vacuum evaporated iodised salt.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 42,
+   "tags": [
+    "staples"
+   ],
+   "image_query": "Salt"
+  },
+  {
+   "name": "Onion",
+   "group": "Fresh Produce",
+   "description": "Local onion.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 80,
+   "tags": [
+    "fresh",
+    "staples"
+   ],
+   "image_query": "Onion"
+  },
+  {
+   "name": "Garlic",
+   "group": "Fresh Produce",
+   "description": "Garlic.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 180,
+   "tags": [
+    "fresh",
+    "staples"
+   ],
+   "image_query": "Garlic"
+  },
+  {
+   "name": "Ginger",
+   "group": "Fresh Produce",
+   "description": "Ginger.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 220,
+   "tags": [
+    "fresh",
+    "staples"
+   ],
+   "image_query": "Ginger"
+  },
+  {
+   "name": "Potato",
+   "group": "Fresh Produce",
+   "description": "Potato.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 35,
+   "tags": [
+    "fresh",
+    "staples"
+   ],
+   "image_query": "Potato"
+  },
+  {
+   "name": "Green Chilli",
+   "group": "Fresh Produce",
+   "description": "Fresh green chilli.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 160,
+   "tags": [
+    "fresh"
+   ],
+   "image_query": "Green chilli"
+  },
+  {
+   "name": "Tomato",
+   "group": "Fresh Produce",
+   "description": "Fresh tomato.",
+   "type": "Product",
+   "uom": "Kg",
+   "rate": 80,
+   "tags": [
+    "fresh"
+   ],
+   "image_query": "Tomato"
+  },
+  {
+   "name": "Turmeric Powder 200 g",
+   "group": "Spices",
+   "description": "Holud gura.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 95,
+   "tags": [
+    "spices"
+   ],
+   "image_query": "Turmeric powder"
+  },
+  {
+   "name": "Chilli Powder 200 g",
+   "group": "Spices",
+   "description": "Morich gura.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 120,
+   "tags": [
+    "spices"
+   ],
+   "image_query": "Chili powder"
+  },
+  {
+   "name": "Coriander Powder 200 g",
+   "group": "Spices",
+   "description": "Dhonia gura.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 80,
+   "tags": [
+    "spices"
+   ],
+   "image_query": "Coriander powder"
+  },
+  {
+   "name": "Cumin Powder 100 g",
+   "group": "Spices",
+   "description": "Jeera gura.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 110,
+   "tags": [
+    "spices"
+   ],
+   "image_query": "Cumin"
+  },
+  {
+   "name": "Biryani Masala 40 g",
+   "group": "Spices",
+   "description": "Ready spice mix for biryani.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 55,
+   "tags": [
+    "spices"
+   ],
+   "image_query": "Spice mix"
+  },
+  {
+   "name": "Meat Masala 100 g",
+   "group": "Spices",
+   "description": "Ready spice mix for meat curry.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 75,
+   "tags": [
+    "spices"
+   ],
+   "image_query": "Garam masala"
+  },
+  {
+   "name": "Bay Leaf 50 g",
+   "group": "Spices",
+   "description": "Tejpata.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 30,
+   "tags": [
+    "spices"
+   ],
+   "image_query": "Bay leaf"
+  },
+  {
+   "name": "Energy Biscuit",
+   "group": "Snacks & Biscuits",
+   "description": "Glucose biscuit, small pack.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 10,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Biscuit"
+  },
+  {
+   "name": "Toast Biscuit 300 g",
+   "group": "Snacks & Biscuits",
+   "description": "Crunchy dry toast.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 70,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Rusk"
+  },
+  {
+   "name": "Potato Chips",
+   "group": "Snacks & Biscuits",
+   "description": "Crisps, small pack.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 15,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Potato chips"
+  },
+  {
+   "name": "Chanachur 150 g",
+   "group": "Snacks & Biscuits",
+   "description": "Spicy fried snack mix.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 45,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Chanachur"
+  },
+  {
+   "name": "Instant Noodles (8 Pack)",
+   "group": "Snacks & Biscuits",
+   "description": "Masala instant noodles family pack.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 160,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Instant noodles"
+  },
+  {
+   "name": "Puffed Rice (Muri) 500 g",
+   "group": "Snacks & Biscuits",
+   "description": "Muri.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 50,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Puffed rice"
+  },
+  {
+   "name": "Lozenge / Candy",
+   "group": "Snacks & Biscuits",
+   "description": "Assorted candy.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Candy"
+  },
+  {
+   "name": "Tea 400 g",
+   "group": "Beverages",
+   "description": "Black tea leaves.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 220,
+   "tags": [
+    "beverages"
+   ],
+   "image_query": "Black tea leaves"
+  },
+  {
+   "name": "Instant Coffee 50 g",
+   "group": "Beverages",
+   "description": "Instant coffee jar.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 180,
+   "tags": [
+    "beverages"
+   ],
+   "image_query": "Instant coffee"
+  },
+  {
+   "name": "Soft Drink 500 ml",
+   "group": "Beverages",
+   "description": "Carbonated soft drink.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 40,
+   "tags": [
+    "beverages"
+   ],
+   "image_query": "Soft drink"
+  },
+  {
+   "name": "Soft Drink 2 Litre",
+   "group": "Beverages",
+   "description": "Carbonated soft drink.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 130,
+   "tags": [
+    "beverages"
+   ],
+   "image_query": "Soft drink"
+  },
+  {
+   "name": "Mango Juice 250 ml",
+   "group": "Beverages",
+   "description": "Mango fruit drink.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 25,
+   "tags": [
+    "beverages"
+   ],
+   "image_query": "Mango juice"
+  },
+  {
+   "name": "Drinking Water 2 Litre",
+   "group": "Beverages",
+   "description": "Bottled drinking water.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 35,
+   "tags": [
+    "beverages"
+   ],
+   "image_query": "Bottled water"
+  },
+  {
+   "name": "Milk Powder 500 g",
+   "group": "Dairy & Eggs",
+   "description": "Full cream milk powder.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 440,
+   "tags": [
+    "dairy"
+   ],
+   "image_query": "Powdered milk"
+  },
+  {
+   "name": "UHT Milk 1 Litre",
+   "group": "Dairy & Eggs",
+   "description": "Long-life liquid milk.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 100,
+   "tags": [
+    "dairy"
+   ],
+   "image_query": "Milk carton"
+  },
+  {
+   "name": "Condensed Milk 397 g",
+   "group": "Dairy & Eggs",
+   "description": "Sweetened condensed milk.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 95,
+   "tags": [
+    "dairy"
+   ],
+   "image_query": "Condensed milk"
+  },
+  {
+   "name": "Egg",
+   "group": "Dairy & Eggs",
+   "description": "Farm egg.",
+   "type": "Product",
+   "uom": "Dozen",
+   "rate": 150,
+   "tags": [
+    "dairy",
+    "fresh"
+   ],
+   "image_query": "Egg (food)"
+  },
+  {
+   "name": "Butter 200 g",
+   "group": "Dairy & Eggs",
+   "description": "Salted butter.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 230,
+   "tags": [
+    "dairy"
+   ],
+   "image_query": "Butter"
+  },
+  {
+   "name": "Ghee 400 g",
+   "group": "Dairy & Eggs",
+   "description": "Pure ghee.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 650,
+   "tags": [
+    "dairy"
+   ],
+   "image_query": "Ghee"
+  },
+  {
+   "name": "Laundry Soap",
+   "group": "Household & Cleaning",
+   "description": "Washing bar soap.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 25,
+   "tags": [
+    "household"
+   ],
+   "image_query": "Laundry soap"
+  },
+  {
+   "name": "Detergent Powder 1 kg",
+   "group": "Household & Cleaning",
+   "description": "Washing powder.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 160,
+   "tags": [
+    "household"
+   ],
+   "image_query": "Laundry detergent"
+  },
+  {
+   "name": "Dishwashing Liquid 500 ml",
+   "group": "Household & Cleaning",
+   "description": "Lemon dishwashing liquid.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 110,
+   "tags": [
+    "household"
+   ],
+   "image_query": "Dishwashing liquid"
+  },
+  {
+   "name": "Toilet Cleaner 500 ml",
+   "group": "Household & Cleaning",
+   "description": "Liquid toilet cleaner.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 110,
+   "tags": [
+    "household"
+   ],
+   "image_query": "Toilet cleaner"
+  },
+  {
+   "name": "Mosquito Coil (Box of 10)",
+   "group": "Household & Cleaning",
+   "description": "Mosquito repellent coils.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 50,
+   "tags": [
+    "household"
+   ],
+   "image_query": "Mosquito coil"
+  },
+  {
+   "name": "Tissue Box",
+   "group": "Household & Cleaning",
+   "description": "Facial tissue, 150 sheets.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 70,
+   "tags": [
+    "household"
+   ],
+   "image_query": "Facial tissue"
+  },
+  {
+   "name": "Match Box",
+   "group": "Household & Cleaning",
+   "description": "Safety matches.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 2,
+   "tags": [
+    "household"
+   ],
+   "image_query": "Match"
+  },
+  {
+   "name": "Bath Soap 100 g",
+   "group": "Personal Care",
+   "description": "Beauty soap bar.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 50,
+   "tags": [
+    "personal"
+   ],
+   "image_query": "Soap"
+  },
+  {
+   "name": "Shampoo 180 ml",
+   "group": "Personal Care",
+   "description": "Shampoo bottle.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 200,
+   "tags": [
+    "personal"
+   ],
+   "image_query": "Shampoo"
+  },
+  {
+   "name": "Shampoo Mini Sachet",
+   "group": "Personal Care",
+   "description": "Single-use shampoo sachet.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 3,
+   "tags": [
+    "personal"
+   ],
+   "image_query": "Sachet"
+  },
+  {
+   "name": "Toothpaste 100 g",
+   "group": "Personal Care",
+   "description": "Fluoride toothpaste.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 110,
+   "tags": [
+    "personal"
+   ],
+   "image_query": "Toothpaste"
+  },
+  {
+   "name": "Toothbrush",
+   "group": "Personal Care",
+   "description": "Medium bristle toothbrush.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 40,
+   "tags": [
+    "personal"
+   ],
+   "image_query": "Toothbrush"
+  },
+  {
+   "name": "Coconut Hair Oil 200 ml",
+   "group": "Personal Care",
+   "description": "Coconut hair oil.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 150,
+   "tags": [
+    "personal"
+   ],
+   "image_query": "Coconut oil"
+  },
+  {
+   "name": "Petroleum Jelly 50 ml",
+   "group": "Personal Care",
+   "description": "Skin protecting jelly.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 60,
+   "tags": [
+    "personal"
+   ],
+   "image_query": "Petroleum jelly"
+  }
+ ]
+}

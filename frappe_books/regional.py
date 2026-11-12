@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 
 from frappe_books.coa import ensure_account
+from frappe_books.company import default_company
 from frappe_books.settings import company_country
 
 INDIAN_STATES = {
@@ -51,6 +52,15 @@ HSN_CODE_PATTERN = re.compile(r"[0-9]{4,8}")
 GST_RATES = (28, 18, 12, 6, 5, 3, 0.25, 0)
 # The seeded GST accounts are named after the GST head they hold.
 GST_HEADS = ("CGST", "SGST", "IGST", "Exempt")
+# Bangladesh's VAT rates under the Value Added Tax and Supplementary Duty Act, 2012: the standard
+# rate, the reduced rates and the zero rate.
+BANGLADESH_VAT_RATES = (15, 10, 7.5, 5, 0)
+BANGLADESH_VAT_ACCOUNT = "VAT"
+# Mobile financial services a Bangladeshi shop is paid by, each with its own ledger account.
+BANGLADESH_MOBILE_WALLETS = ("bKash", "Nagad", "Rocket")
+BANGLADESH_WALLET_GROUP = "Mobile Banking (MFS)"
+# Taka notes and coins a cashier counts.
+BANGLADESH_CASH_DENOMINATIONS = (1000, 500, 200, 100, 50, 20, 10, 5, 2, 1)
 
 
 def ensure_regional_records(country):
@@ -75,6 +85,59 @@ def ensure_regional_records(country):
 					"taxes": _tax_details(tax_type, rate),
 				}
 			).insert(ignore_permissions=True)
+
+
+def vat_template_name(rate) -> str:
+	"""`VAT-15`, `VAT-7.5`: a whole rate is named without its decimal point."""
+	return f"VAT-{rate:g}"
+
+
+def ensure_bangladesh_vat() -> list[str]:
+	"""Make the VAT ledger account and a tax template for each rate; returns the template names."""
+	ensure_account(BANGLADESH_VAT_ACCOUNT, "Duties and Taxes", "Liability", "Tax")
+	names = []
+	for rate in BANGLADESH_VAT_RATES:
+		name = vat_template_name(rate)
+		names.append(name)
+		if frappe.db.exists("Books Item Tax Template", name):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Books Item Tax Template",
+				"title": name,
+				"taxes": [{"tax_type": BANGLADESH_VAT_ACCOUNT, "tax_rate": rate}],
+			}
+		).insert(ignore_permissions=True)
+	return names
+
+
+def ensure_bangladesh_mobile_wallets() -> list[str]:
+	"""Make a mode of payment for each mobile wallet, paid into the wallet's own account."""
+	company = default_company()
+	for wallet in BANGLADESH_MOBILE_WALLETS:
+		account = ensure_account(wallet, BANGLADESH_WALLET_GROUP, "Asset", "Bank").name
+		if frappe.db.exists("Books Mode of Payment", wallet):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Books Mode of Payment",
+				"mode_of_payment": wallet,
+				"type": "Phone",
+				"accounts": [{"company": company, "default_account": account}],
+			}
+		).insert(ignore_permissions=True)
+	return list(BANGLADESH_MOBILE_WALLETS)
+
+
+def ensure_bangladesh_cash_denominations() -> bool:
+	"""Count POS cash in taka notes, unless the denominations are set already."""
+	defaults = frappe.get_single("Books Defaults")
+	if defaults.pos_cash_denominations:
+		return False
+	for denomination in BANGLADESH_CASH_DENOMINATIONS:
+		defaults.append("pos_cash_denominations", {"denomination": denomination})
+	defaults.save(ignore_permissions=True)
+	return True
 
 
 def ensure_address_template(country):

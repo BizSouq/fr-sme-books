@@ -1,0 +1,133 @@
+{
+ "id": "hardware",
+ "label": "Hardware & Sanitary",
+ "description": "Hardware, paint, plumbing or building materials shop",
+ "icon": "wrench",
+ "order": 6,
+ "currency": "BDT",
+ "uoms": [
+  {
+   "name": "Piece",
+   "whole": 1
+  },
+  {
+   "name": "Bag",
+   "whole": 1
+  },
+  {
+   "name": "Box",
+   "whole": 1
+  },
+  {
+   "name": "Feet",
+   "whole": 0
+  },
+  {
+   "name": "Sq Ft",
+   "whole": 0
+  },
+  {
+   "name": "Litre",
+   "whole": 0
+  },
+  {
+   "name": "Gallon",
+   "whole": 0
+  },
+  {
+   "name": "Set",
+   "whole": 1
+  },
+  {
+   "name": "Pair",
+   "whole": 1
+  },
+  {
+   "name": "Cft",
+   "whole": 0
+  },
+  {
+   "name": "Ton",
+   "whole": 0
+  }
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What does your shop sell?",
+   "multiple": true,
+   "options": [
+    {
+     "id": "building",
+     "label": "Cement, rod and building materials"
+    },
+    {
+     "id": "paint",
+     "label": "Paint and colour"
+    },
+    {
+     "id": "plumbing",
+     "label": "Pipes and plumbing"
+    },
+    {
+     "id": "sanitary",
+     "label": "Sanitary ware and tiles"
+    },
+    {
+     "id": "tools",
+     "label": "Tools and hardware"
+    },
+    {
+     "id": "electrical",
+     "label": "Electrical goods"
+    },
+    {
+     "id": "services",
+     "label": "Fitting and delivery services"
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "name": "Cement & Building Materials",
+   "image_query": "Cement"
+  },
+  {
+   "name": "Rod & Steel",
+   "image_query": "Rebar"
+  },
+  {
+   "name": "Paint & Colour",
+   "image_query": "Paint"
+  },
+  {
+   "name": "Pipes & Fittings",
+   "image_query": "Plumbing"
+  },
+  {
+   "name": "Sanitary Ware",
+   "image_query": "Toilet"
+  },
+  {
+   "name": "Tiles",
+   "image_query": "Tile"
+  },
+  {
+   "name": "Hand Tools",
+   "image_query": "Hand tool"
+  },
+  {
+   "name": "Nails, Screws & Locks",
+   "image_query": "Screw"
+  },
+  {
+   "name": "Electrical Goods",
+   "image_query": "Electrical wiring"
+  },
+  {
+   "name": "Hardware Services",
+   "image_query": "Plumber"
+  }
+ ]
+}

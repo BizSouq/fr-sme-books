@@ -1,0 +1,598 @@
+{
+ "id": "fashion",
+ "label": "Clothing & Fashion",
+ "description": "Clothing store, boutique or tailor",
+ "icon": "shirt",
+ "order": 4,
+ "currency": "BDT",
+ "uoms": [
+  {
+   "name": "Piece",
+   "whole": 1
+  },
+  {
+   "name": "Pair",
+   "whole": 1
+  },
+  {
+   "name": "Set",
+   "whole": 1
+  },
+  {
+   "name": "Yard",
+   "whole": 0
+  }
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What does your shop sell?",
+   "multiple": true,
+   "options": [
+    {
+     "id": "mens",
+     "label": "Men's wear"
+    },
+    {
+     "id": "womens",
+     "label": "Women's wear"
+    },
+    {
+     "id": "kids",
+     "label": "Kids' wear"
+    },
+    {
+     "id": "footwear",
+     "label": "Shoes and sandals"
+    },
+    {
+     "id": "accessories",
+     "label": "Bags and accessories"
+    },
+    {
+     "id": "fabric",
+     "label": "Fabric and tailoring"
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "name": "Men's Wear",
+   "image_query": "Panjabi"
+  },
+  {
+   "name": "Women's Wear",
+   "image_query": "Sari"
+  },
+  {
+   "name": "Kids' Wear",
+   "image_query": "Children's clothing"
+  },
+  {
+   "name": "Footwear",
+   "image_query": "Sandal"
+  },
+  {
+   "name": "Accessories",
+   "image_query": "Fashion accessory"
+  },
+  {
+   "name": "Fabric & Tailoring",
+   "image_query": "Textile"
+  }
+ ],
+ "items": [
+  {
+   "name": "Men's Cotton Panjabi",
+   "group": "Men's Wear",
+   "description": "Cotton panjabi for regular and festival wear.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1500,
+   "tags": [
+    "mens"
+   ],
+   "image_query": "Panjabi"
+  },
+  {
+   "name": "Men's Formal Shirt",
+   "group": "Men's Wear",
+   "description": "Full-sleeve formal shirt.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1200,
+   "tags": [
+    "mens"
+   ],
+   "image_query": "Dress shirt"
+  },
+  {
+   "name": "Men's Casual Shirt",
+   "group": "Men's Wear",
+   "description": "Half-sleeve casual shirt.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 900,
+   "tags": [
+    "mens"
+   ],
+   "image_query": "Shirt"
+  },
+  {
+   "name": "Men's T-Shirt",
+   "group": "Men's Wear",
+   "description": "Round-neck cotton T-shirt.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 350,
+   "tags": [
+    "mens"
+   ],
+   "image_query": "T-shirt"
+  },
+  {
+   "name": "Men's Polo Shirt",
+   "group": "Men's Wear",
+   "description": "Cotton pique polo shirt.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 650,
+   "tags": [
+    "mens"
+   ],
+   "image_query": "Polo shirt"
+  },
+  {
+   "name": "Men's Jeans Pant",
+   "group": "Men's Wear",
+   "description": "Denim jeans.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1400,
+   "tags": [
+    "mens"
+   ],
+   "image_query": "Jeans"
+  },
+  {
+   "name": "Men's Gabardine Pant",
+   "group": "Men's Wear",
+   "description": "Chino trousers.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1200,
+   "tags": [
+    "mens"
+   ],
+   "image_query": "Chino cloth"
+  },
+  {
+   "name": "Lungi",
+   "group": "Men's Wear",
+   "description": "Cotton lungi.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 450,
+   "tags": [
+    "mens"
+   ],
+   "image_query": "Lungi"
+  },
+  {
+   "name": "Pajama",
+   "group": "Men's Wear",
+   "description": "Cotton pajama for panjabi.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 450,
+   "tags": [
+    "mens"
+   ],
+   "image_query": "Pajamas"
+  },
+  {
+   "name": "Cotton Saree",
+   "group": "Women's Wear",
+   "description": "Tant cotton saree.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1500,
+   "tags": [
+    "womens"
+   ],
+   "image_query": "Sari"
+  },
+  {
+   "name": "Jamdani Saree",
+   "group": "Women's Wear",
+   "description": "Handwoven jamdani saree.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 6500,
+   "tags": [
+    "womens"
+   ],
+   "image_query": "Jamdani"
+  },
+  {
+   "name": "Silk Saree",
+   "group": "Women's Wear",
+   "description": "Rajshahi silk saree.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 4500,
+   "tags": [
+    "womens"
+   ],
+   "image_query": "Silk sari"
+  },
+  {
+   "name": "Three Piece (Unstitched)",
+   "group": "Women's Wear",
+   "description": "Unstitched salwar kameez set with orna.",
+   "type": "Product",
+   "uom": "Set",
+   "rate": 1800,
+   "tags": [
+    "womens"
+   ],
+   "image_query": "Shalwar kameez"
+  },
+  {
+   "name": "Three Piece (Stitched)",
+   "group": "Women's Wear",
+   "description": "Ready-made salwar kameez set with orna.",
+   "type": "Product",
+   "uom": "Set",
+   "rate": 2500,
+   "tags": [
+    "womens"
+   ],
+   "image_query": "Shalwar kameez"
+  },
+  {
+   "name": "Kurti",
+   "group": "Women's Wear",
+   "description": "Cotton kurti.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 950,
+   "tags": [
+    "womens"
+   ],
+   "image_query": "Kurti top"
+  },
+  {
+   "name": "Borka",
+   "group": "Women's Wear",
+   "description": "Abaya with hijab.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 2200,
+   "tags": [
+    "womens"
+   ],
+   "image_query": "Abaya"
+  },
+  {
+   "name": "Hijab",
+   "group": "Women's Wear",
+   "description": "Georgette hijab scarf.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 350,
+   "tags": [
+    "womens",
+    "accessories"
+   ],
+   "image_query": "Hijab"
+  },
+  {
+   "name": "Orna",
+   "group": "Women's Wear",
+   "description": "Cotton orna.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 300,
+   "tags": [
+    "womens"
+   ],
+   "image_query": "Dupatta"
+  },
+  {
+   "name": "Kids' T-Shirt",
+   "group": "Kids' Wear",
+   "description": "Cotton T-shirt for children.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 250,
+   "tags": [
+    "kids"
+   ],
+   "image_query": "T-shirt"
+  },
+  {
+   "name": "Kids' Frock",
+   "group": "Kids' Wear",
+   "description": "Frock for girls.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 850,
+   "tags": [
+    "kids"
+   ],
+   "image_query": "Frock"
+  },
+  {
+   "name": "Kids' Panjabi",
+   "group": "Kids' Wear",
+   "description": "Panjabi for boys.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 750,
+   "tags": [
+    "kids"
+   ],
+   "image_query": "Panjabi"
+  },
+  {
+   "name": "Kids' Pant",
+   "group": "Kids' Wear",
+   "description": "Trousers for children.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 450,
+   "tags": [
+    "kids"
+   ],
+   "image_query": "Trousers"
+  },
+  {
+   "name": "Baby Dress Set",
+   "group": "Kids' Wear",
+   "description": "Newborn dress set.",
+   "type": "Product",
+   "uom": "Set",
+   "rate": 550,
+   "tags": [
+    "kids"
+   ],
+   "image_query": "Infant clothing"
+  },
+  {
+   "name": "School Uniform Shirt",
+   "group": "Kids' Wear",
+   "description": "White school shirt.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 400,
+   "tags": [
+    "kids"
+   ],
+   "image_query": "School uniform"
+  },
+  {
+   "name": "Men's Leather Sandal",
+   "group": "Footwear",
+   "description": "Leather sandal.",
+   "type": "Product",
+   "uom": "Pair",
+   "rate": 1200,
+   "tags": [
+    "footwear"
+   ],
+   "image_query": "Sandal"
+  },
+  {
+   "name": "Men's Formal Shoe",
+   "group": "Footwear",
+   "description": "Leather formal shoe.",
+   "type": "Product",
+   "uom": "Pair",
+   "rate": 2800,
+   "tags": [
+    "footwear"
+   ],
+   "image_query": "Dress shoe"
+  },
+  {
+   "name": "Sneakers",
+   "group": "Footwear",
+   "description": "Casual sneakers.",
+   "type": "Product",
+   "uom": "Pair",
+   "rate": 2200,
+   "tags": [
+    "footwear"
+   ],
+   "image_query": "Sneakers"
+  },
+  {
+   "name": "Ladies' Sandal",
+   "group": "Footwear",
+   "description": "Flat sandal for women.",
+   "type": "Product",
+   "uom": "Pair",
+   "rate": 900,
+   "tags": [
+    "footwear"
+   ],
+   "image_query": "Sandal"
+  },
+  {
+   "name": "Kids' Shoe",
+   "group": "Footwear",
+   "description": "Shoes for children.",
+   "type": "Product",
+   "uom": "Pair",
+   "rate": 800,
+   "tags": [
+    "footwear",
+    "kids"
+   ],
+   "image_query": "Shoe"
+  },
+  {
+   "name": "Rubber Slipper",
+   "group": "Footwear",
+   "description": "Everyday rubber slipper.",
+   "type": "Product",
+   "uom": "Pair",
+   "rate": 180,
+   "tags": [
+    "footwear"
+   ],
+   "image_query": "Flip-flops"
+  },
+  {
+   "name": "Leather Belt",
+   "group": "Accessories",
+   "description": "Men's leather belt.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 550,
+   "tags": [
+    "accessories",
+    "mens"
+   ],
+   "image_query": "Belt (clothing)"
+  },
+  {
+   "name": "Leather Wallet",
+   "group": "Accessories",
+   "description": "Men's leather wallet.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 650,
+   "tags": [
+    "accessories",
+    "mens"
+   ],
+   "image_query": "Wallet"
+  },
+  {
+   "name": "Ladies' Handbag",
+   "group": "Accessories",
+   "description": "Handbag.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1500,
+   "tags": [
+    "accessories",
+    "womens"
+   ],
+   "image_query": "Handbag"
+  },
+  {
+   "name": "Socks (Pair)",
+   "group": "Accessories",
+   "description": "Cotton socks.",
+   "type": "Product",
+   "uom": "Pair",
+   "rate": 80,
+   "tags": [
+    "accessories",
+    "footwear"
+   ],
+   "image_query": "Sock"
+  },
+  {
+   "name": "Cap",
+   "group": "Accessories",
+   "description": "Baseball cap.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 250,
+   "tags": [
+    "accessories"
+   ],
+   "image_query": "Baseball cap"
+  },
+  {
+   "name": "Tupi",
+   "group": "Accessories",
+   "description": "Prayer cap.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 120,
+   "tags": [
+    "accessories",
+    "mens"
+   ],
+   "image_query": "Taqiyah (cap)"
+  },
+  {
+   "name": "Cotton Fabric",
+   "group": "Fabric & Tailoring",
+   "description": "Printed cotton fabric by the yard.",
+   "type": "Product",
+   "uom": "Yard",
+   "rate": 120,
+   "tags": [
+    "fabric"
+   ],
+   "image_query": "Cotton fabric"
+  },
+  {
+   "name": "Shirting Fabric",
+   "group": "Fabric & Tailoring",
+   "description": "Shirt fabric by the yard.",
+   "type": "Product",
+   "uom": "Yard",
+   "rate": 220,
+   "tags": [
+    "fabric"
+   ],
+   "image_query": "Textile"
+  },
+  {
+   "name": "Suiting Fabric",
+   "group": "Fabric & Tailoring",
+   "description": "Pant and suit fabric by the yard.",
+   "type": "Product",
+   "uom": "Yard",
+   "rate": 450,
+   "tags": [
+    "fabric"
+   ],
+   "image_query": "Textile"
+  },
+  {
+   "name": "Shirt Tailoring",
+   "group": "Fabric & Tailoring",
+   "description": "Making charge for one shirt.",
+   "type": "Service",
+   "uom": "Piece",
+   "rate": 450,
+   "tags": [
+    "fabric"
+   ],
+   "image_query": "Tailor"
+  },
+  {
+   "name": "Pant Tailoring",
+   "group": "Fabric & Tailoring",
+   "description": "Making charge for one pant.",
+   "type": "Service",
+   "uom": "Piece",
+   "rate": 550,
+   "tags": [
+    "fabric"
+   ],
+   "image_query": "Tailor"
+  },
+  {
+   "name": "Three Piece Tailoring",
+   "group": "Fabric & Tailoring",
+   "description": "Making charge for one salwar kameez.",
+   "type": "Service",
+   "uom": "Piece",
+   "rate": 600,
+   "tags": [
+    "fabric"
+   ],
+   "image_query": "Tailor"
+  }
+ ]
+}

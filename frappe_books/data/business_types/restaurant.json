@@ -1,0 +1,1007 @@
+{
+ "id": "restaurant",
+ "label": "Restaurant",
+ "description": "Restaurant, cafe, fast food or sweet shop",
+ "icon": "utensils",
+ "order": 2,
+ "currency": "BDT",
+ "uoms": [
+  {
+   "name": "Plate",
+   "whole": 1
+  },
+  {
+   "name": "Piece",
+   "whole": 1
+  },
+  {
+   "name": "Cup",
+   "whole": 1
+  },
+  {
+   "name": "Glass",
+   "whole": 1
+  },
+  {
+   "name": "Bowl",
+   "whole": 1
+  },
+  {
+   "name": "Bottle",
+   "whole": 1
+  }
+ ],
+ "questions": [
+  {
+   "id": "cuisine",
+   "label": "What kind of food do you serve?",
+   "multiple": true,
+   "options": [
+    {
+     "id": "bangla",
+     "label": "Bangla rice and curry"
+    },
+    {
+     "id": "biryani",
+     "label": "Biryani and kacchi"
+    },
+    {
+     "id": "kebab",
+     "label": "Kebab and grill"
+    },
+    {
+     "id": "chinese",
+     "label": "Chinese and Thai"
+    },
+    {
+     "id": "fastfood",
+     "label": "Burger, pizza and fast food"
+    },
+    {
+     "id": "snacks",
+     "label": "Snacks and street food"
+    },
+    {
+     "id": "sweets",
+     "label": "Sweets and desserts"
+    },
+    {
+     "id": "cafe",
+     "label": "Tea, coffee and juice"
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "name": "Rice & Bhorta",
+   "image_query": "Bengali cuisine rice"
+  },
+  {
+   "name": "Biryani & Kacchi",
+   "image_query": "Biryani"
+  },
+  {
+   "name": "Curry & Bhuna",
+   "image_query": "Bangladeshi curry"
+  },
+  {
+   "name": "Kebab & Grill",
+   "image_query": "Kebab"
+  },
+  {
+   "name": "Chinese & Thai",
+   "image_query": "Fried rice"
+  },
+  {
+   "name": "Burger & Fast Food",
+   "image_query": "Hamburger"
+  },
+  {
+   "name": "Pizza & Pasta",
+   "image_query": "Pizza"
+  },
+  {
+   "name": "Snacks",
+   "image_query": "Samosa"
+  },
+  {
+   "name": "Sweets & Desserts",
+   "image_query": "Rasgulla"
+  },
+  {
+   "name": "Tea & Coffee",
+   "image_query": "Milk tea"
+  },
+  {
+   "name": "Juice & Cold Drinks",
+   "image_query": "Fruit juice"
+  }
+ ],
+ "items": [
+  {
+   "name": "Plain Rice",
+   "group": "Rice & Bhorta",
+   "description": "Steamed white rice.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 30,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Steamed rice"
+  },
+  {
+   "name": "Khichuri",
+   "group": "Rice & Bhorta",
+   "description": "Rice and lentils cooked with spices.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 120,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Khichuri"
+  },
+  {
+   "name": "Dal",
+   "group": "Rice & Bhorta",
+   "description": "Lentil soup.",
+   "type": "Product",
+   "uom": "Bowl",
+   "rate": 30,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Dal"
+  },
+  {
+   "name": "Alu Bhorta",
+   "group": "Rice & Bhorta",
+   "description": "Mashed potato with mustard oil, onion and chilli.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 30,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Aloo bhorta"
+  },
+  {
+   "name": "Begun Bhorta",
+   "group": "Rice & Bhorta",
+   "description": "Smoked mashed eggplant.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 40,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Baingan bharta"
+  },
+  {
+   "name": "Mixed Vegetable",
+   "group": "Rice & Bhorta",
+   "description": "Seasonal vegetables cooked with spices.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 50,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Mixed vegetable curry"
+  },
+  {
+   "name": "Chicken Curry",
+   "group": "Curry & Bhuna",
+   "description": "Home-style chicken curry.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 150,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Chicken curry"
+  },
+  {
+   "name": "Beef Bhuna",
+   "group": "Curry & Bhuna",
+   "description": "Slow-cooked spiced beef.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 220,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Beef bhuna"
+  },
+  {
+   "name": "Mutton Rezala",
+   "group": "Curry & Bhuna",
+   "description": "Mutton in a mild white gravy.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 320,
+   "tags": [
+    "bangla",
+    "biryani"
+   ],
+   "image_query": "Rezala"
+  },
+  {
+   "name": "Rui Fish Curry",
+   "group": "Curry & Bhuna",
+   "description": "Rohu fish in a light gravy.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 160,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Fish curry"
+  },
+  {
+   "name": "Ilish Bhaja",
+   "group": "Curry & Bhuna",
+   "description": "Fried hilsa fish.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 350,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Ilish"
+  },
+  {
+   "name": "Shorshe Ilish",
+   "group": "Curry & Bhuna",
+   "description": "Hilsa cooked in mustard sauce.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 400,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Shorshe ilish"
+  },
+  {
+   "name": "Chingri Malai Curry",
+   "group": "Curry & Bhuna",
+   "description": "Prawns in coconut milk gravy.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 380,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Chingri malai curry"
+  },
+  {
+   "name": "Egg Curry",
+   "group": "Curry & Bhuna",
+   "description": "Boiled eggs in spiced gravy.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 60,
+   "tags": [
+    "bangla"
+   ],
+   "image_query": "Egg curry"
+  },
+  {
+   "name": "Kacchi Biryani",
+   "group": "Biryani & Kacchi",
+   "description": "Mutton and potato layered with aromatic rice.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 380,
+   "tags": [
+    "biryani"
+   ],
+   "image_query": "Kacchi biryani"
+  },
+  {
+   "name": "Chicken Biryani",
+   "group": "Biryani & Kacchi",
+   "description": "Aromatic rice cooked with chicken.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 220,
+   "tags": [
+    "biryani"
+   ],
+   "image_query": "Chicken biryani"
+  },
+  {
+   "name": "Beef Tehari",
+   "group": "Biryani & Kacchi",
+   "description": "Rice cooked with small pieces of beef.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 200,
+   "tags": [
+    "biryani"
+   ],
+   "image_query": "Tehari"
+  },
+  {
+   "name": "Morog Polao",
+   "group": "Biryani & Kacchi",
+   "description": "Fragrant rice with chicken roast.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 260,
+   "tags": [
+    "biryani"
+   ],
+   "image_query": "Morog polao"
+  },
+  {
+   "name": "Plain Polao",
+   "group": "Biryani & Kacchi",
+   "description": "Fragrant ghee rice.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 100,
+   "tags": [
+    "biryani",
+    "bangla"
+   ],
+   "image_query": "Pilaf"
+  },
+  {
+   "name": "Chicken Roast",
+   "group": "Biryani & Kacchi",
+   "description": "Wedding-style chicken roast.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 180,
+   "tags": [
+    "biryani",
+    "bangla"
+   ],
+   "image_query": "Chicken roast"
+  },
+  {
+   "name": "Borhani",
+   "group": "Biryani & Kacchi",
+   "description": "Spiced yoghurt drink.",
+   "type": "Product",
+   "uom": "Glass",
+   "rate": 60,
+   "tags": [
+    "biryani"
+   ],
+   "image_query": "Borhani"
+  },
+  {
+   "name": "Firni",
+   "group": "Sweets & Desserts",
+   "description": "Rice pudding.",
+   "type": "Product",
+   "uom": "Cup",
+   "rate": 60,
+   "tags": [
+    "biryani",
+    "sweets"
+   ],
+   "image_query": "Firni"
+  },
+  {
+   "name": "Chicken Tikka",
+   "group": "Kebab & Grill",
+   "description": "Grilled marinated chicken pieces.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 220,
+   "tags": [
+    "kebab"
+   ],
+   "image_query": "Chicken tikka"
+  },
+  {
+   "name": "Beef Sheek Kebab",
+   "group": "Kebab & Grill",
+   "description": "Minced beef kebab grilled on skewers.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 200,
+   "tags": [
+    "kebab"
+   ],
+   "image_query": "Seekh kebab"
+  },
+  {
+   "name": "Grilled Chicken (Quarter)",
+   "group": "Kebab & Grill",
+   "description": "Charcoal grilled chicken.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 180,
+   "tags": [
+    "kebab"
+   ],
+   "image_query": "Grilled chicken"
+  },
+  {
+   "name": "Chicken Chaap",
+   "group": "Kebab & Grill",
+   "description": "Marinated flattened chicken, pan fried.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 200,
+   "tags": [
+    "kebab"
+   ],
+   "image_query": "Chicken chaap"
+  },
+  {
+   "name": "Naan",
+   "group": "Kebab & Grill",
+   "description": "Tandoor baked flatbread.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 40,
+   "tags": [
+    "kebab"
+   ],
+   "image_query": "Naan"
+  },
+  {
+   "name": "Butter Naan",
+   "group": "Kebab & Grill",
+   "description": "Naan brushed with butter.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 60,
+   "tags": [
+    "kebab"
+   ],
+   "image_query": "Naan"
+  },
+  {
+   "name": "Paratha",
+   "group": "Kebab & Grill",
+   "description": "Layered flatbread.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 20,
+   "tags": [
+    "kebab",
+    "bangla",
+    "snacks"
+   ],
+   "image_query": "Paratha"
+  },
+  {
+   "name": "Chicken Fried Rice",
+   "group": "Chinese & Thai",
+   "description": "Fried rice with chicken and egg.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 220,
+   "tags": [
+    "chinese"
+   ],
+   "image_query": "Fried rice"
+  },
+  {
+   "name": "Egg Fried Rice",
+   "group": "Chinese & Thai",
+   "description": "Fried rice with egg and vegetables.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 160,
+   "tags": [
+    "chinese"
+   ],
+   "image_query": "Egg fried rice"
+  },
+  {
+   "name": "Chicken Chow Mein",
+   "group": "Chinese & Thai",
+   "description": "Stir-fried noodles with chicken.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 220,
+   "tags": [
+    "chinese"
+   ],
+   "image_query": "Chow mein"
+  },
+  {
+   "name": "Chili Chicken",
+   "group": "Chinese & Thai",
+   "description": "Fried chicken in chilli sauce.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 280,
+   "tags": [
+    "chinese"
+   ],
+   "image_query": "Chilli chicken"
+  },
+  {
+   "name": "Mixed Chinese Vegetable",
+   "group": "Chinese & Thai",
+   "description": "Stir-fried vegetables in light sauce.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 200,
+   "tags": [
+    "chinese"
+   ],
+   "image_query": "Stir fried vegetables"
+  },
+  {
+   "name": "Thai Soup",
+   "group": "Chinese & Thai",
+   "description": "Hot and sour soup with chicken and prawn.",
+   "type": "Product",
+   "uom": "Bowl",
+   "rate": 180,
+   "tags": [
+    "chinese"
+   ],
+   "image_query": "Tom yum"
+  },
+  {
+   "name": "Chicken Corn Soup",
+   "group": "Chinese & Thai",
+   "description": "Sweetcorn soup with chicken.",
+   "type": "Product",
+   "uom": "Bowl",
+   "rate": 140,
+   "tags": [
+    "chinese"
+   ],
+   "image_query": "Corn soup"
+  },
+  {
+   "name": "Fried Wonton (6 pcs)",
+   "group": "Chinese & Thai",
+   "description": "Crispy fried dumplings.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 150,
+   "tags": [
+    "chinese"
+   ],
+   "image_query": "Wonton"
+  },
+  {
+   "name": "Chicken Burger",
+   "group": "Burger & Fast Food",
+   "description": "Crispy chicken patty with lettuce and sauce.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 180,
+   "tags": [
+    "fastfood"
+   ],
+   "image_query": "Chicken burger"
+  },
+  {
+   "name": "Beef Burger",
+   "group": "Burger & Fast Food",
+   "description": "Grilled beef patty with cheese.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 250,
+   "tags": [
+    "fastfood"
+   ],
+   "image_query": "Hamburger"
+  },
+  {
+   "name": "Fried Chicken (2 pcs)",
+   "group": "Burger & Fast Food",
+   "description": "Crispy fried chicken.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 220,
+   "tags": [
+    "fastfood"
+   ],
+   "image_query": "Fried chicken"
+  },
+  {
+   "name": "French Fries",
+   "group": "Burger & Fast Food",
+   "description": "Deep-fried potato fries.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 100,
+   "tags": [
+    "fastfood"
+   ],
+   "image_query": "French fries"
+  },
+  {
+   "name": "Chicken Sandwich",
+   "group": "Burger & Fast Food",
+   "description": "Chicken sandwich.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 120,
+   "tags": [
+    "fastfood",
+    "cafe"
+   ],
+   "image_query": "Chicken sandwich"
+  },
+  {
+   "name": "Chicken Shawarma",
+   "group": "Burger & Fast Food",
+   "description": "Chicken wrapped in flatbread.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 150,
+   "tags": [
+    "fastfood",
+    "kebab"
+   ],
+   "image_query": "Shawarma"
+  },
+  {
+   "name": "Chicken Pizza 8 inch",
+   "group": "Pizza & Pasta",
+   "description": "Pizza with chicken and cheese.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 450,
+   "tags": [
+    "fastfood"
+   ],
+   "image_query": "Pizza"
+  },
+  {
+   "name": "Chicken Pizza 12 inch",
+   "group": "Pizza & Pasta",
+   "description": "Pizza with chicken and cheese.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 850,
+   "tags": [
+    "fastfood"
+   ],
+   "image_query": "Pizza"
+  },
+  {
+   "name": "Chicken Pasta",
+   "group": "Pizza & Pasta",
+   "description": "Pasta in creamy white sauce with chicken.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 280,
+   "tags": [
+    "fastfood"
+   ],
+   "image_query": "Pasta"
+  },
+  {
+   "name": "Singara",
+   "group": "Snacks",
+   "description": "Fried pastry with spiced potato filling.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 10,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Samosa"
+  },
+  {
+   "name": "Samosa",
+   "group": "Snacks",
+   "description": "Fried triangular pastry with savoury filling.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 10,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Samosa"
+  },
+  {
+   "name": "Fuchka",
+   "group": "Snacks",
+   "description": "Crisp shells filled with spiced chickpeas and tamarind water.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 60,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Fuchka"
+  },
+  {
+   "name": "Chotpoti",
+   "group": "Snacks",
+   "description": "Spiced chickpeas and potato with tamarind sauce.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 60,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Chotpoti"
+  },
+  {
+   "name": "Mughlai Paratha",
+   "group": "Snacks",
+   "description": "Paratha stuffed with egg and minced meat.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 100,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Mughlai paratha"
+  },
+  {
+   "name": "Chicken Roll",
+   "group": "Snacks",
+   "description": "Fried roll with chicken filling.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 50,
+   "tags": [
+    "snacks",
+    "fastfood"
+   ],
+   "image_query": "Spring roll"
+  },
+  {
+   "name": "Jhal Muri",
+   "group": "Snacks",
+   "description": "Puffed rice with mustard oil and spices.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 30,
+   "tags": [
+    "snacks"
+   ],
+   "image_query": "Jhalmuri"
+  },
+  {
+   "name": "Roshogolla",
+   "group": "Sweets & Desserts",
+   "description": "Soft cheese balls in sugar syrup.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 30,
+   "tags": [
+    "sweets"
+   ],
+   "image_query": "Rasgulla"
+  },
+  {
+   "name": "Kalo Jam",
+   "group": "Sweets & Desserts",
+   "description": "Dark fried milk sweet in syrup.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 30,
+   "tags": [
+    "sweets"
+   ],
+   "image_query": "Kala jamun"
+  },
+  {
+   "name": "Chomchom",
+   "group": "Sweets & Desserts",
+   "description": "Oval milk sweet from Tangail.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 35,
+   "tags": [
+    "sweets"
+   ],
+   "image_query": "Cham cham"
+  },
+  {
+   "name": "Sandesh",
+   "group": "Sweets & Desserts",
+   "description": "Sweet made of fresh chhana.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 35,
+   "tags": [
+    "sweets"
+   ],
+   "image_query": "Sandesh (confectionery)"
+  },
+  {
+   "name": "Mishti Doi",
+   "group": "Sweets & Desserts",
+   "description": "Sweet yoghurt.",
+   "type": "Product",
+   "uom": "Cup",
+   "rate": 60,
+   "tags": [
+    "sweets",
+    "bangla",
+    "biryani"
+   ],
+   "image_query": "Mishti doi"
+  },
+  {
+   "name": "Jilapi",
+   "group": "Sweets & Desserts",
+   "description": "Crisp syrup-soaked spirals.",
+   "type": "Product",
+   "uom": "Plate",
+   "rate": 60,
+   "tags": [
+    "sweets",
+    "snacks"
+   ],
+   "image_query": "Jalebi"
+  },
+  {
+   "name": "Roshmalai",
+   "group": "Sweets & Desserts",
+   "description": "Cheese dumplings in thickened milk.",
+   "type": "Product",
+   "uom": "Cup",
+   "rate": 90,
+   "tags": [
+    "sweets"
+   ],
+   "image_query": "Ras malai"
+  },
+  {
+   "name": "Milk Tea",
+   "group": "Tea & Coffee",
+   "description": "Tea with milk and sugar.",
+   "type": "Product",
+   "uom": "Cup",
+   "rate": 20,
+   "tags": [
+    "cafe",
+    "snacks",
+    "bangla"
+   ],
+   "image_query": "Milk tea"
+  },
+  {
+   "name": "Red Tea",
+   "group": "Tea & Coffee",
+   "description": "Black tea.",
+   "type": "Product",
+   "uom": "Cup",
+   "rate": 10,
+   "tags": [
+    "cafe",
+    "snacks",
+    "bangla"
+   ],
+   "image_query": "Black tea"
+  },
+  {
+   "name": "Hot Coffee",
+   "group": "Tea & Coffee",
+   "description": "Milk coffee.",
+   "type": "Product",
+   "uom": "Cup",
+   "rate": 80,
+   "tags": [
+    "cafe"
+   ],
+   "image_query": "Coffee"
+  },
+  {
+   "name": "Cappuccino",
+   "group": "Tea & Coffee",
+   "description": "Espresso with steamed milk foam.",
+   "type": "Product",
+   "uom": "Cup",
+   "rate": 180,
+   "tags": [
+    "cafe"
+   ],
+   "image_query": "Cappuccino"
+  },
+  {
+   "name": "Cold Coffee",
+   "group": "Juice & Cold Drinks",
+   "description": "Chilled blended coffee.",
+   "type": "Product",
+   "uom": "Glass",
+   "rate": 150,
+   "tags": [
+    "cafe",
+    "fastfood"
+   ],
+   "image_query": "Iced coffee"
+  },
+  {
+   "name": "Lemon Juice",
+   "group": "Juice & Cold Drinks",
+   "description": "Fresh lemonade.",
+   "type": "Product",
+   "uom": "Glass",
+   "rate": 50,
+   "tags": [
+    "cafe"
+   ],
+   "image_query": "Lemonade"
+  },
+  {
+   "name": "Mango Juice",
+   "group": "Juice & Cold Drinks",
+   "description": "Fresh mango juice.",
+   "type": "Product",
+   "uom": "Glass",
+   "rate": 120,
+   "tags": [
+    "cafe"
+   ],
+   "image_query": "Mango juice"
+  },
+  {
+   "name": "Sweet Lassi",
+   "group": "Juice & Cold Drinks",
+   "description": "Sweet yoghurt drink.",
+   "type": "Product",
+   "uom": "Glass",
+   "rate": 90,
+   "tags": [
+    "cafe",
+    "kebab",
+    "sweets"
+   ],
+   "image_query": "Lassi"
+  },
+  {
+   "name": "Chocolate Milkshake",
+   "group": "Juice & Cold Drinks",
+   "description": "Chocolate milkshake.",
+   "type": "Product",
+   "uom": "Glass",
+   "rate": 180,
+   "tags": [
+    "cafe",
+    "fastfood"
+   ],
+   "image_query": "Milkshake"
+  },
+  {
+   "name": "Soft Drink 250 ml",
+   "group": "Juice & Cold Drinks",
+   "description": "Carbonated soft drink.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 25,
+   "tags": [
+    "cafe",
+    "fastfood",
+    "biryani",
+    "bangla",
+    "kebab",
+    "chinese"
+   ],
+   "image_query": "Soft drink"
+  },
+  {
+   "name": "Mineral Water 500 ml",
+   "group": "Juice & Cold Drinks",
+   "description": "Bottled drinking water.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 20,
+   "tags": [
+    "cafe",
+    "fastfood",
+    "biryani",
+    "bangla",
+    "kebab",
+    "chinese",
+    "snacks",
+    "sweets"
+   ],
+   "image_query": "Bottled water"
+  }
+ ]
+}

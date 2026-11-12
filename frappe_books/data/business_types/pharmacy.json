@@ -1,0 +1,886 @@
+{
+ "id": "pharmacy",
+ "label": "Pharmacy",
+ "description": "Medicine shop or drug store",
+ "icon": "pill",
+ "order": 1,
+ "currency": "BDT",
+ "uoms": [
+  {
+   "name": "Strip",
+   "whole": 1
+  },
+  {
+   "name": "Box",
+   "whole": 1
+  },
+  {
+   "name": "Bottle",
+   "whole": 1
+  },
+  {
+   "name": "Tube",
+   "whole": 1
+  },
+  {
+   "name": "Piece",
+   "whole": 1
+  },
+  {
+   "name": "Pack",
+   "whole": 1
+  }
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What does your pharmacy sell?",
+   "multiple": true,
+   "options": [
+    {
+     "id": "medicine",
+     "label": "Common medicine"
+    },
+    {
+     "id": "chronic",
+     "label": "Diabetes, pressure and heart medicine"
+    },
+    {
+     "id": "nutrition",
+     "label": "Vitamins and supplements"
+    },
+    {
+     "id": "baby",
+     "label": "Baby care"
+    },
+    {
+     "id": "personal",
+     "label": "Personal care and hygiene"
+    },
+    {
+     "id": "devices",
+     "label": "Medical devices"
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "name": "Tablets & Capsules",
+   "image_query": "Tablet (pharmacy)"
+  },
+  {
+   "name": "Syrups & Suspensions",
+   "image_query": "Syrup medicine"
+  },
+  {
+   "name": "Injections & Saline",
+   "image_query": "Saline (medicine)"
+  },
+  {
+   "name": "Ointments & Creams",
+   "image_query": "Topical medication"
+  },
+  {
+   "name": "Drops & Inhalers",
+   "image_query": "Eye drop"
+  },
+  {
+   "name": "Vitamins & Supplements",
+   "image_query": "Dietary supplement"
+  },
+  {
+   "name": "Baby Care",
+   "image_query": "Infant formula"
+  },
+  {
+   "name": "Personal Care",
+   "image_query": "Personal hygiene products"
+  },
+  {
+   "name": "Medical Devices",
+   "image_query": "Sphygmomanometer"
+  }
+ ],
+ "items": [
+  {
+   "name": "Napa 500 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Paracetamol 500 mg. For fever and pain. Beximco Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 12,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Paracetamol tablets"
+  },
+  {
+   "name": "Napa Extra Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Paracetamol 500 mg + Caffeine 65 mg. For headache and pain.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 30,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Paracetamol tablets"
+  },
+  {
+   "name": "Ace Plus Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Paracetamol 500 mg + Caffeine 65 mg. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 30,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Paracetamol tablets"
+  },
+  {
+   "name": "Seclo 20 mg Capsule",
+   "group": "Tablets & Capsules",
+   "description": "Omeprazole 20 mg. For acidity and gastric ulcer. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 70,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Omeprazole capsule"
+  },
+  {
+   "name": "Sergel 20 mg Capsule",
+   "group": "Tablets & Capsules",
+   "description": "Esomeprazole 20 mg. For acidity and GERD. Healthcare Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 70,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Esomeprazole"
+  },
+  {
+   "name": "Maxpro 20 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Esomeprazole 20 mg. For acidity and GERD. Renata.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 98,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Esomeprazole"
+  },
+  {
+   "name": "Pantonix 20 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Pantoprazole 20 mg. For acidity. Incepta Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 70,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Pantoprazole"
+  },
+  {
+   "name": "Fexo 120 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Fexofenadine 120 mg. For allergy. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 90,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Fexofenadine"
+  },
+  {
+   "name": "Alatrol 10 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Cetirizine 10 mg. For allergy and cold. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 30,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Cetirizine"
+  },
+  {
+   "name": "Monas 10 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Montelukast 10 mg. For asthma and allergy. Acme Laboratories.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 240,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Montelukast"
+  },
+  {
+   "name": "Zimax 500 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Azithromycin 500 mg. Antibiotic. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 210,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Azithromycin"
+  },
+  {
+   "name": "Cef-3 200 mg Capsule",
+   "group": "Tablets & Capsules",
+   "description": "Cefixime 200 mg. Antibiotic. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 315,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Cefixime"
+  },
+  {
+   "name": "Ciprocin 500 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Ciprofloxacin 500 mg. Antibiotic. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 150,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Ciprofloxacin"
+  },
+  {
+   "name": "Flagyl 400 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Metronidazole 400 mg. For amoebic and bacterial infection.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 17,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Metronidazole"
+  },
+  {
+   "name": "Tory 90 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Etoricoxib 90 mg. For joint and muscle pain.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 120,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Etoricoxib"
+  },
+  {
+   "name": "Rolac 10 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Ketorolac 10 mg. For short-term pain relief. Renata.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 100,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Ketorolac"
+  },
+  {
+   "name": "Omidon 10 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Domperidone 10 mg. For nausea and vomiting. Incepta Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 35,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Domperidone"
+  },
+  {
+   "name": "Orsaline-N",
+   "group": "Tablets & Capsules",
+   "description": "Oral rehydration salt sachet. For diarrhoea and dehydration. SMC.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 6,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Oral rehydration therapy"
+  },
+  {
+   "name": "Comet 500 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Metformin 500 mg. For type 2 diabetes. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 40,
+   "tags": [
+    "chronic"
+   ],
+   "image_query": "Metformin"
+  },
+  {
+   "name": "Osartil 50 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Losartan Potassium 50 mg. For high blood pressure. Incepta Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 80,
+   "tags": [
+    "chronic"
+   ],
+   "image_query": "Losartan"
+  },
+  {
+   "name": "Amdocal 5 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Amlodipine 5 mg. For high blood pressure. Beximco Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 50,
+   "tags": [
+    "chronic"
+   ],
+   "image_query": "Amlodipine"
+  },
+  {
+   "name": "Bizoran 5/20 Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Amlodipine 5 mg + Olmesartan 20 mg. For high blood pressure.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 120,
+   "tags": [
+    "chronic"
+   ],
+   "image_query": "Olmesartan"
+  },
+  {
+   "name": "Atova 10 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Atorvastatin 10 mg. For high cholesterol. Beximco Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 100,
+   "tags": [
+    "chronic"
+   ],
+   "image_query": "Atorvastatin"
+  },
+  {
+   "name": "Ecosprin 75 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Aspirin 75 mg. Blood thinner for heart patients. Acme Laboratories.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 8,
+   "tags": [
+    "chronic"
+   ],
+   "image_query": "Aspirin tablets"
+  },
+  {
+   "name": "Linatab 5 mg Tablet",
+   "group": "Tablets & Capsules",
+   "description": "Linagliptin 5 mg. For type 2 diabetes.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 220,
+   "tags": [
+    "chronic"
+   ],
+   "image_query": "Linagliptin"
+  },
+  {
+   "name": "Napa Syrup 60 ml",
+   "group": "Syrups & Suspensions",
+   "description": "Paracetamol 120 mg/5 ml syrup for children. Beximco Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 35,
+   "tags": [
+    "medicine",
+    "baby"
+   ],
+   "image_query": "Paracetamol syrup"
+  },
+  {
+   "name": "Tusca Plus Syrup 100 ml",
+   "group": "Syrups & Suspensions",
+   "description": "Cough syrup. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 85,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Cough medicine"
+  },
+  {
+   "name": "Adovas Syrup 100 ml",
+   "group": "Syrups & Suspensions",
+   "description": "Herbal cough syrup. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 75,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Cough medicine"
+  },
+  {
+   "name": "Entacyd Plus Suspension 200 ml",
+   "group": "Syrups & Suspensions",
+   "description": "Antacid suspension. For acidity and gas. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 95,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Antacid"
+  },
+  {
+   "name": "Zimax Suspension 30 ml",
+   "group": "Syrups & Suspensions",
+   "description": "Azithromycin 200 mg/5 ml powder for suspension. Antibiotic for children.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 130,
+   "tags": [
+    "medicine",
+    "baby"
+   ],
+   "image_query": "Azithromycin"
+  },
+  {
+   "name": "Normal Saline 0.9% 500 ml",
+   "group": "Injections & Saline",
+   "description": "Sodium Chloride 0.9% IV infusion.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 90,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Saline (medicine)"
+  },
+  {
+   "name": "Cholera Saline 500 ml",
+   "group": "Injections & Saline",
+   "description": "IV infusion for severe dehydration.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 95,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Intravenous therapy"
+  },
+  {
+   "name": "Disposable Syringe 5 ml",
+   "group": "Injections & Saline",
+   "description": "Sterile single-use syringe with needle.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 8,
+   "tags": [
+    "medicine",
+    "devices"
+   ],
+   "image_query": "Syringe"
+  },
+  {
+   "name": "Insulin Syringe 1 ml",
+   "group": "Injections & Saline",
+   "description": "Sterile insulin syringe, 100 IU.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 10,
+   "tags": [
+    "chronic",
+    "devices"
+   ],
+   "image_query": "Insulin syringe"
+  },
+  {
+   "name": "Burna Cream 25 g",
+   "group": "Ointments & Creams",
+   "description": "Silver Sulfadiazine 1% cream. For burns.",
+   "type": "Product",
+   "uom": "Tube",
+   "rate": 50,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Silver sulfadiazine"
+  },
+  {
+   "name": "Fungidal Cream 15 g",
+   "group": "Ointments & Creams",
+   "description": "Miconazole 2% cream. For fungal skin infection.",
+   "type": "Product",
+   "uom": "Tube",
+   "rate": 45,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Miconazole"
+  },
+  {
+   "name": "Savlon Antiseptic Cream 30 g",
+   "group": "Ointments & Creams",
+   "description": "Antiseptic cream for cuts and wounds. ACI.",
+   "type": "Product",
+   "uom": "Tube",
+   "rate": 45,
+   "tags": [
+    "medicine",
+    "personal"
+   ],
+   "image_query": "Antiseptic cream"
+  },
+  {
+   "name": "Voltalin Gel 20 g",
+   "group": "Ointments & Creams",
+   "description": "Diclofenac gel. For muscle and joint pain.",
+   "type": "Product",
+   "uom": "Tube",
+   "rate": 60,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Diclofenac gel"
+  },
+  {
+   "name": "Antazol Nasal Drop 0.1%",
+   "group": "Drops & Inhalers",
+   "description": "Xylometazoline 0.1% nasal drop. For blocked nose. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 20,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Nasal spray"
+  },
+  {
+   "name": "Ciprocin Eye Drop 5 ml",
+   "group": "Drops & Inhalers",
+   "description": "Ciprofloxacin 0.3% eye and ear drop.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 45,
+   "tags": [
+    "medicine"
+   ],
+   "image_query": "Eye drop"
+  },
+  {
+   "name": "Azmasol Inhaler",
+   "group": "Drops & Inhalers",
+   "description": "Salbutamol 100 mcg metered dose inhaler. For asthma. Beximco Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 250,
+   "tags": [
+    "medicine",
+    "chronic"
+   ],
+   "image_query": "Salbutamol inhaler"
+  },
+  {
+   "name": "Calbo-D Tablet",
+   "group": "Vitamins & Supplements",
+   "description": "Calcium 500 mg + Vitamin D3 200 IU. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Box",
+   "rate": 210,
+   "tags": [
+    "nutrition"
+   ],
+   "image_query": "Calcium supplement"
+  },
+  {
+   "name": "Neuro-B Tablet",
+   "group": "Vitamins & Supplements",
+   "description": "Vitamin B1, B6 and B12. For nerve health. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 100,
+   "tags": [
+    "nutrition"
+   ],
+   "image_query": "B vitamins"
+  },
+  {
+   "name": "Ceevit 250 mg Chewable Tablet",
+   "group": "Vitamins & Supplements",
+   "description": "Vitamin C 250 mg chewable tablet. Square Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Strip",
+   "rate": 20,
+   "tags": [
+    "nutrition"
+   ],
+   "image_query": "Vitamin C tablets"
+  },
+  {
+   "name": "Zinc B Syrup 100 ml",
+   "group": "Vitamins & Supplements",
+   "description": "Zinc with vitamin B complex syrup.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 50,
+   "tags": [
+    "nutrition",
+    "baby"
+   ],
+   "image_query": "Zinc supplement"
+  },
+  {
+   "name": "Bextram Gold Tablet",
+   "group": "Vitamins & Supplements",
+   "description": "Multivitamin and multimineral, A to Z. Beximco Pharmaceuticals.",
+   "type": "Product",
+   "uom": "Box",
+   "rate": 270,
+   "tags": [
+    "nutrition"
+   ],
+   "image_query": "Multivitamin"
+  },
+  {
+   "name": "Lactogen 1 Infant Formula 350 g",
+   "group": "Baby Care",
+   "description": "Infant formula for 0 to 6 months. Nestle.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 700,
+   "tags": [
+    "baby"
+   ],
+   "image_query": "Infant formula"
+  },
+  {
+   "name": "Cerelac Wheat and Milk 400 g",
+   "group": "Baby Care",
+   "description": "Baby cereal from 6 months. Nestle.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 420,
+   "tags": [
+    "baby"
+   ],
+   "image_query": "Baby food"
+  },
+  {
+   "name": "Baby Diaper Medium (Pack)",
+   "group": "Baby Care",
+   "description": "Disposable baby diapers, size M.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 650,
+   "tags": [
+    "baby"
+   ],
+   "image_query": "Diaper"
+  },
+  {
+   "name": "Baby Wipes (120 pcs)",
+   "group": "Baby Care",
+   "description": "Alcohol-free wet wipes for babies.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 180,
+   "tags": [
+    "baby"
+   ],
+   "image_query": "Wet wipe"
+  },
+  {
+   "name": "Baby Lotion 100 ml",
+   "group": "Baby Care",
+   "description": "Gentle moisturising lotion for babies.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 220,
+   "tags": [
+    "baby"
+   ],
+   "image_query": "Baby lotion"
+  },
+  {
+   "name": "Sanitary Napkin (Pack of 10)",
+   "group": "Personal Care",
+   "description": "Regular flow sanitary pads.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 120,
+   "tags": [
+    "personal"
+   ],
+   "image_query": "Sanitary napkin"
+  },
+  {
+   "name": "Hand Sanitizer 50 ml",
+   "group": "Personal Care",
+   "description": "Alcohol-based hand rub.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 50,
+   "tags": [
+    "personal"
+   ],
+   "image_query": "Hand sanitizer"
+  },
+  {
+   "name": "Surgical Face Mask (Box of 50)",
+   "group": "Personal Care",
+   "description": "3-ply disposable face masks.",
+   "type": "Product",
+   "uom": "Box",
+   "rate": 150,
+   "tags": [
+    "personal",
+    "devices"
+   ],
+   "image_query": "Surgical mask"
+  },
+  {
+   "name": "Dettol Antiseptic Liquid 100 ml",
+   "group": "Personal Care",
+   "description": "Antiseptic disinfectant liquid.",
+   "type": "Product",
+   "uom": "Bottle",
+   "rate": 110,
+   "tags": [
+    "personal"
+   ],
+   "image_query": "Antiseptic liquid"
+  },
+  {
+   "name": "Toothpaste 100 g",
+   "group": "Personal Care",
+   "description": "Fluoride toothpaste.",
+   "type": "Product",
+   "uom": "Tube",
+   "rate": 110,
+   "tags": [
+    "personal"
+   ],
+   "image_query": "Toothpaste"
+  },
+  {
+   "name": "Cotton Roll 100 g",
+   "group": "Personal Care",
+   "description": "Absorbent cotton wool.",
+   "type": "Product",
+   "uom": "Pack",
+   "rate": 70,
+   "tags": [
+    "personal",
+    "devices"
+   ],
+   "image_query": "Cotton wool"
+  },
+  {
+   "name": "Digital Thermometer",
+   "group": "Medical Devices",
+   "description": "Digital clinical thermometer.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 150,
+   "tags": [
+    "devices"
+   ],
+   "image_query": "Medical thermometer"
+  },
+  {
+   "name": "Digital Blood Pressure Monitor",
+   "group": "Medical Devices",
+   "description": "Automatic upper-arm blood pressure monitor.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 2200,
+   "tags": [
+    "devices"
+   ],
+   "image_query": "Sphygmomanometer"
+  },
+  {
+   "name": "Blood Glucose Meter",
+   "group": "Medical Devices",
+   "description": "Glucometer kit with lancing device.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1500,
+   "tags": [
+    "devices",
+    "chronic"
+   ],
+   "image_query": "Glucose meter"
+  },
+  {
+   "name": "Glucose Test Strips (25 pcs)",
+   "group": "Medical Devices",
+   "description": "Test strips for blood glucose meter.",
+   "type": "Product",
+   "uom": "Box",
+   "rate": 650,
+   "tags": [
+    "devices",
+    "chronic"
+   ],
+   "image_query": "Glucose test strip"
+  },
+  {
+   "name": "Nebulizer Machine",
+   "group": "Medical Devices",
+   "description": "Compressor nebulizer for asthma medication.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 2500,
+   "tags": [
+    "devices"
+   ],
+   "image_query": "Nebulizer"
+  },
+  {
+   "name": "Pulse Oximeter",
+   "group": "Medical Devices",
+   "description": "Fingertip pulse oximeter.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 1200,
+   "tags": [
+    "devices"
+   ],
+   "image_query": "Pulse oximetry"
+  },
+  {
+   "name": "Crepe Bandage 4 inch",
+   "group": "Medical Devices",
+   "description": "Elastic crepe bandage roll.",
+   "type": "Product",
+   "uom": "Piece",
+   "rate": 60,
+   "tags": [
+    "devices"
+   ],
+   "image_query": "Elastic bandage"
+  }
+ ]
+}
