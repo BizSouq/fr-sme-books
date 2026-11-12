@@ -1,0 +1,149 @@
+{
+ "id": "grocery",
+ "label": "Grocery Store",
+ "description": "Grocery, departmental store or mudi dokan",
+ "icon": "shopping-basket",
+ "order": 3,
+ "currency": "BDT",
+ "uoms": [
+  {
+   "name": "Piece",
+   "whole": 1
+  },
+  {
+   "name": "Pack",
+   "whole": 1
+  },
+  {
+   "name": "Litre",
+   "whole": 0
+  },
+  {
+   "name": "Dozen",
+   "whole": 1
+  },
+  {
+   "name": "Bottle",
+   "whole": 1
+  },
+  {
+   "name": "Tube",
+   "whole": 1
+  }
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What does your shop stock?",
+   "multiple": true,
+   "options": [
+    {
+     "id": "staples",
+     "label": "Rice, pulses, oil and sugar"
+    },
+    {
+     "id": "spices",
+     "label": "Spices"
+    },
+    {
+     "id": "snacks",
+     "label": "Snacks and biscuits"
+    },
+    {
+     "id": "beverages",
+     "label": "Tea, coffee and drinks"
+    },
+    {
+     "id": "dairy",
+     "label": "Dairy and eggs"
+    },
+    {
+     "id": "household",
+     "label": "Household and cleaning"
+    },
+    {
+     "id": "personal",
+     "label": "Personal care"
+    },
+    {
+     "id": "fresh",
+     "label": "Fresh vegetables and fish"
+    },
+    {
+     "id": "meat",
+     "label": "Meat and fish"
+    },
+    {
+     "id": "frozen",
+     "label": "Frozen food and ice cream"
+    },
+    {
+     "id": "bakery",
+     "label": "Bread and bakery"
+    },
+    {
+     "id": "baby",
+     "label": "Baby care"
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "name": "Rice, Flour & Pulses",
+   "image_query": "Rice"
+  },
+  {
+   "name": "Oil, Sugar & Salt",
+   "image_query": "Cooking oil"
+  },
+  {
+   "name": "Spices",
+   "image_query": "Spice"
+  },
+  {
+   "name": "Sauces & Ready Mix",
+   "image_query": "Ketchup"
+  },
+  {
+   "name": "Snacks & Biscuits",
+   "image_query": "Biscuit"
+  },
+  {
+   "name": "Beverages",
+   "image_query": "Tea"
+  },
+  {
+   "name": "Dairy & Eggs",
+   "image_query": "Dairy product"
+  },
+  {
+   "name": "Meat & Fish",
+   "image_query": "Rohu"
+  },
+  {
+   "name": "Frozen Food",
+   "image_query": "Frozen food"
+  },
+  {
+   "name": "Bread & Bakery",
+   "image_query": "Bread"
+  },
+  {
+   "name": "Household & Cleaning",
+   "image_query": "Cleaning agent"
+  },
+  {
+   "name": "Personal Care",
+   "image_query": "Soap"
+  },
+  {
+   "name": "Baby Care",
+   "image_query": "Diaper"
+  },
+  {
+   "name": "Fresh Produce",
+   "image_query": "Vegetable"
+  }
+ ]
+}

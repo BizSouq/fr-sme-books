@@ -25,6 +25,11 @@ jobs:
         run: |
           uvx ruff@0.14.10 check frappe_books
           uvx ruff@0.14.10 format --check frappe_books
+          uvx ruff@0.14.10 check master_data
+          uvx ruff@0.14.10 format --check master_data
+
+      - name: Check the master data catalog is valid and built
+        run: python3 master_data/build.py --check
 
       - name: Check the Vue app
         working-directory: frontend

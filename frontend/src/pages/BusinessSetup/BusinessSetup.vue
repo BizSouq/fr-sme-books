@@ -363,7 +363,7 @@ import {
   applySetup,
   buildApplyOptions,
   describeAnswers,
-  findImages,
+  findImagesInBatches,
   getCatalogItems,
   getSetupOptions,
   groupRows,
@@ -570,14 +570,12 @@ async function loadImages() {
     return;
   }
 
-  try {
-    const found = await findImages(queries);
+  // A big catalog is looked up in batches, each shown as it comes.
+  await findImagesInBatches(queries, (found) => {
     for (const row of rows.value) {
       row.image ||= found[row.image_query] ?? '';
     }
-  } catch {
-    // Pictures are a nicety: the setup goes on without them.
-  }
+  });
 }
 
 async function askForQuestions() {

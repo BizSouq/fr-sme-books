@@ -1,0 +1,42 @@
+{
+ "id": "stationery",
+ "label": "Stationery & Books",
+ "description": "Stationery, bookshop, printing or photocopy shop",
+ "icon": "book",
+ "order": 7,
+ "currency": "BDT",
+ "uoms": [
+  {"name": "Piece", "whole": 1},
+  {"name": "Pack", "whole": 1},
+  {"name": "Box", "whole": 1},
+  {"name": "Dozen", "whole": 1},
+  {"name": "Ream", "whole": 1},
+  {"name": "Page", "whole": 1},
+  {"name": "Set", "whole": 1}
+ ],
+ "questions": [
+  {
+   "id": "range",
+   "label": "What does your shop sell?",
+   "multiple": true,
+   "options": [
+    {"id": "school", "label": "School stationery"},
+    {"id": "office", "label": "Office supplies"},
+    {"id": "books", "label": "Books and guides"},
+    {"id": "art", "label": "Art and craft"},
+    {"id": "print", "label": "Photocopy, print and lamination"},
+    {"id": "gifts", "label": "Gifts and cards"}
+   ]
+  }
+ ],
+ "groups": [
+  {"name": "Pens & Pencils", "image_query": "Ballpoint pen"},
+  {"name": "Notebooks & Paper", "image_query": "Notebook"},
+  {"name": "School Supplies", "image_query": "School supplies"},
+  {"name": "Office Supplies", "image_query": "Office supplies"},
+  {"name": "Books", "image_query": "Book"},
+  {"name": "Art & Craft", "image_query": "Colored pencil"},
+  {"name": "Gifts & Cards", "image_query": "Greeting card"},
+  {"name": "Print & Copy Services", "image_query": "Photocopier"}
+ ]
+}

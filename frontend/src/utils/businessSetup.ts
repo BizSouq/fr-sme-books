@@ -93,6 +93,26 @@ export function findImages(queries: string[]): Promise<Record<string, string>> {
   return call<Record<string, string>>(`${API}.find_images`, { queries });
 }
 
+/** Picture phrases per lookup; the server looks up at most 120 at once. */
+export const IMAGE_BATCH = 100;
+
+/**
+ * Look up pictures for any number of phrases, in batches the server takes, handing each batch's
+ * finds to `onFound` as it comes. A failed batch ends the lookup: pictures are a nicety.
+ */
+export async function findImagesInBatches(
+  queries: string[],
+  onFound: (found: Record<string, string>) => void
+): Promise<void> {
+  for (let start = 0; start < queries.length; start += IMAGE_BATCH) {
+    try {
+      onFound(await findImages(queries.slice(start, start + IMAGE_BATCH)));
+    } catch {
+      return;
+    }
+  }
+}
+
 export async function suggestQuestions(
   businessLabel: string,
   answers: AnswerText[],
