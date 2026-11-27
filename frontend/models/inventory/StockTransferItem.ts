@@ -13,7 +13,10 @@ export const transferRowLinks = withoutCreate(['item_code', 'uom', 'batch_no']);
 
 /** The batches, units and items a shipment or purchase receipt row offers: its item's, and stock items. */
 export const transferRowFilters: FiltersMap = {
-  item_code: () => [['is_stock_item', '=', 1]],
+  item_code: () => [
+    ['is_stock_item', '=', 1],
+    ['has_variants', '=', 0],
+  ],
   batch_no: (doc) => [['item', '=', doc.item_code]],
   uom: getTransferUnitFilter,
 };

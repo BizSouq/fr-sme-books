@@ -56,6 +56,18 @@ before_tests = [
 
 # Each new document belongs to the one Books Company.
 doc_events = {doctype: {"before_insert": "frappe_books.company.set_company"} for doctype in COMPANY_DOCTYPES}
+# A sale, purchase or stock move names a size or color of an article, not the article.
+for doctype in (
+	"Books Sales Invoice",
+	"Books Purchase Invoice",
+	"Books Quotation",
+	"Books Delivery Note",
+	"Books Purchase Receipt",
+	"Books Stock Entry",
+):
+	doc_events.setdefault(doctype, {})["validate"] = (
+		"frappe_books.inventory.variants.validate_transaction_items"
+	)
 # Keeps the palette's index in step with saves while Frappe's update stops at ERPNext's search; see search.py.
 doc_events["*"] = {
 	"on_update": "frappe_books.search.update_doc_index",

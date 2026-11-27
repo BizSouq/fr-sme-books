@@ -11,6 +11,7 @@ from frappe.utils import flt, getdate
 
 from frappe_books.accounting.accounts import latest_ledger_account, validate_account
 from frappe_books.company import company_value, default_company
+from frappe_books.inventory.variants import on_template_update, validate_item
 from frappe_books.permissions import check_preview_permission
 from frappe_books.regional import validate_hsn_codes
 from frappe_books.series import INVALID_PREFIX_CHARACTERS, ITEM_SERIES, item_series_pattern, validate_pattern
@@ -38,10 +39,14 @@ class BooksItem(Document):
 		from frappe_books.frappe_books.doctype.books_item_barcode.books_item_barcode import BooksItemBarcode
 		from frappe_books.frappe_books.doctype.books_item_default.books_item_default import BooksItemDefault
 		from frappe_books.frappe_books.doctype.books_item_tax.books_item_tax import BooksItemTax
+		from frappe_books.frappe_books.doctype.books_item_variant_attribute.books_item_variant_attribute import (
+			BooksItemVariantAttribute,
+		)
 		from frappe_books.frappe_books.doctype.books_uom_conversion_detail.books_uom_conversion_detail import (
 			BooksUOMConversionDetail,
 		)
 
+		attributes: DF.Table[BooksItemVariantAttribute]
 		barcodes: DF.Table[BooksItemBarcode]
 		batch_number_series: DF.Data | None
 		create_new_batch: DF.Check
@@ -49,6 +54,7 @@ class BooksItem(Document):
 		gst_hsn_code: DF.Data | None
 		has_batch_no: DF.Check
 		has_serial_no: DF.Check
+		has_variants: DF.Check
 		image: DF.AttachImage | None
 		is_stock_item: DF.Check
 		item_code: DF.Data
@@ -61,6 +67,7 @@ class BooksItem(Document):
 		stock_uom: DF.Link | None
 		taxes: DF.Table[BooksItemTax]
 		uoms: DF.Table[BooksUOMConversionDetail]
+		variant_of: DF.Link | None
 	# end: auto-generated types
 
 	_DOCTYPE_NAME = "Books Item"
@@ -109,6 +116,10 @@ class BooksItem(Document):
 		self.validate_unit_conversions()
 		self.validate_series()
 		self.validate_barcodes()
+		validate_item(self)
+
+	def on_update(self):
+		on_template_update(self)
 
 	def validate_stock_settings(self):
 		if self.is_stock_item and self.item_type != "Product":

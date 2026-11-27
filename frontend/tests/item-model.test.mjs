@@ -39,6 +39,9 @@ test('the Item form shows the fields, labels, placeholders and sections it showe
     'stock_uom | Default Unit of Measure | Default Unit of Measure | Details',
     'standard_rate | Rate |  | Details',
     'description | Description | Item Description | Details',
+    'has_variants | Has Sizes or Colors |  | Sizes and Colors',
+    'variant_of | Variant Of |  | Sizes and Colors',
+    'attributes | Attributes |  | Sizes and Colors',
     'item_defaults | Item Defaults |  | Accounting',
     'income_account | Income Account |  | Accounting',
     'expense_account | Expense Account |  | Accounting',
@@ -137,10 +140,14 @@ test('HSN/SAC shows and is checked only for an Indian company', async () => {
 test('item links filter and create items by Frappe fieldnames', async () => {
   const SalesInvoiceItem = frappeModels.SalesInvoice.rowModels.items;
   const StockEntryDetail = frappeModels.StockEntry.rowModels.items;
-  assert.equal(SalesInvoiceItem.filters.item_code, undefined);
+  // A row names a size or color of an article, never the article.
+  assert.deepEqual(SalesInvoiceItem.filters.item_code(), [
+    ['has_variants', '=', 0],
+  ]);
   assert.equal(SalesInvoiceItem.createFilters.item_code, undefined);
   assert.deepEqual(StockEntryDetail.filters.item_code(), [
     ['is_stock_item', '=', 1],
+    ['has_variants', '=', 0],
   ]);
   assert.deepEqual(StockEntryDetail.createFilters.item_code(), [
     ['is_stock_item', '=', 1],

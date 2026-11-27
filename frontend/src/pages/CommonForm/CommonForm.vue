@@ -21,8 +21,9 @@
       <template v-if="canShowExchangeRate" #exchange-rate>
         <ExchangeRate v-bind="exchangeRateProps" @change="setExchangeRate" />
       </template>
-      <template v-if="canShowBarcode" #barcode>
-        <Barcode @item-selected="addItem" />
+      <template v-if="canShowBarcode || canAddBySize" #barcode>
+        <Barcode v-if="canShowBarcode" @item-selected="addItem" />
+        <AddBySizeButton v-if="canAddBySize" :doc="doc" />
       </template>
     </MobileForm>
     <template v-else>
@@ -130,8 +131,13 @@
             @value-change="onValueChange"
             @row-change="updateGroupedFields"
           >
-            <template v-if="canShowBarcode" #table>
-              <Barcode @item-selected="addItem" />
+            <template v-if="canShowBarcode || canAddBySize" #table>
+              <Barcode v-if="canShowBarcode" @item-selected="addItem" />
+              <AddBySizeButton v-if="canAddBySize" :doc="doc" />
+            </template>
+            <!-- An article's size grid sits under its attributes. -->
+            <template v-if="hasVariants && hasAttributesTable(fields)" #end>
+              <ItemVariantsSection :key="doc.name" class="mt-6" :doc="doc" />
             </template>
           </CommonFormSection>
           <LinkedRecordsSection
@@ -213,10 +219,13 @@ import {
   routeTo,
 } from 'src/utils/ui';
 import { isMobile } from 'src/utils/viewport';
+import { hasAttributesTable, isItemTemplate } from 'src/utils/itemVariants';
 import { useDocShortcuts } from 'src/utils/vueUtils';
 import { computed, defineComponent, inject, nextTick } from 'vue';
 import CommonFormSection from './CommonFormSection.vue';
 import FormSkeleton from './FormSkeleton.vue';
+import ItemVariantsSection from 'src/components/ItemVariants/ItemVariantsSection.vue';
+import AddBySizeButton from 'src/components/ItemVariants/AddBySizeButton.vue';
 import FormSummary from './FormSummary.vue';
 import LinkedEntries from './LinkedEntries.vue';
 import LinkedRecordsSection from './LinkedRecordsSection.vue';
@@ -230,6 +239,8 @@ export default defineComponent({
     CommonFormSection,
     FormSkeleton,
     FormSummary,
+    ItemVariantsSection,
+    AddBySizeButton,
     FrappeBreadcrumbs,
     FrappeButton,
     PageHeader,
@@ -306,6 +317,14 @@ export default defineComponent({
       }
 
       if (this.doc.isSubmitted || this.doc.isCancelled) {
+        return false;
+      }
+
+      return typeof this.doc?.addItem === 'function';
+    },
+    /** A document with item rows takes an article's sizes in one sheet. */
+    canAddBySize(): boolean {
+      if (!this.hasDoc || this.doc.isSubmitted || this.doc.isCancelled) {
         return false;
       }
 
@@ -414,6 +433,10 @@ export default defineComponent({
       return schema;
     },
     /** Records the model lists on its saved documents, e.g. an item's prices. */
+    /** A saved article with sizes or colors shows their stock grid. */
+    hasVariants(): boolean {
+      return isItemTemplate(this.docOrNull);
+    },
     linkedRecords(): LinkedRecords | undefined {
       const Model = this.docOrNull?.constructor as typeof FrappeDoc | undefined;
       return Model?.getLinkedRecords(this.fyo);
@@ -558,6 +581,7 @@ export default defineComponent({
     this.row = null;
   },
   methods: {
+    hasAttributesTable,
     routeTo,
     async addItem(name: string, quantity?: number) {
       // @ts-expect-error only invoices and transfers have addItem

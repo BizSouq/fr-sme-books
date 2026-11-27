@@ -232,6 +232,7 @@ test('links of stock documents filter by the vocabulary of their targets', async
   );
   assert.deepEqual(getModel('DeliveryNoteItem').filters.item_code(), [
     ['is_stock_item', '=', 1],
+    ['has_variants', '=', 0],
   ]);
   assert.deepEqual(
     await getModel('StockEntryDetail').filters.uom(movementRow),

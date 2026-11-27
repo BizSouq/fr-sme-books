@@ -36,6 +36,7 @@ export const POS_ITEM_FIELDS = [
   'is_stock_item',
   'has_batch_no',
   'has_serial_no',
+  'has_variants',
 ];
 
 const TRACKED_ITEMS: Partial<Record<ItemVisibility, number>> = {
@@ -181,7 +182,8 @@ export function getPOSItemFilters(
   visibility: ItemVisibility | undefined,
   itemGroup?: string
 ): Filter[] {
-  const filters: Filter[] = [];
+  // An article with sizes or colors is listed once; its sizes are picked from it.
+  const filters: Filter[] = [['variant_of', 'is', 'not set']];
   const tracked = visibility && TRACKED_ITEMS[visibility];
   if (tracked !== undefined) {
     filters.push(['is_stock_item', '=', tracked]);
@@ -228,7 +230,41 @@ export function toPOSItem(item: DocValues, itemQtyMap: ItemQtyMap): POSItem {
     unit: item.stock_uom as string,
     hasBatch: !!item.has_batch_no,
     hasSerialNumber: !!item.has_serial_no,
+    hasVariants: !!item.has_variants,
   };
+}
+
+/** The stock map with each listed article's stock: the sum of its sizes and colors. */
+export async function addArticleStock(
+  items: DocValues[],
+  itemQtyMap: ItemQtyMap
+): Promise<ItemQtyMap> {
+  if (!items.some((item) => item.has_variants)) {
+    return itemQtyMap;
+  }
+
+  const variants = await getAllDocuments('Books Item', {
+    fields: ['name', 'variant_of'],
+    filters: [['variant_of', 'is', 'set']],
+  });
+  return getArticleStock(variants, itemQtyMap);
+}
+
+/** Adds up the stock of each article's variants under the article's name. */
+export function getArticleStock(
+  variants: DocValues[],
+  itemQtyMap: ItemQtyMap
+): ItemQtyMap {
+  const stock: ItemQtyMap = { ...itemQtyMap };
+  for (const { name, variant_of } of variants) {
+    const article = variant_of as string;
+    const qty = itemQtyMap[name as string]?.availableQty ?? 0;
+    stock[article] = {
+      availableQty: (stock[article]?.availableQty ?? 0) + qty,
+    };
+  }
+
+  return stock;
 }
 
 /** The items the POS lists; Hide Unavailable Items leaves out stock items none is left of. */

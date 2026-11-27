@@ -260,6 +260,8 @@ export class InvoiceItem extends FrappeDoc {
 
   // Items, batches and units are Frappe-backed and filter by Frappe fieldnames.
   static override filters: FiltersMap = {
+    // A row sells or buys a size or color of an article, not the article.
+    item_code: () => [['has_variants', '=', 0]],
     batch_no: async (doc: FrappeDoc) => {
       const item = doc.item_code as string;
       if (!doc.isSales || doc.isReturn) {

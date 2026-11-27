@@ -1,0 +1,48 @@
+{
+ "actions": [],
+ "creation": "2026-11-27 16:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "attribute_value",
+  "abbreviation",
+  "color"
+ ],
+ "fields": [
+  {
+   "fieldname": "attribute_value",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Value",
+   "reqd": 1,
+   "placeholder": "42, Black, XL"
+  },
+  {
+   "fieldname": "abbreviation",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Code",
+   "placeholder": "Added to the item code, like BLK"
+  },
+  {
+   "fieldname": "color",
+   "fieldtype": "Color",
+   "in_list_view": 1,
+   "label": "Swatch"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-27 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Frappe Books",
+ "name": "Books Item Attribute Value",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
