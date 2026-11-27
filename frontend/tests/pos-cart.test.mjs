@@ -219,6 +219,30 @@ test('a new cart row needs its item in stock and leaves its price to the server'
   }
 });
 
+test('fast taps add to one cart row, within the stock', async () => {
+  stock = { [tea]: 2 };
+  setUOMConversions(false);
+  const sale = makeSale();
+  const taps = await Promise.allSettled(
+    [1, 2, 3].map(() => posCart.addToCart(sale, { name: tea }, 1))
+  );
+  assert.deepEqual(
+    taps.map(({ status }) => status),
+    ['fulfilled', 'fulfilled', 'rejected']
+  );
+  assert.deepEqual(
+    sale.items.map((row) => row.stock_qty),
+    [2]
+  );
+
+  const [row] = sale.items;
+  await Promise.all([
+    posCart.stepCartQuantity(row, -1),
+    posCart.stepCartQuantity(row, 1),
+  ]);
+  assert.equal(row.stock_qty, 2);
+});
+
 test('the item badge and the cart total count what the cart shows', () => {
   setUOMConversions(true);
   const sale = makeSale([
@@ -271,6 +295,18 @@ test('a cart discount edit picks a percentage or an amount per unit', async () =
     [row.discount_percentage, row.price_list_rate.float],
     [10, 7]
   );
+});
+
+test('a cart discount amount cannot exceed the rate, as the server checks', async () => {
+  const [row] = makeSale([
+    { item_code: tea, stock_qty: 1, price_list_rate: 40 },
+  ]).items;
+  await assert.rejects(
+    posCart.setPOSRowValue(row, 'discount_amount', fyo.pesa(50)),
+    /cannot exceed the row rate/
+  );
+  await posCart.setPOSRowValue(row, 'discount_amount', fyo.pesa(40));
+  assert.equal(row.discount_amount.float, 40);
 });
 
 function setUOMConversions(isEnabled) {

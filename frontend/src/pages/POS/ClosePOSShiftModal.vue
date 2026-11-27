@@ -102,7 +102,7 @@
               {{ format(row.expected_amount) }}
             </span>
             <span
-              v-if="cashClosingAmounts.includes(row)"
+              v-if="countedClosingAmounts.includes(row)"
               class="truncate text-end text-base-medium text-ink-gray-8"
               dir="ltr"
             >
@@ -152,6 +152,7 @@
 
 <script lang="ts">
 import { Button as FrappeButton } from 'frappe-ui';
+import { getErrorMessage } from 'src/utils';
 import Modal from 'src/components/POS/POSDialog.vue';
 import CashCountTable from 'src/components/POS/CashCountTable.vue';
 import FormControl from 'src/components/Controls/FormControl.vue';
@@ -218,15 +219,19 @@ export default defineComponent({
       return (this.posClosingShiftDoc?.payment_reconciliation ??
         []) as ClosingAmount[];
     },
-    /** Cash methods share the drawer count; the others are counted one by one. */
-    cashClosingAmounts(): ClosingAmount[] {
+    /** Cash methods share the drawer count; the others, and cash without denominations, are typed one by one. */
+    countedClosingAmounts(): ClosingAmount[] {
+      if (!this.closingCash.length) {
+        return [];
+      }
+
       return this.closingAmounts.filter((row) =>
         this.shift.cashMethods.includes(row.mode_of_payment as string)
       );
     },
     otherClosingAmounts(): ClosingAmount[] {
       return this.closingAmounts.filter(
-        (row) => !this.cashClosingAmounts.includes(row)
+        (row) => !this.countedClosingAmounts.includes(row)
       );
     },
     isOnline() {
@@ -269,7 +274,7 @@ export default defineComponent({
       try {
         await this.posClosingShiftDoc?.preview();
       } catch (error) {
-        showToast({ type: 'error', message: t`${error as string}` });
+        showToast({ type: 'error', message: getErrorMessage(error as Error) });
       }
     },
     /** Colours a difference by its sign; an exact count stays gray. */
@@ -298,7 +303,7 @@ export default defineComponent({
       } catch (error) {
         return showToast({
           type: 'error',
-          message: t`${error as string}`,
+          message: getErrorMessage(error as Error),
           duration: 'short',
         });
       }

@@ -11,6 +11,7 @@ from frappe_books.commerce.pos import open_shift_name, transacted_amounts
 from frappe_books.frappe_books.doctype.books_pos_opening_entry.test_books_pos_opening_entry import (
 	credits,
 	debits,
+	make_opening_shift,
 	make_user,
 	open_shift,
 	set_pos_accounts,
@@ -92,6 +93,20 @@ class IntegrationTestBooksPOSClosingEntry(IntegrationTestCase):
 		self.assertEqual(cash_amounts(draft).expected_amount, 280)
 		self.assertEqual(cash_amounts(draft).difference, 0)
 
+	def test_a_shift_counts_cash_taken_for_a_sale_of_an_earlier_shift(self):
+		earlier = open_shift(0)
+		invoice = self._pos_invoice()
+		close_shift(earlier, 0)
+		later = open_shift(100)
+		pay_pos_invoice(invoice.name, [{"mode_of_payment": "Cash", "amount": invoice.base_grand_total}])
+
+		closing = close_shift(later, 280)
+
+		self.assertEqual((cash_amounts(closing).expected_amount, cash_amounts(closing).difference), (280, 0))
+		entries = ledger_entries("Books Journal Entry", closing.journal_entry)
+		self.assertEqual(credits(entries, self.counter), Decimal("280"))
+		self.assertFalse(debits(entries, self.write_off) or credits(entries, self.write_off))
+
 	def test_shift_cannot_be_closed_twice(self):
 		opening = open_shift(100)
 		close_shift(opening, 100)
@@ -157,6 +172,23 @@ class IntegrationTestBooksPOSClosingEntry(IntegrationTestCase):
 		self.assertEqual(cash_amounts(draft).difference, -10)
 		self.assertEqual(draft.payment_reconciliation[1].difference, 5)
 
+	def test_without_denominations_a_shift_closes_with_the_typed_cash(self):
+		opening = make_opening_shift(0)
+		opening.balance_details[0].opening_amount = 100
+		opening.insert().submit()
+		closing = make_closing_shift(opening, 0)
+		cash_amounts(closing).closing_amount = 90
+
+		closing.preview()
+		closing.insert().submit()
+
+		self.assertEqual(cash_amounts(closing).closing_amount, 90)
+		self.assertEqual(cash_amounts(closing).difference, -10)
+		entries = ledger_entries("Books Journal Entry", closing.journal_entry)
+		self.assertEqual(debits(entries, "Cash"), Decimal("90"))
+		self.assertEqual(debits(entries, self.write_off), Decimal("10"))
+		self.assertEqual(credits(entries, self.counter), Decimal("100"))
+
 	def test_preview_shares_the_counted_cash_among_the_cash_methods(self):
 		petty = make_mode_of_payment("Petty Cash", "Cash")
 		opening = frappe.get_doc(
@@ -206,10 +238,39 @@ class IntegrationTestBooksPOSClosingEntry(IntegrationTestCase):
 		with self.set_user(make_user("Books Cashier")):
 			self.assertRaises(frappe.PermissionError, make_closing_shift(opening, 0).insert)
 
-	def test_preview_needs_an_open_shift(self):
+	def test_preview_without_an_open_shift_leaves_the_shift_to_pick(self):
 		draft = frappe.get_doc({"doctype": "Books POS Closing Entry"})
 
-		self.assertRaisesRegex(frappe.ValidationError, "no open POS shift", draft.preview)
+		draft.preview()
+
+		self.assertIsNone(draft.pos_opening_entry)
+		self.assertRaisesRegex(frappe.ValidationError, "no open POS shift", draft.insert)
+
+	def test_a_manager_closes_a_cashiers_shift(self):
+		cashier = make_user("Books Cashier")
+		with self.set_user(cashier):
+			opening = open_shift(50)
+
+		with self.set_user(make_user("Books Manager")):
+			draft = frappe.get_doc({"doctype": "Books POS Closing Entry", "pos_opening_entry": opening.name})
+			draft.preview()
+			closing = close_shift(opening, 50)
+
+		self.assertEqual((draft.cashier, cash_amounts(draft).expected_amount), (cashier, 50))
+		self.assertEqual(closing.cashier, cashier)
+		self.assertIsNone(open_shift_name(cashier))
+
+	def test_a_shift_shows_whether_it_is_open(self):
+		opening = make_opening_shift(0).insert()
+		statuses = [opening.status]
+		opening.submit()
+		statuses.append(opening.status)
+		closing = close_shift(opening, 0)
+		statuses.append(opening.reload().status)
+		closing.cancel()
+		statuses.append(opening.reload().status)
+
+		self.assertEqual(statuses, ["Draft", "Open", "Closed", "Open"])
 
 	def test_payment_for_several_invoices_is_counted_once(self):
 		open_shift(0)
