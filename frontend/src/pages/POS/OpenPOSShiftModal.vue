@@ -116,6 +116,7 @@
 
 <script lang="ts">
 import { Button as FrappeButton, Icon as FrappeIcon } from 'frappe-ui';
+import { getErrorMessage } from 'src/utils';
 import Modal from 'src/components/POS/POSDialog.vue';
 import CashCountTable from 'src/components/POS/CashCountTable.vue';
 import { paymentMethodIcons } from 'src/components/POS/types';
@@ -139,7 +140,6 @@ import { computed, PropType } from 'vue';
 import { defineComponent } from 'vue';
 import { fyo } from 'src/initFyo';
 import { showToast } from 'src/utils/interactive';
-import { t } from 'fyo';
 import { getCashDenominations } from 'src/utils/posSetup';
 import type { POSShift } from 'src/utils/posShift';
 
@@ -222,12 +222,12 @@ export default defineComponent({
     this.isDismissed = true;
   },
   methods: {
-    /** The counted drawer covers cash methods; the others are entered one by one. */
-    isCashMethod(paymentMethod?: string): boolean {
-      return this.shift.cashMethods.includes(paymentMethod ?? '');
-    },
+    /** The counted drawer covers cash methods; without denominations, cash is typed like the others. */
     isCounted(row: OpeningBalance): boolean {
-      return this.isCashMethod(row.mode_of_payment);
+      return (
+        this.openingCash.length > 0 &&
+        this.shift.cashMethods.includes(row.mode_of_payment ?? '')
+      );
     },
     async setProfile(profile: string) {
       await this.posShiftDoc?.set('pos_profile', profile);
@@ -271,7 +271,7 @@ export default defineComponent({
       try {
         await this.posShiftDoc?.preview();
       } catch (error) {
-        showToast({ type: 'error', message: t`${error as string}` });
+        showToast({ type: 'error', message: getErrorMessage(error as Error) });
       }
     },
     async handleSubmit() {
@@ -282,7 +282,7 @@ export default defineComponent({
       } catch (error) {
         showToast({
           type: 'error',
-          message: t`${error as string}`,
+          message: getErrorMessage(error as Error),
           duration: 'short',
         });
         return;
