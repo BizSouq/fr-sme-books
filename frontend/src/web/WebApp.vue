@@ -20,11 +20,18 @@
         <FrappeSpinner v-else size="lg" />
       </div>
       <BusinessSetup v-else-if="showBusinessSetup" embedded @done="reload" />
-      <SetupWizard
-        v-else-if="needsSetup"
-        @setup-complete="completeSetup"
-        @setup-canceled="leaveBooks"
-      />
+      <div
+        v-else-if="needsSetup && !canSetUp"
+        class="h-full flex items-center justify-center bg-surface-gray-1 p-4"
+      >
+        <FrappeAlert
+          class="max-w-xl"
+          :title="t`Frappe Books is not set up yet`"
+          :description="t`Ask a System Manager to complete the setup.`"
+          :primary-action="{ label: t`Try again`, onClick: () => initialize() }"
+        />
+      </div>
+      <SetupWizard v-else-if="needsSetup" @setup-complete="openBusinessSetup" />
       <MobileDesk v-else-if="isMobile" />
       <Desk v-else class="flex-1" />
       <DialogSheet v-if="isMobile" />
@@ -33,7 +40,6 @@
 </template>
 
 <script lang="ts">
-import type { FrappeDoc } from 'src/frappe/document';
 import { frappeModels, getRegionalFrappeModels } from 'models';
 import type { Company } from 'models/baseModels/Company/Company';
 import type { SystemSettings } from 'models/baseModels/SystemSettings/SystemSettings';
@@ -73,7 +79,7 @@ import {
   Spinner as FrappeSpinner,
   useColorScheme,
 } from 'frappe-ui';
-import { call, redirectToLogin } from './api';
+import { redirectToLogin } from './api';
 
 export default defineComponent({
   name: 'WebApp',
@@ -110,6 +116,8 @@ export default defineComponent({
       loading: true,
       needsSetup: false,
       showBusinessSetup: false,
+      // Frappe's setup, which the wizard completes, is for System Managers.
+      canSetUp: false,
       startupError: '',
     };
   },
@@ -166,25 +174,19 @@ export default defineComponent({
         loadCompany(books.company),
       ]);
       this.needsSetup = !fyo.singles.AccountingSettings?.setup_complete;
+      this.canSetUp = fyo.can(ModelNameEnum.SetupWizard, 'write');
       if (!this.needsSetup) {
         this.searcher = new Search(fyo);
         this.searcher.initialize();
       }
       this.loading = false;
     },
-    async completeSetup(wizard: FrappeDoc) {
-      await wizard.sync();
-      await call(
-        'frappe_books.frappe_books.doctype.books_setup_wizard.books_setup_wizard.complete_setup'
-      );
+    openBusinessSetup() {
       // The company exists now; its items and local defaults come next, then the app loads afresh.
       this.showBusinessSetup = true;
     },
     reload() {
       window.location.reload();
-    },
-    leaveBooks() {
-      window.location.href = '/app';
     },
   },
 });

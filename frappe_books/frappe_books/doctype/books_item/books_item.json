@@ -35,6 +35,7 @@
   "batch_number_series",
   "has_serial_no",
   "serial_no_series",
+  "uom_conversions_section_break",
   "uoms",
   "barcodes_section_break",
   "barcodes",
@@ -150,8 +151,7 @@
    "fieldname": "item_defaults",
    "fieldtype": "Table",
    "label": "Item Defaults",
-   "options": "Books Item Default",
-   "permlevel": 1
+   "options": "Books Item Default"
   },
   {
    "fieldname": "taxes_section_break",
@@ -220,6 +220,11 @@
    "fieldname": "serial_no_series",
    "fieldtype": "Data",
    "label": "Serial Number Series"
+  },
+  {
+   "fieldname": "uom_conversions_section_break",
+   "fieldtype": "Section Break",
+   "label": "UOM Conversions"
   },
   {
    "fieldname": "uoms",

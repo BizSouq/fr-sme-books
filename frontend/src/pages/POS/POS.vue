@@ -21,7 +21,12 @@
         />
       </template>
       <template v-if="shiftSubtitle" #left>
-        <FrappeBadge theme="green" :label="shiftSubtitle" />
+        <!-- A tablet's header keeps its room for the title and actions. -->
+        <FrappeBadge
+          theme="green"
+          :label="shiftSubtitle"
+          class="max-lg:hidden"
+        />
       </template>
       <POSHeaderActions
         :profile="posProfile as POSProfile"
@@ -45,6 +50,7 @@
       :search-term="itemSearchTerm"
       :total-quantity="totalQuantity"
       :disable-pay="disablePayButton"
+      :profile="posProfile as POSProfile"
       @search="handleItemSearch"
       @add-item="addItem"
       @set-customer="setCustomer"
@@ -215,6 +221,7 @@ import {
   dialog,
 } from 'frappe-ui';
 import { t } from 'fyo';
+import { getErrorMessage } from 'src/utils';
 import { DateTime } from 'luxon';
 import { fyo } from 'src/initFyo';
 import MobilePOS from './MobilePOS.vue';
@@ -271,6 +278,7 @@ import {
   canApplyCoupon,
   canRedeemLoyalty,
   isPriceListOffered,
+  redeemLoyaltyPoints,
 } from 'src/utils/posDiscounts';
 import {
   addToCart,
@@ -555,7 +563,7 @@ export default defineComponent({
         showToast({
           id: POS_ITEM_TOAST_ID,
           type: 'error',
-          message: t`${error as string}`,
+          message: getErrorMessage(error as Error),
           duration: 'short',
         });
       }
@@ -678,7 +686,7 @@ export default defineComponent({
       } catch (error) {
         return showToast({
           type: 'error',
-          message: t`${error as string}`,
+          message: getErrorMessage(error as Error),
         });
       }
 
@@ -757,9 +765,11 @@ export default defineComponent({
       await this.setLoyaltyPoints(0);
     },
     async setLoyaltyPoints(value: number) {
-      await this.sinvDoc.set('loyalty_points', value);
-      await this.sinvDoc.set('redeem_loyalty_points', value > 0);
-      await this.previewInvoice();
+      try {
+        await redeemLoyaltyPoints(this.sinvDoc, value);
+      } catch (error) {
+        showToast({ type: 'error', message: getErrorMessage(error as Error) });
+      }
     },
     /** Opens a held sale; a submitted one goes on to its payment. */
     async selectedInvoiceName(invoice: { name: string; docstatus: number }) {
@@ -820,7 +830,7 @@ export default defineComponent({
         showToast({
           id: POS_ITEM_TOAST_ID,
           type: 'error',
-          message: t`${error as string}`,
+          message: getErrorMessage(error as Error),
         });
       }
     },
@@ -865,7 +875,7 @@ export default defineComponent({
         showToast({
           id: POS_ITEM_TOAST_ID,
           type: 'error',
-          message: t`${error as string}`,
+          message: getErrorMessage(error as Error),
         });
       }
     },
@@ -887,7 +897,7 @@ export default defineComponent({
       } catch (error) {
         showToast({
           type: 'error',
-          message: t`${error as string}`,
+          message: getErrorMessage(error as Error),
         });
       }
     },
@@ -907,7 +917,7 @@ export default defineComponent({
             : this.showSaleToast(invoice, names)
         )
         .catch((error) =>
-          showToast({ type: 'error', message: t`${error as string}` })
+          showToast({ type: 'error', message: getErrorMessage(error as Error) })
         );
     },
     showPaymentToast(payments: string[]) {
@@ -971,7 +981,7 @@ export default defineComponent({
       try {
         await this.sinvDoc.preview();
       } catch (error) {
-        showToast({ type: 'error', message: t`${error as string}` });
+        showToast({ type: 'error', message: getErrorMessage(error as Error) });
       }
     },
     async routeToSinvList() {

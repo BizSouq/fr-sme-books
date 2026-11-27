@@ -63,6 +63,18 @@ class IntegrationTestBooksPOSOpeningEntry(IntegrationTestCase):
 		self.assertIsNone(draft.name)
 		self.assertEqual([row.opening_amount for row in draft.balance_details], [150, 0])
 
+	def test_without_denominations_a_shift_opens_with_the_typed_cash(self):
+		draft = make_opening_shift(0)
+		draft.balance_details[0].opening_amount = 50
+
+		draft.preview()
+		draft.insert().submit()
+
+		self.assertEqual(draft.balance_details[0].opening_amount, 50)
+		entries = ledger_entries("Books Journal Entry", draft.journal_entry)
+		self.assertEqual(debits(entries, self.counter), Decimal("50"))
+		self.assertEqual(credits(entries, "Cash"), Decimal("50"))
+
 	def test_preview_of_a_new_shift_lists_every_mode_of_payment(self):
 		draft = frappe.new_doc("Books POS Opening Entry")
 
@@ -92,9 +104,11 @@ class IntegrationTestBooksPOSOpeningEntry(IntegrationTestCase):
 
 	def test_a_user_can_have_only_one_open_shift(self):
 		open_shift(0)
+		drafts = frappe.db.count("Books POS Opening Entry", {"docstatus": 0})
 
 		with self.assertRaisesRegex(frappe.ValidationError, "already has an open POS shift"):
 			open_shift(0)
+		self.assertEqual(frappe.db.count("Books POS Opening Entry", {"docstatus": 0}), drafts)
 
 	def test_each_cashier_opens_their_own_shift(self):
 		mine = open_shift(0)
