@@ -180,12 +180,16 @@ test('item default accounts filter by the item tracking, as the server checks th
   assert.equal(hidden(row, 'default_warehouse'), true);
 });
 
-test('a saved item makes both sales and purchase invoices', () => {
+test('a saved item makes both sales and purchase invoices, and prints labels', () => {
   const labels = (notInserted) =>
     frappeModels.Item.getActions(fyo)
       .filter(({ condition }) => condition({ notInserted }))
       .map(({ label }) => label);
-  assert.deepEqual(labels(false), ['Sales Invoice', 'Purchase Invoice']);
+  assert.deepEqual(labels(false), [
+    'Print Labels',
+    'Sales Invoice',
+    'Purchase Invoice',
+  ]);
   assert.deepEqual(labels(true), []);
 });
 

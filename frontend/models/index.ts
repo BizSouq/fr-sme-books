@@ -31,6 +31,7 @@ import { SetupWizard } from './baseModels/SetupWizard/SetupWizard';
 import { SystemSettings } from './baseModels/SystemSettings/SystemSettings';
 import { ItemGroup } from './baseModels/ItemGroup/ItemGroup';
 import { ItemAttribute } from './baseModels/ItemAttribute/ItemAttribute';
+import { LabelTemplate } from './baseModels/LabelTemplate/LabelTemplate';
 import { ItemTaxTemplate } from './baseModels/ItemTaxTemplate/ItemTaxTemplate';
 import { UOM } from './baseModels/UOM/UOM';
 import { Batch } from './inventory/Batch';
@@ -74,6 +75,7 @@ export const frappeModels: Record<string, FrappeModel> = {
   ItemGroup,
   Item,
   ItemAttribute,
+  LabelTemplate,
   UOM,
   LoyaltyProgram,
   LoyaltyPointEntry,

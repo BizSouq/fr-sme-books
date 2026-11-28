@@ -9,7 +9,7 @@ import {
   ValidationMap,
 } from 'fyo/model/types';
 import { ValidationError } from 'fyo/utils/errors';
-import { getMappedDocAction } from 'models/helpers';
+import { getMappedDocAction, getPrintLabelsAction } from 'models/helpers';
 import { getItemPrices } from 'models/baseModels/ItemPrice/ItemPrice';
 import { isHsnCodeHidden } from 'models/regionalModels/in/hsnCode';
 import { ModelNameEnum } from 'models/types';
@@ -167,6 +167,7 @@ export class Item extends FrappeDoc {
 
   static getActions(fyo: Fyo): Action[] {
     return [
+      getPrintLabelsAction(fyo, 'Item'),
       getMappedDocAction(fyo, {
         group: fyo.t`Create`,
         label: fyo.t`Sales Invoice`,

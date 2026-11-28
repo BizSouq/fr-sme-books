@@ -14,6 +14,7 @@ export enum ModelNameEnum {
   Item = 'Item',
   ItemGroup = 'ItemGroup',
   ItemAttribute = 'ItemAttribute',
+  LabelTemplate = 'LabelTemplate',
   ItemEnquiry = 'ItemEnquiry',
   UOM = 'UOM',
   UOMConversionDetail = 'UOMConversionDetail',

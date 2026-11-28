@@ -50,6 +50,8 @@ await build({
       export { getSearchFilters, ListFilters } from './src/utils/listFilters';
       export * as pos from './src/utils/pos';
       export * as itemVariants from './src/utils/itemVariants';
+      export * as labels from './src/utils/labels';
+      export * as barcode from './src/utils/barcode';
       export { usePOSCheckout } from './src/utils/posCheckout';
       export * as posDiscounts from './src/utils/posDiscounts';
       export * as posCart from './src/utils/posCart';
@@ -199,6 +201,8 @@ export const {
   ListFilters,
   pos,
   itemVariants,
+  labels,
+  barcode,
   usePOSCheckout,
   posDiscounts,
   posCart,

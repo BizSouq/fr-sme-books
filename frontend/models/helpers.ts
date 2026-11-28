@@ -85,6 +85,23 @@ export function getInvoiceActions(
   ];
 }
 
+/** Opens the label print page for the document: an item's sizes, or what a receipt received. */
+export function getPrintLabelsAction(
+  fyo: Fyo,
+  source: 'Item' | 'Purchase Receipt'
+): Action {
+  return {
+    label: fyo.t`Print Labels`,
+    condition: (doc: FrappeDoc) => !doc.notInserted && !doc.isCancelled,
+    action: async (doc: FrappeDoc, router: Router) => {
+      await router.push({
+        path: '/print-labels',
+        query: { source, names: doc.name! },
+      });
+    },
+  };
+}
+
 export function getStockTransferActions(
   fyo: Fyo,
   schemaName: ModelNameEnum.DeliveryNote | ModelNameEnum.PurchaseReceipt
