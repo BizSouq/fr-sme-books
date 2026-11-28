@@ -1,6 +1,11 @@
 {
   "countryCode": "bd",
   "name": "Bangladesh - Chart of Accounts",
+  "defaultAccounts": {
+    "receivable": "Debtors",
+    "payable": "Creditors",
+    "income": "Sales"
+  },
   "tree": {
     "Assets": {
       "rootType": "Asset",
