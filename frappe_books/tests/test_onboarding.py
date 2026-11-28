@@ -5,9 +5,10 @@ from frappe.tests import IntegrationTestCase
 
 from frappe_books.accounting.accounts import mode_of_payment_account
 from frappe_books.coa import ensure_chart, load_chart
+from frappe_books.company import default_company
 from frappe_books.onboarding import api, catalog, images, seed, suggest
 from frappe_books.setup_service import default_accounts
-from frappe_books.tests.accounting import ensure_user, unique_name
+from frappe_books.tests.accounting import ensure_user, set_company_value, unique_name
 from frappe_books.tests.test_ai import ai_settings
 
 MANAGER = "books-onboarding-manager@example.com"
@@ -134,7 +135,7 @@ class IntegrationTestBusinessCatalog(IntegrationTestCase):
 		chart = load_chart(BANGLADESH_CHART)
 		names = {account.name for account in chart}
 		self.assertTrue({"bKash", "Nagad", "Duties and Taxes", "Advance Income Tax (AIT)"} <= names)
-		picks = default_accounts(chart)
+		picks = default_accounts(BANGLADESH_CHART, chart)
 		self.assertEqual(picks["receivable"], "Debtors")
 		self.assertEqual(picks["round_off"], "Round Off")
 		self.assertTrue(all(picks.values()), picks)
@@ -185,7 +186,12 @@ class IntegrationTestBusinessSetup(IntegrationTestCase):
 
 	def setUp(self):
 		use_bangladesh(self)
-		ensure_chart(load_chart(BANGLADESH_CHART))
+		chart = load_chart(BANGLADESH_CHART)
+		ensure_chart(chart)
+		# The setup gives the company its income ledger, which new items sell into.
+		income = frappe.db.get_value("Books Company", default_company(), "default_income_account")
+		self.addCleanup(set_company_value, "default_income_account", income)
+		set_company_value("default_income_account", default_accounts(BANGLADESH_CHART, chart)["income"])
 		frappe.set_user(MANAGER)
 
 	def test_options_offer_bangladesh_defaults_only_in_bangladesh(self):
