@@ -5,6 +5,7 @@ from frappe.desk.page.setup_wizard.setup_wizard import complete_app_setup
 from frappe.permissions import add_permission, update_permission_property
 
 from frappe_books.company import default_company, save_company
+from frappe_books.inventory.variants import seed_attributes
 from frappe_books.printing import default_print_format, set_default_print_format
 from frappe_books.regional import ensure_address_template
 from frappe_books.series import NUMBER_SERIES
@@ -65,6 +66,7 @@ def bootstrap():
 	for name, whole in DEFAULT_UOMS.items():
 		_insert_if_missing("Books UOM", name, {"uom_name": name, "must_be_whole_number": whole})
 	_insert_if_missing("Books Warehouse", "Stores", {"warehouse_name": "Stores"})
+	seed_attributes()
 	for mode_type in ("Cash", "Bank"):
 		_insert_if_missing(
 			"Books Mode of Payment", mode_type, {"mode_of_payment": mode_type, "type": mode_type}

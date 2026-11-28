@@ -111,6 +111,7 @@
           </div>
         </div>
       </div>
+      <slot name="end" />
     </component>
 
     <!-- The accordion is w-full, so the bleed goes on a wrapper to widen it. -->

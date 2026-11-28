@@ -13,6 +13,7 @@ export enum ModelNameEnum {
   Defaults = 'Defaults',
   Item = 'Item',
   ItemGroup = 'ItemGroup',
+  ItemAttribute = 'ItemAttribute',
   ItemEnquiry = 'ItemEnquiry',
   UOM = 'UOM',
   UOMConversionDetail = 'UOMConversionDetail',

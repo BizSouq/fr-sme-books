@@ -442,6 +442,13 @@ function getCompleteSidebar(): SidebarConfig {
           hidden: () => !fyo.isFeatureOn('enable_item_group'),
         },
         {
+          label: t`Sizes and Colors`,
+          name: 'item-attribute',
+          icon: 'lucide-swatch-book',
+          route: '/list/ItemAttribute',
+          schemaName: 'ItemAttribute',
+        },
+        {
           label: t`UOM`,
           name: 'uom',
           icon: 'lucide-ruler',

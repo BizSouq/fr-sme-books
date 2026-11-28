@@ -93,6 +93,12 @@
           <slot name="barcode" />
         </template>
       </MobileFormSection>
+      <!-- An article's size grid follows the section that names its attributes. -->
+      <ItemVariantsSection
+        v-if="isItemTemplate(doc) && hasAttributesTable(fields)"
+        :key="doc.name"
+        :doc="doc"
+      />
     </template>
     <LinkedRecordsSection
       v-if="linkedRecords && isFirstTab"
@@ -162,6 +168,8 @@ import { computed, nextTick, useTemplateRef, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import MobileFormSection from './MobileFormSection.vue';
 import LinkedRecordsSection from './LinkedRecordsSection.vue';
+import ItemVariantsSection from 'src/components/ItemVariants/ItemVariantsSection.vue';
+import { hasAttributesTable, isItemTemplate } from 'src/utils/itemVariants';
 
 type FormAction = Pick<Action, 'label' | 'group' | 'theme' | 'nextStep'> & {
   action: (doc: FrappeDoc, router: ReturnType<typeof useRouter>) => unknown;

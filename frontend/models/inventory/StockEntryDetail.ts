@@ -31,7 +31,10 @@ export class StockEntryDetail extends FrappeDoc {
   override hidden: HiddenMap = getStockRowHiddenMap(this, 'transfer_qty');
 
   static filters: FiltersMap = {
-    item_code: () => [['is_stock_item', '=', 1]],
+    item_code: () => [
+      ['is_stock_item', '=', 1],
+      ['has_variants', '=', 0],
+    ],
     uom: getTransferUnitFilter,
     batch_no: (doc) => [['item', '=', doc.item_code]],
   };

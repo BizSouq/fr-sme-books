@@ -19,6 +19,10 @@
   "stock_uom",
   "standard_rate",
   "description",
+  "variants_section_break",
+  "has_variants",
+  "variant_of",
+  "attributes",
   "accounts_section_break_11",
   "item_defaults",
   "taxes_section_break",
@@ -105,6 +109,38 @@
    "fieldtype": "Text",
    "label": "Description",
    "placeholder": "Item Description"
+  },
+  {
+   "fieldname": "variants_section_break",
+   "fieldtype": "Section Break",
+   "label": "Sizes and Colors"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:!doc.variant_of",
+   "fieldname": "has_variants",
+   "fieldtype": "Check",
+   "label": "Has Sizes or Colors",
+   "description": "Sell this article in several sizes or colors. Each one becomes its own item, with its own stock, price and barcode."
+  },
+  {
+   "fieldname": "variant_of",
+   "fieldtype": "Link",
+   "label": "Variant Of",
+   "options": "Books Item",
+   "read_only": 1,
+   "depends_on": "variant_of",
+   "search_index": 1,
+   "no_copy": 1
+  },
+  {
+   "depends_on": "eval:doc.has_variants || doc.variant_of",
+   "fieldname": "attributes",
+   "fieldtype": "Table",
+   "label": "Attributes",
+   "options": "Books Item Variant Attribute",
+   "mandatory_depends_on": "has_variants",
+   "read_only_depends_on": "variant_of"
   },
   {
    "fieldname": "accounts_section_break_11",
@@ -216,7 +252,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-07 12:00:00.000000",
+ "modified": "2026-11-27 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "Frappe Books",
  "name": "Books Item",

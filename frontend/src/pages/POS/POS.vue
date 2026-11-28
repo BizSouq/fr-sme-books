@@ -163,6 +163,14 @@
       @toggle-modal="toggleModal('BatchSelection', false)"
       @batch-selected="handleBatchSelected"
     />
+    <VariantSelectionModal
+      :open-modal="openVariantSelectionModal"
+      :item-code="selectedArticle?.name ?? ''"
+      :item-name="selectedArticle?.itemName ?? ''"
+      :item-qty-map="itemQtyMap"
+      @toggle-modal="toggleModal('VariantSelection', false)"
+      @variant-selected="handleVariantSelected"
+    />
     <SavedInvoiceModal
       :open-modal="openSavedInvoiceModal"
       @toggle-modal="toggleModal('SavedInvoice', false)"
@@ -235,6 +243,7 @@ import SavedInvoiceModal from './SavedInvoiceModal.vue';
 import OpenPOSShiftModal from './OpenPOSShiftModal.vue';
 import ClosePOSShiftModal from './ClosePOSShiftModal.vue';
 import BatchSelectionModal from './BatchSelectionModal.vue';
+import VariantSelectionModal from './VariantSelectionModal.vue';
 import LoyaltyProgramModal from './LoyaltyProgramModal.vue';
 import ReturnSalesInvoiceModal from './ReturnSalesInvoiceModal.vue';
 import { ModelNameEnum } from 'models/types';
@@ -256,6 +265,8 @@ import {
   getPOSItemFilters,
   getPOSItemRecords,
   getListedPOSItems,
+  addArticleStock,
+  toPOSItem,
   validatePOSCheckout,
   isTypingInField,
   getQuickQtyBuffer,
@@ -316,6 +327,7 @@ export default defineComponent({
     OpenPOSShiftModal,
     ClosePOSShiftModal,
     BatchSelectionModal,
+    VariantSelectionModal,
     LoyaltyProgramModal,
     ReturnSalesInvoiceModal,
   },
@@ -358,6 +370,7 @@ export default defineComponent({
       openLoyaltyProgramModal: false,
       openReturnSalesInvoiceModal: false,
       openBatchSelectionModal: false,
+      openVariantSelectionModal: false,
       isMenuOpen: false,
 
       itemSearchTerm: '',
@@ -377,6 +390,12 @@ export default defineComponent({
         addition: CartAddition;
       } | null,
       expandedRow: undefined as string | undefined,
+      /** The article whose size or color the cashier is picking, and how to add it. */
+      selectedArticle: null as POSItem | null,
+      pendingVariantAddition: null as {
+        quantity: number;
+        addition: CartAddition;
+      } | null,
     };
   },
   computed: {
@@ -693,12 +712,13 @@ export default defineComponent({
       const visibility = getItemVisibility(profile);
       const filters = getPOSItemFilters(visibility, this.selectedItemGroup);
       const items = await getPOSItemRecords(filters);
+      const itemQtyMap = await addArticleStock(items, this.itemQtyMap);
       const hideUnavailable = !!(
         this.posProfile?.hide_unavailable_items ??
         this.fyo.singles.POSSettings?.hide_unavailable_items
       );
 
-      this.items = getListedPOSItems(items, this.itemQtyMap, hideUnavailable);
+      this.items = getListedPOSItems(items, itemQtyMap, hideUnavailable);
     },
     async selectedReturnInvoice(invoiceName: string) {
       const invoice = await getFrappeDoc(
@@ -792,6 +812,13 @@ export default defineComponent({
           return;
         }
 
+        if (item.hasVariants) {
+          this.selectedArticle = item;
+          this.pendingVariantAddition = { quantity, addition };
+          this.toggleModal('VariantSelection', true);
+          return;
+        }
+
         if (item.hasBatch) {
           this.selectBatch(item, quantity, addition);
           return;
@@ -806,6 +833,18 @@ export default defineComponent({
           message: getErrorMessage(error as Error),
         });
       }
+    },
+    /** Adds the picked size or color as the article would have been added. */
+    async handleVariantSelected(name: string) {
+      const pending = this.pendingVariantAddition;
+      this.pendingVariantAddition = null;
+      const [record] = await getPOSItemRecords([['name', '=', name]]);
+      if (!record) {
+        return;
+      }
+
+      const variant = toPOSItem(record, this.itemQtyMap);
+      await this.addItem(variant, pending?.quantity ?? 1, pending?.addition);
     },
     selectBatch(item: POSItem, quantity: number, addition: CartAddition) {
       this.selectedItemForBatch = item.name;

@@ -77,6 +77,7 @@ test('the POS reads what its profile allows and lists, else POS Settings', async
 
 test('All Items lists stock and service items, hiding only stock that is out', () => {
   assert.deepEqual(pos.getPOSItemFilters('All Items', 'Drinks'), [
+    ['variant_of', 'is', 'not set'],
     ['item_group', '=', 'Drinks'],
   ]);
 

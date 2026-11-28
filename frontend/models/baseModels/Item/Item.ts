@@ -94,6 +94,8 @@ export class Item extends FrappeDoc {
       item_defaults: { hidden: true },
       taxes: { emptyMessage: 'No taxes' },
       barcodes: { emptyMessage: 'No barcodes' },
+      attributes: { emptyMessage: 'Add Size, Color or both' },
+      variant_of: { create: false },
     },
   };
   static override rowModels = {

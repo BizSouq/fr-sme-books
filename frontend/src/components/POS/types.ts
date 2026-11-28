@@ -23,6 +23,7 @@ export const modalNames = [
   'ItemEnquiry',
   'ReturnSalesInvoice',
   'BatchSelection',
+  'VariantSelection',
 ] as const;
 
 export type ModalName = (typeof modalNames)[number];
@@ -46,6 +47,8 @@ export interface POSItem {
   unit: string;
   hasBatch: boolean;
   hasSerialNumber: boolean;
+  /** An article whose sizes or colors are picked from it, as it is not sold itself. */
+  hasVariants?: boolean;
   itemGroup?: string;
 }
 

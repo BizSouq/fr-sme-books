@@ -27,6 +27,12 @@
             {{ getItemInitials(item.itemName) }}
           </span>
           <FrappeBadge
+            v-if="item.hasVariants"
+            class="absolute bottom-1.5 start-1.5"
+            theme="blue"
+            :label="t`Sizes`"
+          />
+          <FrappeBadge
             v-if="item.trackItem"
             class="absolute end-1.5 top-1.5"
             :theme="item.availableQty > 0 ? 'green' : 'red'"
