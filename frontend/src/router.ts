@@ -13,6 +13,8 @@ import QuickEditForm from 'src/pages/QuickEditForm.vue';
 import Report from 'src/pages/Report.vue';
 import Settings from 'src/pages/Settings/Settings.vue';
 import TemplateBuilder from 'src/pages/TemplateBuilder/TemplateBuilder.vue';
+import LabelDesigner from 'src/pages/Labels/LabelDesigner.vue';
+import PrintLabels from 'src/pages/Labels/PrintLabels.vue';
 import POS from 'src/pages/POS/POS.vue';
 import type { HistoryState, RouteLocationNormalized } from 'vue-router';
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
@@ -137,6 +139,19 @@ const routes: RouteRecordRaw[] = [
     name: 'Import Wizard',
     meta: { desktopOnly: true },
     component: ImportWizard,
+  },
+  {
+    path: '/label-designer/:name',
+    name: 'Label Designer',
+    meta: { sidebarPath: '/print-labels', pushed: true },
+    component: LabelDesigner,
+    props: true,
+  },
+  {
+    path: '/print-labels',
+    name: 'Print Labels',
+    meta: { sidebarPath: '/print-labels' },
+    component: PrintLabels,
   },
   {
     path: '/template-builder/:name',

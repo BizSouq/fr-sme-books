@@ -2,6 +2,7 @@ import type { Fyo } from 'fyo';
 import type { Action, ListViewSettings } from 'fyo/model/types';
 import {
   getDocStatusListColumn,
+  getPrintLabelsAction,
   getStockTransferActions,
 } from 'models/helpers';
 import { ModelNameEnum } from 'models/types';
@@ -36,6 +37,9 @@ export class PurchaseReceipt extends StockTransfer {
   }
 
   static getActions(fyo: Fyo): Action[] {
-    return getStockTransferActions(fyo, ModelNameEnum.PurchaseReceipt);
+    return [
+      getPrintLabelsAction(fyo, 'Purchase Receipt'),
+      ...getStockTransferActions(fyo, ModelNameEnum.PurchaseReceipt),
+    ];
   }
 }

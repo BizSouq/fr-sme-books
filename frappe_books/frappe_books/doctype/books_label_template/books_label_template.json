@@ -1,0 +1,179 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:template_name",
+ "creation": "2026-11-28 14:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "template_name",
+  "is_default",
+  "sheet_section",
+  "paper",
+  "label_width",
+  "label_height",
+  "columns",
+  "column_break_gap",
+  "column_gap",
+  "row_gap",
+  "margin_top",
+  "margin_left",
+  "layout_section",
+  "layout"
+ ],
+ "fields": [
+  {
+   "fieldname": "template_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Template Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Default",
+   "description": "Labels print with this template unless another is picked."
+  },
+  {
+   "fieldname": "sheet_section",
+   "fieldtype": "Section Break",
+   "label": "Label and Paper"
+  },
+  {
+   "default": "Label Printer",
+   "fieldname": "paper",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Paper",
+   "options": "Label Printer\nA4 Sheet",
+   "reqd": 1
+  },
+  {
+   "default": "38",
+   "fieldname": "label_width",
+   "fieldtype": "Float",
+   "label": "Label Width (mm)",
+   "reqd": 1,
+   "non_negative": 1
+  },
+  {
+   "default": "25",
+   "fieldname": "label_height",
+   "fieldtype": "Float",
+   "label": "Label Height (mm)",
+   "reqd": 1,
+   "non_negative": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "columns",
+   "fieldtype": "Int",
+   "label": "Labels Across",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_gap",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "column_gap",
+   "fieldtype": "Float",
+   "label": "Gap Between Columns (mm)",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "row_gap",
+   "fieldtype": "Float",
+   "label": "Gap Between Rows (mm)",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "margin_top",
+   "fieldtype": "Float",
+   "label": "Top Margin (mm)",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "margin_left",
+   "fieldtype": "Float",
+   "label": "Left Margin (mm)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "layout_section",
+   "fieldtype": "Section Break",
+   "label": "Layout"
+  },
+  {
+   "default": "[]",
+   "fieldname": "layout",
+   "fieldtype": "Code",
+   "label": "Layout",
+   "options": "JSON",
+   "description": "What the label shows and where, as the label designer saves it."
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-11-28 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Frappe Books",
+ "name": "Books Label Template",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Books Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Books User"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Books Cashier"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
